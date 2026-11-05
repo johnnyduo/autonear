@@ -74,7 +74,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .main { min-width: 0; display: flex; flex-direction: column; }
 .topbar { position: sticky; top: 0; z-index: 15; display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: color-mix(in srgb, var(--ink-0) 92%, transparent); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); height: 56px; min-height: 56px; overflow: hidden; }
 .topbar .grow > * { white-space: nowrap; }
-.topbar .grow { flex: 1; min-width: 0; }
+.topbar .grow { flex: 1; min-width: 0; flex-wrap: nowrap; } /* nowrap: the LED + status text must stay on one line at 360px, the text ellipsizes instead */
+.topbar .grow .clip { min-width: 0; flex: 0 1 auto; }
+.topbar .row { flex-wrap: nowrap; min-height: 0; } /* the LED and its label share a line at every width (they stacked at 360px) */
 .page { padding: 32px 24px 96px; max-width: 1480px; width: 100%; margin: 0 auto; }
 .page > header { margin-bottom: 32px; }
 .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
@@ -197,7 +199,7 @@ pre.code { margin: 0; padding: 16px; background: var(--ink-0); border: 1px solid
 .tabs button[aria-selected='true'] { color: var(--signal); border-color: var(--signal); }
 .md h1 { font: 400 32px/1.1 var(--f-display); margin: 0 0 12px; } .md h2 { font: 500 12px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--mineral-hi); margin: 24px 0 8px; }
 .md ul, .md ol { margin: 0 0 12px; padding-left: 20px; } .md li { margin: 4px 0; color: var(--chalk-2); }
-.cite { font: 500 10.5px var(--f-mono); color: var(--mineral-hi); border: 1px solid color-mix(in srgb, var(--mineral-hi) 35%, var(--line)); border-radius: 4px; padding: 1px 5px; margin: 0 2px; cursor: pointer; background: none; }
+.cite { font: 500 10.5px var(--f-mono); color: var(--mineral-hi); border: 1px solid color-mix(in srgb, var(--mineral-hi) 35%, var(--line)); border-radius: 4px; padding: 4px 6px; /* >=24px tall (WCAG 2.5.8) */ margin: 0 2px; cursor: pointer; background: none; }
 .cite:hover { background: var(--mineral); color: var(--chalk); }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100vw); background: var(--ink-1); border-left: 1px solid var(--line-hi); z-index: 55; overflow: auto; padding: 24px; animation: slide .24s var(--ease); }
 @keyframes slide { from { transform: translateX(24px); opacity: 0; } }

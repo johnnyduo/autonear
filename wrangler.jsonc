@@ -17,6 +17,6 @@
     // Replace database_id after `npx wrangler d1 create autonear` (the id is not a secret). Local dev works with the placeholder.
     { "binding": "DB", "database_name": "autonear", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true, "traces": { "enabled": true } }
   // Secrets (never in this file): npx wrangler secret put OPERATOR_TOKEN | CRON_SECRET | ANTHROPIC_API_KEY | AI_GATEWAY_API_KEY | GITHUB_TOKEN
 }
