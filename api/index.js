@@ -23,7 +23,7 @@ function getApp() {
       cronSecret: process.env.CRON_SECRET ?? '',
       defer: (p) => waitUntil(p.catch((e) => console.error('deferred', e))),
       schedulerMode: 'vercel-cron',
-      schedulerNote: 'Vercel Cron (vercel.json crons). Hobby plan: once per day; use an external pinger on /api/cron/tick for a faster cadence.',
+      schedulerNote: 'Vercel Cron (vercel.json crons): every 15 minutes (Pro plan).',
     });
   })();
   appPromise.catch(() => { appPromise = undefined; }); // retry on the next request instead of caching a failure
