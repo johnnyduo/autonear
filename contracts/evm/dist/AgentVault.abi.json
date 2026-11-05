@@ -1,0 +1,1091 @@
+{
+  "contract": "AgentVault",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "initialOwner",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "receive",
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "MAX_DEPLOYS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_DURATION",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_LABEL_LEN",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MIN_PERIOD",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "acceptOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "allowTemplate",
+      "inputs": [
+        {
+          "name": "templateId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "internalType": "string"
+        },
+        {
+          "name": "deposit",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "available",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "config",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct IAgentVault.Config",
+          "components": [
+            {
+              "name": "owner",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "pendingOwner",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "paused",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "networkId",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "epoch",
+              "type": "uint64",
+              "internalType": "uint64"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "deploy",
+      "inputs": [
+        {
+          "name": "templateId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "code",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "target",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "disallowTemplate",
+      "inputs": [
+        {
+          "name": "templateId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "draw",
+      "inputs": [
+        {
+          "name": "amount",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "mandate",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct IAgentVault.Mandate",
+          "components": [
+            {
+              "name": "agent",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "expiresAt",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "maxDeploys",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "start",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "periodSecs",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "revoked",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "perDrawCap",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "periodCap",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalCap",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "pause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "periodState",
+      "inputs": [
+        {
+          "name": "ts",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ps",
+          "type": "tuple",
+          "internalType": "struct IAgentVault.PeriodState",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "spent",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "startsAt",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "endsAt",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "predictAddress",
+      "inputs": [
+        {
+          "name": "templateId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "previewDeploy",
+      "inputs": [
+        {
+          "name": "templateId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "err",
+          "type": "bytes4",
+          "internalType": "bytes4"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "previewDraw",
+      "inputs": [
+        {
+          "name": "amount",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "err",
+          "type": "bytes4",
+          "internalType": "bytes4"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "revoke",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setMandate",
+      "inputs": [
+        {
+          "name": "agent",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "expiresAt",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "perDrawCap",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "periodSecs",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "periodCap",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalCap",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "maxDeploys",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "template",
+      "inputs": [
+        {
+          "name": "templateId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct IAgentVault.Template",
+          "components": [
+            {
+              "name": "id",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "label",
+              "type": "string",
+              "internalType": "string"
+            },
+            {
+              "name": "deposit",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "templateCount",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "templateIdOf",
+      "inputs": [
+        {
+          "name": "initcode",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "templates",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "limit",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "page",
+          "type": "tuple[]",
+          "internalType": "struct IAgentVault.Template[]",
+          "components": [
+            {
+              "name": "id",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "label",
+              "type": "string",
+              "internalType": "string"
+            },
+            {
+              "name": "deposit",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        {
+          "name": "newOwner",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "usage",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct IAgentVault.Usage",
+          "components": [
+            {
+              "name": "totalSpent",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "periodSpent",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "periodIndex",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "deploys",
+              "type": "uint32",
+              "internalType": "uint32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "withdraw",
+      "inputs": [
+        {
+          "name": "amount",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "Deployed",
+      "inputs": [
+        {
+          "name": "epoch",
+          "type": "uint64",
+          "indexed": true,
+          "internalType": "uint64"
+        },
+        {
+          "name": "templateId",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "target",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "deploys",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Deposited",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Drawn",
+      "inputs": [
+        {
+          "name": "epoch",
+          "type": "uint64",
+          "indexed": true,
+          "internalType": "uint64"
+        },
+        {
+          "name": "agent",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalSpent",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "periodSpent",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MandateRevoked",
+      "inputs": [
+        {
+          "name": "epoch",
+          "type": "uint64",
+          "indexed": true,
+          "internalType": "uint64"
+        },
+        {
+          "name": "by",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MandateSet",
+      "inputs": [
+        {
+          "name": "epoch",
+          "type": "uint64",
+          "indexed": true,
+          "internalType": "uint64"
+        },
+        {
+          "name": "agent",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "expiresAt",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "perDrawCap",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "periodSecs",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "periodCap",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalCap",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "maxDeploys",
+          "type": "uint32",
+          "indexed": false,
+          "internalType": "uint32"
+        },
+        {
+          "name": "start",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferStarted",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "pendingOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TemplateAllowed",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        },
+        {
+          "name": "deposit",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TemplateDisallowed",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "VaultPaused",
+      "inputs": [
+        {
+          "name": "by",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "VaultUnpaused",
+      "inputs": [
+        {
+          "name": "by",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Withdrawn",
+      "inputs": [
+        {
+          "name": "owner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "AddressTaken",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "BadAmount",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "BadMandate",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "BadName",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "BadOwner",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "BadTemplate",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CodeMismatch",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "DeployFailed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "DeployLimit",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InsufficientBalance",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "MandateInactive",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NoMandate",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Paused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "PerDrawCap",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "PeriodCap",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Reentrancy",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "TemplateNotAllowed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "TotalCap",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "TransferFailed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Unauthorized",
+      "inputs": []
+    }
+  ],
+  "selectors": {
+    "MAX_DEPLOYS()": "0x55e067c5",
+    "MAX_DURATION()": "0xb1724b46",
+    "MAX_LABEL_LEN()": "0xe9921c86",
+    "MIN_PERIOD()": "0xbbccf154",
+    "acceptOwnership()": "0x79ba5097",
+    "allowTemplate(bytes32,string,uint256)": "0x6214a32f",
+    "available()": "0x48a0d754",
+    "config()": "0x79502c55",
+    "deploy(bytes32,bytes32,bytes)": "0xd76fad23",
+    "disallowTemplate(bytes32)": "0xc173d16c",
+    "draw(uint256)": "0x3b304147",
+    "mandate()": "0x39b1b96d",
+    "pause()": "0x8456cb59",
+    "periodState(uint256)": "0x35e3a9bd",
+    "predictAddress(bytes32,bytes32)": "0x10a93528",
+    "previewDeploy(bytes32,bytes32)": "0x04e7a876",
+    "previewDraw(uint256)": "0xa054d076",
+    "revoke()": "0xb6549f75",
+    "setMandate(address,uint256,uint256,uint256,uint256,uint256,uint256)": "0x2fe8e348",
+    "template(bytes32)": "0x77ceb0be",
+    "templateCount()": "0x26705c3c",
+    "templateIdOf(bytes)": "0x04b80d3c",
+    "templates(uint256,uint256)": "0xd07e0189",
+    "transferOwnership(address)": "0xf2fde38b",
+    "unpause()": "0x3f4ba83a",
+    "usage()": "0x6d811e71",
+    "withdraw(uint256)": "0x2e1a7d4d"
+  },
+  "errors": {
+    "AddressTaken()": "0xf649c1a5",
+    "BadAmount()": "0x749b5939",
+    "BadMandate()": "0x3e916108",
+    "BadName()": "0x153736cd",
+    "BadOwner()": "0x73cb018f",
+    "BadTemplate()": "0x2d22289e",
+    "CodeMismatch()": "0x179708c0",
+    "DeployFailed()": "0xb4f54111",
+    "DeployLimit()": "0x0a68f4fd",
+    "InsufficientBalance()": "0xf4d678b8",
+    "MandateInactive()": "0xb25d2e88",
+    "NoMandate()": "0x8814cafb",
+    "Paused()": "0x9e87fac8",
+    "PerDrawCap()": "0xc4b0aa3c",
+    "PeriodCap()": "0xf203bf60",
+    "Reentrancy()": "0xab143c06",
+    "TemplateNotAllowed()": "0xfb16ac4c",
+    "TotalCap()": "0x18f65848",
+    "TransferFailed()": "0x90b8ec18",
+    "Unauthorized()": "0x82b42900"
+  },
+  "events": {
+    "Deployed(uint64,bytes32,address,bytes32,uint256)": "0xf5fa8d94133dd4d6feff964b354d93f6f8c0e6d4f6b7723276c6fb07be632fb1",
+    "Deposited(address,uint256)": "0x2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c4",
+    "Drawn(uint64,address,uint256,uint256,uint256)": "0x4b298bbb10fac98cb9ba948e441a726a4dcb1d4c356a284280ef519f96fc3e28",
+    "MandateRevoked(uint64,address)": "0x68665b80ed67231287b319de211f8818dfb23bc4408e2ed25775e295937a3bc5",
+    "MandateSet(uint64,address,uint64,uint256,uint64,uint256,uint256,uint32,uint64)": "0x427a9246bb5d2158f9afcaadea185020254dc287ce3ec31d35232522a2953e56",
+    "OwnershipTransferStarted(address,address)": "0x38d16b8cac22d99fc7c124b9cd0de2d3fa1faef420bfe791d8c362d765e22700",
+    "OwnershipTransferred(address,address)": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+    "TemplateAllowed(bytes32,string,uint256)": "0x20e5043f88ffe61a95f65a3a1b48b212d2c7ae4a159b9650c675119957149c9d",
+    "TemplateDisallowed(bytes32)": "0xdda6bd105cf364ca012e34c2d5c94b12e0bef2882b3887dd5168c7d4c3da26da",
+    "VaultPaused(address)": "0xdffada2889ebfab9224c24069d833f3de835d8cf99872d49e7b7ba5fccb7a46f",
+    "VaultUnpaused(address)": "0xcf1b4127793ff168d18689e30ebd56f02dc076b536aab2a7fd836bea67761017",
+    "Withdrawn(address,uint256)": "0x7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d5"
+  },
+  "previewCodes": {
+    "0x00000000": "",
+    "0xf649c1a5": "AddressTaken",
+    "0x749b5939": "BadAmount",
+    "0x3e916108": "BadMandate",
+    "0x153736cd": "BadName",
+    "0x73cb018f": "BadOwner",
+    "0x2d22289e": "BadTemplate",
+    "0x179708c0": "CodeMismatch",
+    "0x0a68f4fd": "DeployLimit",
+    "0xf4d678b8": "InsufficientBalance",
+    "0xb25d2e88": "MandateInactive",
+    "0x8814cafb": "NoMandate",
+    "0x9e87fac8": "Paused",
+    "0xc4b0aa3c": "PerDrawCap",
+    "0xf203bf60": "PeriodCap",
+    "0xfb16ac4c": "TemplateNotAllowed",
+    "0x18f65848": "TotalCap",
+    "0x82b42900": "Unauthorized"
+  }
+}

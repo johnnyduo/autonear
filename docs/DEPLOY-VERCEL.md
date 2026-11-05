@@ -6,7 +6,7 @@ what has actually been observed). Cloudflare Workers + D1 ([DEPLOY-CLOUDFLARE.md
 
 ## What the repository contains for Vercel
 * `vercel.json`: `framework: null`, `installCommand` (root deps + `web/` deps), `buildCommand` (`vite build` inside `web/`),
-  `outputDirectory: web/dist`, a daily cron on `/api/cron/tick`, security headers (same CSP as the Node server), `maxDuration: 60`
+  `outputDirectory: web/dist`, a daily cron on `/api/cron/tick`, security headers (same CSP as the Node server), `maxDuration: 300`
   for the function, and the NEAR wasm files included in the bundle.
 * `api/index.js`: Vercel Function (Node.js runtime) exposing the same Web-standard handler (`createApp`) as the Node server and the
   Cloudflare Worker. Storage is libSQL/Turso via `DATABASE_URL` + `DATABASE_AUTH_TOKEN` (or the `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` names that
@@ -31,9 +31,8 @@ Never add wallet or agent private keys to Vercel: the autonomy loop (agent signi
 * **Hobby cron runs once per day** and expressions that run more often fail the deployment. For a 15-minute cadence use an external
   scheduler (GitHub Actions `schedule`, any uptime pinger) calling `GET /api/cron/tick` with `Authorization: Bearer $CRON_SECRET`, or Vercel Pro.
 * `defer()` uses `waitUntil` from `@vercel/functions`, so a background run continues after the 202 response within `maxDuration`.
-* A full ingestion tick must finish inside `maxDuration` (60 s here). Not yet measured on Vercel. Measured locally on 2026-11-05 with all 9 sources: about 35 s
-  (cold database, 1,814 queries) and 37 s (warm, 434 queries); the four reachable social sources are about 15 to 16 s of that, mostly network. Turso adds per-query latency
-  that a local sqlite file does not, so re-measure after deploying. Tuning: `SOCIAL_MAX_ITEMS`, `SOCIAL_BUDGET_MS` (see `.env.example`).
+* A full ingestion tick must finish inside `maxDuration` (300 s here). **Measured:** 64 s with the function in `hnd1`; >300 s (504) with it in `iad1` because the Turso database is far from Washington (~200 ms per query, ~1,300 queries per pass). `vercel.json` pins `functions["api/**/*.js"].regions` to `hnd1`: **change it to the region of your own Turso database** (the host name of `DATABASE_URL` shows it) and re-measure with `GET /api/cron/tick?wait=1`.
+  With all 9 sources the local (sqlite) measurement was about 35 s cold / 37 s warm (1,814 / 434 queries; the reachable social sources are about 15-16 s of that, mostly network). The 64 s above was measured with the 4 original sources against Turso; re-measure after the social sources land. Tuning: `SOCIAL_MAX_ITEMS`, `SOCIAL_BUDGET_MS` (see `.env.example`).
 * Optional social-source variables (`MASTODON_*`, `DEVTO_TAGS`, `FARCASTER_*`, `BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD`) go in the same place; mark the Bluesky app password Sensitive.
   Bluesky stays `not_configured` (no request, no error) until both are set.
 
