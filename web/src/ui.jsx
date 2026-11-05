@@ -25,6 +25,17 @@ const P = {
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2',
   link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
   copy: 'M9 9h11v11H9zM5 15V4h11',
+  vault: 'M4 5h16v14H4zM9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0M7 19v2M17 19v2',
+  ban: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.6l12.8 12.8',
+  draw: 'M12 3v11M7.5 10l4.5 4.5 4.5-4.5M4 17v3h16v-3',
+  deploy: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12L4 7.5M12 12v9',
+  loop: 'M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 3v4h-4M6 21v-4h4',
+  user: 'M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 21c0-4 3.6-7 8-7s8 3 8 7',
+  bot: 'M5 8h14v10H5zM12 8V4M9.5 13h.01M14.5 13h.01M3 12v3M21 12v3',
+  lock: 'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
+  bolt: 'M13 3L5 14h6l-1 7 8-11h-6z',
+  info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5v.5',
+  arrow: 'M5 12h14M13 6l6 6-6 6',
 };
 export function Icon({ name, size = 20, label, className }) {
   return (
@@ -48,6 +59,14 @@ export function Status({ state }) {
 export function Meter({ value = 0, tone, label }) {
   const v = Math.max(0, Math.min(1, value));
   return <div className={`meter ${tone ?? (v < 0.35 ? 'risk' : v < 0.6 ? 'warn' : '')}`} role="meter" aria-valuenow={Math.round(v * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={label}><i style={{ width: `${v * 100}%` }} /></div>;
+}
+/** Who approved a decision. "Approved under mandate:..." (the agent's loop, inside a human-granted mandate) must never look like a human approval. */
+export function ApproverBadge({ approver, compact }) {
+  if (!approver) return null;
+  const m = /^mandate:/.test(approver);
+  return m
+    ? <span className="chip mandate" title={`Approved by the autonomy loop under ${approver}. No human clicked approve for this decision.`}><Icon name="bot" size={13} />{compact ? 'under mandate' : `approved under ${approver}`}</span>
+    : <span className="chip human" title={`Approved by a human: ${approver}`}><Icon name="user" size={13} />{compact ? 'by human' : `approved by human · ${approver}`}</span>;
 }
 export const CostChip = ({ cost = 0, tokens = 0 }) => <Chip title="Estimated list price; tokens may be approximate">{cost ? fmt.usd(cost) : '$0'} · {tokens} tok</Chip>;
 export const Hash = ({ h, n = 8 }) => <span className="mono-v" title={h}>{fmt.short(h, n)}</span>;

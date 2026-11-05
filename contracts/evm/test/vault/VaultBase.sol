@@ -14,6 +14,8 @@ abstract contract VaultBase is Test {
     bytes internal constant T1_INIT = hex"600160005360016000f3";
     /// @dev Same shape, runtime 0x02: a distinct template id.
     bytes internal constant T2_INIT = hex"600260005360016000f3";
+    /// @dev Initcode that succeeds but returns EMPTY runtime code (PUSH0-free: 6000 6000 f3).
+    bytes internal constant EMPTY_RUNTIME_INIT = hex"60006000f3";
     /// @dev Initcode that reverts with empty data (PUSH0 PUSH0 REVERT as 6000 6000 fd).
     bytes internal constant REVERTING_INIT = hex"60006000fd";
 

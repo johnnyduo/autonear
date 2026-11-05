@@ -133,11 +133,14 @@ impl Env {
         id
     }
     async fn set_mandate(&self, max_deploys: u32) {
+        self.set_mandate_for(self.agent.id(), max_deploys).await
+    }
+    async fn set_mandate_for(&self, agent: &AccountId, max_deploys: u32) {
         let exp = self.now_secs().await + 3600;
         self.owner
             .call(self.vault.id(), "set_mandate")
             .args_json(json!({
-                "agent": self.agent.id(), "expires_at": exp.to_string(),
+                "agent": agent, "expires_at": exp.to_string(),
                 "per_draw_cap": near(5).as_yoctonear().to_string(), "period_secs": "3600",
                 "period_cap": near(20).as_yoctonear().to_string(),
                 "total_cap": near(50).as_yoctonear().to_string(), "max_deploys": max_deploys
@@ -356,6 +359,19 @@ async fn registry_deployed_through_vault_is_keyless_correctly_initialised_and_bu
     assert!(
         r.is_failure() && format!("{:?}", r.into_result().unwrap_err()).contains("private"),
         "on_deployed must be #[private]"
+    );
+    let r = env
+        .agent
+        .call(env.vault.id(), "on_drawn")
+        .args_json(
+            json!({"epoch": "1", "period_index": "0", "agent": env.agent.id(), "amount": "0"}),
+        )
+        .transact()
+        .await
+        .unwrap();
+    assert!(
+        r.is_failure() && format!("{:?}", r.into_result().unwrap_err()).contains("private"),
+        "on_drawn must be #[private]"
     );
     let r = env
         .agent
@@ -602,6 +618,7 @@ fn vault_wasm_imports_no_key_or_account_destroying_host_functions_and_has_no_upg
         "draw",
         "deploy",
         "on_deployed",
+        "on_drawn",
         "config",
         "mandate",
         "usage",
@@ -616,5 +633,88 @@ fn vault_wasm_imports_no_key_or_account_destroying_host_functions_and_has_no_upg
     assert_eq!(
         methods, want,
         "exported methods are exactly the documented API (no upgrade/migrate/call-anything)"
+    );
+}
+
+/// The bound agent is a named account that deletes itself in the same receipt that calls `draw`
+/// (fixture `draw_then_self_delete.wasm`, see its .wat). The vault's Transfer to the now-deleted
+/// account fails in the next block, the runtime refunds the vault, and `on_drawn` must restore the budget.
+#[tokio::test]
+async fn draw_to_a_deleted_agent_account_is_refunded_and_the_budget_restored() {
+    let env = setup().await;
+    assert_eq!(
+        env.vault.id().as_str(),
+        "vault.test.near",
+        "fixture hard-codes the vault id"
+    );
+    assert_eq!(
+        env.owner.id().as_str(),
+        "owner.test.near",
+        "fixture hard-codes the beneficiary"
+    );
+    let root = env.worker.root_account().unwrap();
+    let wallet = root
+        .create_subaccount("sweeper")
+        .initial_balance(near(5))
+        .transact()
+        .await
+        .unwrap()
+        .into_result()
+        .unwrap()
+        .deploy(include_bytes!("../fixtures/draw_then_self_delete.wasm"))
+        .await
+        .unwrap()
+        .into_result()
+        .unwrap();
+    env.set_mandate_for(wallet.id(), 1).await;
+    let avail0 = env.available().await;
+    assert_eq!(
+        env.vview(
+            "preview_draw",
+            json!({"amount": near(2).as_yoctonear().to_string()})
+        )
+        .await,
+        ""
+    );
+
+    let res = wallet
+        .call("go")
+        .args_json(json!({"amount": near(2).as_yoctonear().to_string()}))
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+    let logs = res.logs().join("\n");
+    assert!(
+        logs.contains("\"event\":\"drawn\""),
+        "the vault accepted the draw first: {logs} / {:?}",
+        res.failures()
+    );
+    assert!(
+        env.worker.view_account(wallet.id()).await.is_err(),
+        "the agent account must be gone, otherwise the transfer would not fail"
+    );
+    assert!(
+        logs.contains("\"event\":\"draw_failed\"") && logs.contains("\"reversed\":true"),
+        "on_drawn must report the reversal: {logs}"
+    );
+    let u = env.vview("usage", json!({})).await;
+    assert_eq!(u["total_spent"], "0", "total restored");
+    assert_eq!(u["period_spent"], "0", "period restored");
+    let ps = env.vview("period_state", json!({})).await;
+    assert_eq!(ps["period_spent"], "0");
+    let avail1 = env.available().await;
+    let tol = near(1).as_yoctonear() / 100;
+    assert!(
+        avail1 + tol >= avail0,
+        "the refund came back to the vault: {avail0} -> {avail1}"
+    );
+    assert_eq!(
+        env.vview(
+            "preview_draw",
+            json!({"amount": near(5).as_yoctonear().to_string()})
+        )
+        .await,
+        ""
     );
 }

@@ -40,6 +40,8 @@ pub const MIN_INIT_GAS: u64 = 5 * TGAS;
 pub const MAX_INIT_GAS: u64 = 200 * TGAS;
 /// Static gas reserved for `on_deployed`.
 pub const CALLBACK_GAS: u64 = 10 * TGAS;
+/// Static gas reserved for `on_drawn`.
+pub const DRAW_CALLBACK_GAS: u64 = 5 * TGAS;
 pub const DEFAULT_PAGE: u64 = 50;
 pub const MAX_PAGE: u64 = 100;
 pub const EVENT_STANDARD_VERSION: &str = "1.0.0";
@@ -514,7 +516,8 @@ impl Vault {
     // ------------------------------------------------------------ agent ops
 
     /// Pull `amount` yoctoNEAR to `mandate.agent` (never to anyone else). Counters are updated
-    /// before the transfer promise is created.
+    /// before the transfer promise is created (optimistic); if the transfer fails (e.g. the agent
+    /// account was deleted) the runtime refunds the vault and `on_drawn` reverses the charge.
     pub fn draw(&mut self, amount: U128) {
         let caller = env::predecessor_account_id();
         let now = now_secs();
@@ -528,7 +531,52 @@ impl Vault {
             period_spent: U128(self.usage.period_spent),
         }
         .emit();
-        send(&agent, amount.0);
+        let transfer = env::promise_batch_create(&agent);
+        env::promise_batch_action_transfer(transfer, token(amount.0));
+        let callback = env::promise_batch_then(transfer, &env::current_account_id());
+        let cb_args = serde_json::to_vec(&serde_json::json!({
+            "epoch": U64(self.epoch),
+            "period_index": U64(self.usage.period_index),
+            "agent": agent,
+            "amount": amount,
+        }))
+        .unwrap_or_else(|_| env::panic_str("callback args"));
+        env::promise_batch_action_function_call(
+            callback,
+            "on_drawn",
+            &cb_args,
+            token(0),
+            Gas::from_gas(DRAW_CALLBACK_GAS),
+        );
+        env::promise_return(callback);
+    }
+
+    /// Callback of `draw`. If the transfer failed, the amount has been refunded to the vault and the
+    /// optimistic charge is reversed: always inside the same mandate epoch (a newer mandate has its
+    /// own counters and is left alone), `period_spent` only if the stored period is still the one
+    /// charged. Saturating, so a replay can never underflow. On success it does nothing.
+    #[private]
+    pub fn on_drawn(&mut self, epoch: U64, period_index: U64, agent: AccountId, amount: U128) {
+        require!(
+            env::promise_results_count() == 1,
+            "expected one promise result"
+        );
+        if let PromiseResult::Failed = env::promise_result(0) {
+            let reversed = epoch.0 == self.epoch;
+            if reversed {
+                self.usage.total_spent = self.usage.total_spent.saturating_sub(amount.0);
+                if self.usage.period_index == period_index.0 {
+                    self.usage.period_spent = self.usage.period_spent.saturating_sub(amount.0);
+                }
+            }
+            Event::DrawFailed {
+                agent,
+                amount,
+                epoch,
+                reversed,
+            }
+            .emit();
+        }
     }
 
     /// Creates `{name}.{vault}`, funds it with the template deposit, deploys `code` and calls

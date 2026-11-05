@@ -3,7 +3,7 @@
   "track": "AI Security & Defense",
   "voice": {
     "name": "Puck",
-    "style": "Speak like a confident founder delivering a hackathon pitch: crisp, warm, rising energy, short punchy sentences, a beat of silence after each full stop. Never robotic, never shouting."
+    "style": "Speak like a confident founder delivering a hackathon pitch at a brisk, energetic pace of about three words per second: crisp, warm, rising energy, short punchy sentences, only a short beat after each full stop. Never robotic, never shouting."
   },
   "tokens_note": "{{path}} is resolved from src/data/captured.json. {{path|w}} = spoken words (TTS), digits are used in captions. Numbers cannot drift from what the code produced.",
   "scenes": [

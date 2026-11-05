@@ -12,11 +12,16 @@ export function useToken() {
   return t;
 }
 
+/** Fixture mode (dev/screenshots only) is reachable solely through an explicit `fixture=1` query inside the hash. */
+export const isFixtureMode = () => { try { return /[?&]fixture=1(?:&|$)/.test(location.hash || ''); } catch { return false; } };
+
 export class ApiError extends Error {
   constructor(message, status, code) { super(message); this.status = status; this.code = code; }
 }
 
 export async function api(path, { method = 'GET', body, idem, signal } = {}) {
+  // Safety net: while fixture data is on screen NO mutation can leave the browser, whatever component asks for it.
+  if (method !== 'GET' && isFixtureMode()) throw new ApiError('Fixture mode: no request was sent. Nothing can be changed from fixture data.', 0, 'fixture');
   const headers = {};
   const tok = getToken();
   if (tok) headers.authorization = `Bearer ${tok}`;

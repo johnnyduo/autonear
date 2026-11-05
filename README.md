@@ -31,7 +31,7 @@ No credentials are required for the whole read path. Put keys in `.env` only whe
 ## Verify it yourself
 
 ```bash
-npm run verify                  # syntax + 33 backend tests + 144 Foundry + 84 Rust tests + web build
+npm run verify                  # syntax + 275 backend tests + 241 Foundry + 84 + 43 Rust tests + web build
 npm run ingest                  # real network ingestion; prints per-source results
 npm run bench                   # deterministic vs LLM analyst, mechanical rubric
 npm run attest -- near          # real cargo build + tests → hashes recorded
@@ -41,6 +41,10 @@ npm run run:pipeline -- --chain=evm:84532 --owner=0x… --proposer=0x…   # ful
 ```
 
 Then open **Overview → Dossier → Runs → Studio → Approve**. A fresh reviewer should be able to: inspect fresh source records with working original links (Radar), see supporting *and* contradicting evidence (Dossier), trigger an analyst/skeptic run and watch real events (Runs), read the brief and the automated-check results (Studio), and see that deploy is blocked until a scoped approval exists (Approve).
+
+## Autonomous agent wallet (Mandate Vault)
+
+Beyond the one-decision-one-signature flow, a human can grant an agent a **mandate**: a revocable, capped budget in a vault contract (NEAR and EVM, same rules). The agent holds its own testnet key and can only draw gas to itself and deploy contract code the owner pre-approved by exact hash with init arguments fixed by the owner. It cannot widen its budget, send funds elsewhere, pick owners or upgrade; the owner can revoke, pause or withdraw at any time. The loop is **off by default** (`AUTONOMY_ENABLED=1`), runs only on a Node host you control, and every action lands in a hash-chained ledger visible at `#/vault`. Spec and limits: [docs/agent-vault-spec.md](docs/agent-vault-spec.md); proof table: Gate G in [PROGRESS.md](PROGRESS.md). Testnet only; ERC-8004 is used only as an optional, Draft identity file.
 
 ## Architecture
 

@@ -64,6 +64,11 @@ contract AgentVault is IAgentVault {
     mapping(bytes32 id => string label) private _tplLabel;
     bytes32[] private _tplIds;
 
+    /// @dev CREATE2 addresses this vault has successfully deployed to. Needed because a template may deploy EMPTY
+    ///      runtime code: the account then has a nonce but `code.length == 0`, so a code check alone would
+    ///      let preview say "ok" for an address CREATE2 can no longer use.
+    mapping(address target => bool used) private _deployedAt;
+
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
@@ -270,6 +275,7 @@ contract AgentVault is IAgentVault {
             target := create2(0, add(initcode, 0x20), mload(initcode), salt)
         }
         if (target == address(0)) revert DeployFailed();
+        _deployedAt[target] = true;
 
         emit Deployed(_epoch, templateId, target, salt, deploys);
     }
@@ -393,7 +399,8 @@ contract AgentVault is IAgentVault {
         if (_tplIndex[templateId] == 0) return TemplateNotAllowed.selector;
         if (codeHash != templateId) return CodeMismatch.selector;
         if (_usage.deploys >= _mandate.maxDeploys) return DeployLimit.selector;
-        if (predictAddress(templateId, salt).code.length != 0) return AddressTaken.selector;
+        address predicted = predictAddress(templateId, salt);
+        if (_deployedAt[predicted] || predicted.code.length != 0) return AddressTaken.selector;
         return bytes4(0);
     }
 

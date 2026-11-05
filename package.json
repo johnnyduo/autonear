@@ -36,7 +36,13 @@
     "contract:evm:vault:build": "node scripts/evm-vault-build.mjs",
     "contract:evm:vault:test": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" sh -c \"cd contracts/evm && forge test --match-path 'test/vault/*'\"",
     "contract:evm:vault:e2e": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" bash contracts/evm/script/e2e-vault-anvil.sh",
-    "contract:evm:vault:coverage": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" sh -c \"cd contracts/evm && forge coverage --ir-minimum --match-path 'test/vault/*' --report summary\""
+    "contract:evm:vault:coverage": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" sh -c \"cd contracts/evm && forge coverage --ir-minimum --match-path 'test/vault/*' --report summary\"",
+    "agent:status": "node src/cli.js agent status",
+    "agent:loop": "node src/cli.js agent loop",
+    "agent:propose": "node src/cli.js agent propose",
+    "e2e:near-sandbox": "node scripts/e2e-near-sandbox.mjs",
+    "test:vault": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" node --test tests/vault-model.test.js tests/vault-service.test.js tests/autonomy.test.js tests/vault-near.test.js",
+    "cf:dry": "npx wrangler deploy --dry-run --outdir .wrangler/dry"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

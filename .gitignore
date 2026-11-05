@@ -174,3 +174,7 @@ CLAUDE.local.md
 !Cargo.lock
 !**/Cargo.lock
 !foundry.lock
+
+# local copies of deployed secrets
+data/*.token
+data/*.secret

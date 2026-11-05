@@ -249,7 +249,17 @@ impl Run {
         }
         match op {
             "draw" => {
-                assert_eq!(receipts.len(), 1, "draw creates exactly one receipt");
+                assert_eq!(
+                    receipts.len(),
+                    2,
+                    "draw: one transfer + the on_drawn callback"
+                );
+                assert!(
+                    matches!(&receipts[1].actions[..], [MockAction::FunctionCallWeight { method_name, .. }]
+                        if method_name.as_slice() == b"on_drawn")
+                        && receipts[1].receiver_id.as_str() == VAULT,
+                    "second receipt is the on_drawn callback to the vault"
+                );
                 let bound = self.v.mandate().expect("mandate").agent;
                 assert_eq!(
                     receipts[0].receiver_id, bound,

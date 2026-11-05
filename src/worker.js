@@ -1,10 +1,13 @@
 // Cloudflare Workers entry: same handler, D1 storage, Cron Trigger drives ingestion + pipeline (no browser needed).
+// The Worker NEVER signs: no keystore is loaded, signingSupported is false, and src/autonomy.js / src/agent/keystore.js are not imported here
+// (the vault API is read-only on the Worker; the autonomy loop runs on the Node runtime only).
 import { openDb } from './db.js';
 import { createApp } from './app.js';
 import { registerSources, ingestAll } from './ingest.js';
 import { pipelineTick } from './orchestrator/coordinator.js';
 import { config } from './config.js';
 import { CONNECTORS } from './connectors/index.js';
+import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 
 function applyEnv(env) { // Workers expose secrets via env, not process.env
   for (const [k, v] of Object.entries(env)) if (typeof v === 'string') process.env[k] = v;
@@ -37,9 +40,9 @@ export default {
   async fetch(request, env, ctx) {
     applyEnv(env);
     const url = new URL(request.url);
-    if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+    if (!url.pathname.startsWith('/api/') && url.pathname !== WELL_KNOWN_PATH) return env.ASSETS.fetch(request);
     const d = await getDb(env);
-    const app = createApp({ db: d, trustCfIp: true, operatorToken: env.OPERATOR_TOKEN ?? '', cronSecret: env.CRON_SECRET ?? '', defer: (p) => ctx.waitUntil(p.catch((e) => console.error('deferred', e))), schedulerMode: 'cloudflare-cron', schedulerNote: 'Workers Cron Trigger (wrangler.jsonc triggers.crons)' });
+    const app = createApp({ db: d, trustCfIp: true, signingSupported: false, agentPublicUrl: env.AGENT_PUBLIC_URL ?? '', operatorToken: env.OPERATOR_TOKEN ?? '', cronSecret: env.CRON_SECRET ?? '', defer: (p) => ctx.waitUntil(p.catch((e) => console.error('deferred', e))), schedulerMode: 'cloudflare-cron', schedulerNote: 'Workers Cron Trigger (wrangler.jsonc triggers.crons)' });
     return app(request);
   },
   async scheduled(event, env, ctx) {

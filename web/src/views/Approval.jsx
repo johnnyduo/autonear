@@ -3,10 +3,11 @@
 // -> step 4 the API verifies the transaction on-chain and only then records the deployment.
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { api, fmt, useApi } from '../api.js';
-import { Chip, Dialog, Empty, ErrorPanel, Icon, NeedsOperator, Panel, SkeletonRows, StaleNote, Status, useToast } from '../ui.jsx';
+import { ApproverBadge, Chip, Dialog, Empty, ErrorPanel, Icon, NeedsOperator, Panel, SkeletonRows, StaleNote, Status, useToast } from '../ui.jsx';
 import { Checks, CopyButton, Full, KV, PageHead, cap, countdown, sha256Text, useNow } from './_run-parts.jsx';
 
 const WalletPanel = lazy(() => import('../wallet/WalletPanel.jsx'));
+const GrantSummary = lazy(() => import('./vault/GrantSummary.jsx')); // only for grant_mandate decisions; shares a chunk with the Vault route
 const SIGNER_RE = { near: /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/, evm: /^0x[0-9a-fA-F]{40}$/ };
 const protoOf = (d) => d.payload?.protocol ?? (String(d.chain_id).startsWith('evm:') ? 'evm' : 'near');
 
@@ -39,8 +40,8 @@ function List() {
                 <a className="li ap-li" href={`#/approval/${d.id}`}>
                   <span className="mono-v ap-li-id">{d.id}</span>
                   <span><Status state={d.effectiveStatus} /></span>
-                  <span className="ap-li-what">{cap(d.action)} <span className="faint">on</span> {d.payload?.networkLabel ?? d.chain_id}</span>
-                  <span className="mono-v faint">artifact {fmt.short(d.artifact_hash, 8)}</span>
+                  <span className="ap-li-what">{cap(d.action)} <span className="faint">on</span> {d.payload?.networkLabel ?? d.chain_id} {d.approver && <ApproverBadge approver={d.approver} compact />}</span>
+                  <span className="mono-v faint">{d.action === 'grant_mandate' ? `vault ${fmt.short(d.payload?.vault?.address, 8)}` : `artifact ${fmt.short(d.artifact_hash, 8)}`}</span>
                   <span className="mono-v ap-li-exp">{d.effectiveStatus === 'pending' ? `expires in ${countdown(d.expiry, now)}` : d.effectiveStatus === 'expired' ? `expired ${fmt.ago(d.expiry)}` : `decided ${fmt.ago(d.decided_at ?? d.created_at)}`}</span>
                 </a>
               </li>
@@ -74,7 +75,7 @@ function Detail({ id, status, token }) {
   if (dec.error?.status === 404) return <div className="page"><Empty title="Decision not found" action={<a className="btn" href="#/approval">All decisions</a>}>No decision with id {id}.</Empty></div>;
   if (dec.error && !d) return <div className="page"><ErrorPanel error={dec.error} onRetry={dec.reload} what="the decision" /></div>;
 
-  const p = d.payload ?? {}; const reg = p.registry ?? {}; const proto = protoOf(d);
+  const p = d.payload ?? {}; const reg = p.registry ?? {}; const proto = protoOf(d); const isGrant = d.action === 'grant_mandate';
   const st = d.effectiveStatus; const paused = status.data?.paused;
   const expired = st === 'expired';
   const stepIdx = st === 'pending' || expired ? 0 : st === 'approved' || st === 'executing' ? 2 : st === 'executed' ? 3 : 1;
@@ -88,11 +89,11 @@ function Detail({ id, status, token }) {
     { name: 'action is enabled in this build', ok: lim.allowedActions.includes(d.action), detail: `${d.action} (enabled: ${lim.allowedActions.join(', ')})` },
     { name: 'network is allowlisted, mainnet blocked', ok: lim.allowedNetworks.includes(d.chain_id), detail: d.chain_id },
     { name: `expiry within ${Math.round(lim.maxExpiryMs / 864e5)} days`, ok: d.expiry - Date.now() <= lim.maxExpiryMs, detail: `${countdown(d.expiry, now)} remaining` },
-    { name: 'max spend does not exceed the ceiling', ok: (() => { try { return BigInt(d.max_spend) <= BigInt(lim.maxSpendCeiling); } catch { return false; } })(), detail: `${d.max_spend} vs ceiling ${lim.maxSpendCeiling}` },
+    isGrant ? null : { name: 'max spend does not exceed the ceiling', ok: (() => { try { return BigInt(d.max_spend) <= BigInt(lim.maxSpendCeiling); } catch { return false; } })(), detail: `${d.max_spend} vs ceiling ${lim.maxSpendCeiling}` },
     { name: 'payload hash recomputed in this browser matches', ok: hashCheck === true, detail: hashCheck == null ? 'computing…' : fmt.short(d.payload_hash, 12) },
-    { name: 'artifact hash is an attested contract build', ok: (arts.data?.items ?? []).some((a) => a.hash === d.artifact_hash && a.kind.startsWith('contract-build:')), detail: fmt.short(d.artifact_hash, 12) },
+    isGrant ? null : { name: 'artifact hash is an attested contract build', ok: (arts.data?.items ?? []).some((a) => a.hash === d.artifact_hash && a.kind.startsWith('contract-build:')), detail: fmt.short(d.artifact_hash, 12) },
     { name: 'kill switch is not engaged', ok: !paused, detail: paused ? 'ENGAGED: approval is blocked' : 'released' },
-  ] : [];
+  ].filter(Boolean) : [];
 
   const checks = dossier.data?.content?.output?.checks ?? [];
   const unresolved = dossier.data?.content?.output?.unresolved ?? [];
@@ -101,18 +102,31 @@ function Detail({ id, status, token }) {
 
   return (
     <div className="page">
-      <PageHead eyebrow={<><a href="#/approval" className="rh-back">Approval</a> / {d.id}</>} title={cap(d.action).replace(/^./, (c) => c.toUpperCase())} em={`on ${d.chain_id}`} aside={<Status state={st} />}>
-        <span className="faint mono-v">{d.run_id && <a href={`#/run/${d.run_id}`}>run {d.run_id}</a>} · created {fmt.date(d.created_at)}</span>
+      <PageHead eyebrow={<><a href="#/approval" className="rh-back">Approval</a> / {d.id}</>} title={cap(d.action).replace(/^./, (c) => c.toUpperCase())} em={`on ${d.chain_id}`} aside={<span className="row"><Status state={st} /><ApproverBadge approver={d.approver} /></span>}>
+        <span className="faint mono-v">{d.run_id && <><a href={`#/run/${d.run_id}`}>run {d.run_id}</a> · </>}created {fmt.date(d.created_at)}</span>
       </PageHead>
 
       <Stepper idx={stepIdx} st={st} />
 
       <div className="grid" style={{ marginTop: 24 }}>
         <div className="span-8 stack" style={{ alignContent: 'start' }}>
-          {(st === 'approved' || st === 'executing') && <SignPanel d={d} proto={proto} token={token} reload={reload} />}
-          {(st === 'executed' || deployment) && <Monitoring d={d} deployment={deployment} />}
+          {isGrant && (st === 'approved' || st === 'executing') && (
+            <Panel title="Step 3 · Sign the on-chain mandate yourself" tone="live" aside={<Chip tone="mineral">you sign, we verify</Chip>}>
+              <p className="dim" style={{ marginTop: 0 }}>This grant is approved but <b>not active</b>. Approving never moves funds or sets a mandate. Sign the owner transactions yourself, then the server reads the vault and enables the loop only if the chain equals what you approved, field by field.</p>
+              <a className="btn primary" href={`#/vault/grant/${d.id}`}><Icon name="vault" size={16} />Open the grant flow</a>
+            </Panel>
+          )}
+          {!isGrant && (st === 'approved' || st === 'executing') && <SignPanel d={d} proto={proto} token={token} reload={reload} />}
+          {!isGrant && (st === 'executed' || deployment) && <Monitoring d={d} deployment={deployment} />}
 
-          <Panel title="The exact action you are authorizing" tone={st === 'pending' ? 'live' : ''}>
+          {isGrant && (
+            <Panel title="The exact mandate you are authorizing" tone={st === 'pending' ? 'live' : ''}>
+              <Suspense fallback={<SkeletonRows n={4} />}><GrantSummary payload={p} chainId={d.chain_id} /></Suspense>
+              <hr className="rule" />
+              <KV rows={[['Action', <b key="a">{d.action}</b>], ['Expires', <span key="ex"><span className="mono-v">{fmt.date(d.expiry)}</span> · <b className={`ap-cd ${expired ? 'bad' : ''}`} data-testid="countdown">{st === 'pending' ? countdown(d.expiry, now) : expired ? 'expired' : 'n/a (decided)'}</b></span>], ['Nonce', <Full key="nc" v={d.nonce} copy />], ['Payload hash', <Full key="ph" v={d.payload_hash} copy />], ['Bound signer', d.bound_signer ? <Full key="bs" v={d.bound_signer} /> : <span key="bs" className="faint">not bound yet: set when you approve (the human owner who will sign on-chain)</span>]]} />
+            </Panel>
+          )}
+          {!isGrant && <Panel title="The exact action you are authorizing" tone={st === 'pending' ? 'live' : ''}>
             <KV rows={[
               ['Action', <b key="a">{d.action}</b>],
               ['Network', <span key="n">{p.networkLabel ?? '–'} <span className="mono-v faint">({d.chain_id})</span></span>],
@@ -131,28 +145,34 @@ function Detail({ id, status, token }) {
               ['Bound signer', d.bound_signer ? <Full key="bs" v={d.bound_signer} /> : <span key="bs" className="faint">not bound yet: set when you approve</span>],
               ['Brief hash', <Full key="bh" v={p.briefHash} />],
             ].filter(Boolean)} />
-          </Panel>
+          </Panel>}
 
-          <Panel title="Rollback path"><p style={{ margin: 0 }}>{p.rollback ?? 'No rollback path recorded.'}</p></Panel>
+          <Panel title="Rollback path"><p style={{ margin: 0 }}>{p.rollback ?? (isGrant ? 'The owner can revoke the mandate, pause the vault, or withdraw to the owner address at any time, with the owner key. The agent cannot widen, extend or undo any of it.' : 'No rollback path recorded.')}</p></Panel>
 
           <Panel title={`Policy checks · ${policy.filter((c) => c.ok).length}/${policy.length} pass`} aside={sec.loading ? <span className="faint">loading…</span> : null}>
             {sec.error && !sec.data ? <ErrorPanel error={sec.error} onRetry={sec.reload} what="decision limits" /> : <Checks items={policy} />}
-            <p className="help" style={{ marginBottom: 0 }}>Evaluated here against the limits published by /api/security. The server repeats every check when you approve.</p>
+            <p className="help" style={{ marginBottom: 0 }}>Evaluated here against the limits published by /api/security. The server repeats every check when you approve.{isGrant ? ' For a mandate the server also enforces its total-cap ceiling (VAULT_MAX_TOTAL_CAP) at that point; it is not published here yet.' : ''}</p>
           </Panel>
 
-          <Panel title={`Automated security checks · ${checks.filter((c) => c.ok).length}/${checks.length} pass`} aside={<Chip tone="bad">independent audit: none</Chip>}>
+          {!isGrant && <Panel title={`Automated security checks · ${checks.filter((c) => c.ok).length}/${checks.length} pass`} aside={<Chip tone="bad">independent audit: none</Chip>}>
             {dossier.loading && <SkeletonRows n={3} />}
             {!dossierMeta && !run.loading && <p className="faint">No security dossier is attached to this decision's run.</p>}
             {checks.length > 0 && <details className="ap-det" open={checks.some((c) => !c.ok)}><summary>{checks.some((c) => !c.ok) ? `${checks.filter((c) => !c.ok).length} check(s) FAILED: show all` : 'Show all automated checks'}</summary><Checks items={checks} /></details>}
             <p className="help" style={{ marginBottom: 0 }}>These are automated checks over this run's artifacts, not an audit. <a href={`#/studio/${d.run_id}?tab=security`}>Open the full dossier</a>.</p>
-          </Panel>
+          </Panel>}
 
           <Panel title="Risks you are accepting">
             <ul className="st-ul ap-risks">
+              {isGrant && <>
+                <li>The agent may spend up to the <b>total cap</b> on gas draws and template deposits, with no further click from you, until the mandate expires or you revoke it.</li>
+                <li>It may deploy only the <b>allowlisted templates</b> above, and only for deploy decisions that pass every normal check. Those are then recorded as approved <b>under mandate</b>, not by a human.</li>
+                <li>The vault contract is automated-test checked against a shared conformance suite; it has <b>not been independently audited</b>.</li>
+                <li>Testnet only. Mainnet is blocked in the backend.</li>
+              </>}
               {unresolved.map((u) => <li key={u}>{u}</li>)}
               {threats.map((t) => <li key={t.threat}><b>{t.threat}</b> <Chip tone="warn">{t.status}</Chip> <span className="dim">{t.mitigation}</span></li>)}
               {quoteMode && quoteMode !== 'live' && <li>Treasury quotes in the brief are <b>synthetic fixtures</b>, not market quotes.</li>}
-              {!unresolved.length && !threats.length && !(quoteMode && quoteMode !== 'live') && <li className="faint">No risk list could be loaded for this decision's run.</li>}
+              {!isGrant && !unresolved.length && !threats.length && !(quoteMode && quoteMode !== 'live') && <li className="faint">No risk list could be loaded for this decision's run.</li>}
             </ul>
           </Panel>
 
@@ -183,14 +203,14 @@ function Stepper({ idx, st }) {
 }
 
 /* =============================== approve / reject =============================== */
-function ApprovePanel({ d, proto, token, paused, expired, reload, toast, policyOk }) {
+export function ApprovePanel({ d, proto, token, paused, expired, reload, toast, policyOk }) {
   const [confirm, setConfirm] = useState(''); const [ack, setAck] = useState(false); const [signer, setSigner] = useState('');
   const [dlg, setDlg] = useState(false); const [err, setErr] = useState(null); const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState(''); const [rej, setRej] = useState(false);
   const st = d.effectiveStatus;
   const phraseOk = confirm === d.confirmPhrase;
   const signerOk = SIGNER_RE[proto]?.test(signer.trim()) && signer.trim().length <= 64;
-  const reg = d.payload?.registry ?? {};
+  const reg = d.payload?.registry ?? {}; const isGrant = d.action === 'grant_mandate'; const ownerHint = reg.owner ?? d.payload?.vault?.owner;
   const why = expired ? 'This decision has expired.' : paused ? 'Kill switch engaged: approvals are blocked.' : null;
   const canOpen = phraseOk && ack && signerOk && !why;
 
@@ -199,7 +219,7 @@ function ApprovePanel({ d, proto, token, paused, expired, reload, toast, policyO
   };
   const approve = async () => {
     setBusy(true); setErr(null);
-    try { await api(`/api/decisions/${d.id}/approve`, { method: 'POST', body: { nonce: d.nonce, payloadHash: d.payload_hash, confirm, signer: signer.trim() } }); setDlg(false); toast('Approved. Nothing has been deployed: sign it yourself next.'); reload(); }
+    try { await api(`/api/decisions/${d.id}/approve`, { method: 'POST', body: { nonce: d.nonce, payloadHash: d.payload_hash, confirm, signer: signer.trim() } }); setDlg(false); toast(isGrant ? 'Approved. Nothing is granted yet: sign the on-chain mandate yourself next.' : 'Approved. Nothing has been deployed: sign it yourself next.'); reload(); }
     catch (e) { setErr(e.message); setDlg(false); } finally { setBusy(false); }
   };
   const reject = async () => {
@@ -217,13 +237,13 @@ function ApprovePanel({ d, proto, token, paused, expired, reload, toast, policyO
         <div className="stack">
           {st === 'pending' && (
             <form className="stack" onSubmit={(e) => { e.preventDefault(); if (canOpen) setDlg(true); }} noValidate>
-              <div className="banner warn"><Icon name="alert" /><div><b>Approval is not execution.</b> It records your authorization for exactly the payload above. You then sign the deployment yourself, and it is recorded only after on-chain verification.</div></div>
+              <div className="banner warn"><Icon name="alert" /><div><b>Approval is not {isGrant ? 'activation' : 'execution'}.</b> It records your authorization for exactly the payload above. {isGrant ? 'You then sign the on-chain mandate yourself, and the loop is enabled only after the server has read the chain and it equals what you approved.' : 'You then sign the deployment yourself, and it is recorded only after on-chain verification.'}</div></div>
               <div className="field">
                 <label htmlFor="signer">{proto === 'near' ? 'NEAR account that will sign' : 'EVM address that will sign'}</label>
                 <input id="signer" className="input mono-i" value={signer} onChange={(e) => setSigner(e.target.value)} autoComplete="off" spellCheck={false} placeholder={proto === 'near' ? 'deployer.testnet' : '0x…'} aria-invalid={signer !== '' && !signerOk} aria-describedby="signer-h" />
                 <span id="signer-h" className={signer && !signerOk ? 'err-t' : 'help'}>{signer && !signerOk ? `Not a valid ${proto === 'near' ? 'NEAR account id' : 'EVM address (0x + 40 hex)'}.` : 'Bound to this decision. Only a deployment from this signer will verify.'}</span>
                 <div className="row">
-                  {reg.owner && <button type="button" className="btn sm" onClick={() => setSigner(reg.owner)}>Use registry owner</button>}
+                  {ownerHint && <button type="button" className="btn sm" onClick={() => setSigner(ownerHint)}>{isGrant ? 'Use vault owner' : 'Use registry owner'}</button>}
                   {proto === 'evm' && typeof window !== 'undefined' && window.ethereum && <button type="button" className="btn sm" onClick={fromWallet}><Icon name="wallet" size={14} />Fill from browser wallet</button>}
                 </div>
               </div>
@@ -233,9 +253,9 @@ function ApprovePanel({ d, proto, token, paused, expired, reload, toast, policyO
                 <input id="phrase" className="input mono-i" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" spellCheck={false} aria-describedby="phrase-h" aria-invalid={confirm !== '' && !phraseOk} />
                 <span id="phrase-h" className={confirm && !phraseOk ? 'err-t' : 'help'}>{confirm && !phraseOk ? 'Does not match yet.' : 'The exact phrase is shown above; pasting is allowed, but read it first.'}</span>
               </div>
-              <label className="ap-ack"><input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} /><span>I understand that approving does not execute anything, that I will sign the transaction myself, and that this is a testnet-only action.</span></label>
+              <label className="ap-ack"><input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} /><span>{isGrant ? 'I understand that approving grants nothing by itself, that I will sign the on-chain mandate myself, that the agent will then act inside it without asking me again, and that this is a testnet-only action.' : 'I understand that approving does not execute anything, that I will sign the transaction myself, and that this is a testnet-only action.'}</span></label>
               {why && <p className="err-t" role="alert">{why}</p>}
-              {!policyOk && <p className="help" style={{ margin: 0 }}>One or more policy checks above did not pass or are still loading; the server will refuse an out-of-policy approval.</p>}
+              {policyOk === false && <p className="help" style={{ margin: 0 }}>One or more policy checks above did not pass or are still loading; the server will refuse an out-of-policy approval.</p>}
               <button className="btn primary" type="submit" disabled={!canOpen}>Review final confirmation</button>
             </form>
           )}
@@ -253,8 +273,8 @@ function ApprovePanel({ d, proto, token, paused, expired, reload, toast, policyO
       {dlg && (
         <Dialog title="Final confirmation" onClose={() => setDlg(false)}>
           <div className="stack">
-            <p className="dim" style={{ margin: 0 }}>You are authorizing one testnet action. <b>Nothing is deployed by this click.</b></p>
-            <KV rows={[['Action', d.action], ['Network', d.payload?.networkLabel ?? d.chain_id], ['Artifact', <span key="a" className="mono-v">{fmt.short(d.artifact_hash, 12)}</span>], ['Bound signer', <span key="s" className="mono-v" style={{ overflowWrap: 'anywhere' }}>{signer.trim()}</span>], ['Max spend', d.max_spend]]} />
+            <p className="dim" style={{ margin: 0 }}>You are authorizing one testnet action. <b>{isGrant ? 'Nothing is granted or funded by this click.' : 'Nothing is deployed by this click.'}</b></p>
+            <KV rows={[['Action', d.action], ['Network', d.payload?.networkLabel ?? d.chain_id], isGrant ? ['Vault', <span key="a" className="mono-v">{fmt.short(d.payload?.vault?.address, 12)}</span>] : ['Artifact', <span key="a" className="mono-v">{fmt.short(d.artifact_hash, 12)}</span>], ['Bound signer', <span key="s" className="mono-v" style={{ overflowWrap: 'anywhere' }}>{signer.trim()}</span>], ['Max spend', d.max_spend]]} />
             <div className="row"><button className="btn primary" onClick={approve} disabled={busy}>{busy ? 'Approving…' : 'Approve decision'}</button><button className="btn" onClick={() => setDlg(false)}>Go back</button></div>
           </div>
         </Dialog>

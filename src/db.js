@@ -83,6 +83,24 @@ CREATE INDEX IF NOT EXISTS artifacts_created ON artifacts(created_at DESC);
 CREATE INDEX IF NOT EXISTS ingest_runs_by_source ON ingest_runs(source_id, id DESC);
 `;
 
+/** Schema v3: Mandate Vault tables (NEW tables only; migrations/0003_vault.sql is generated from this, existing tables are never altered).
+ *  vault_ledger is hash-chained like audit (UNIQUE(prev_hash) makes a fork impossible). mandate_runs.decision_id is the PRIMARY KEY, so a decision
+ *  can be executed by the agent at most once; the partial unique index makes "one deploy in flight per vault" a database fact, not a convention. */
+export const SCHEMA_V3 = `
+CREATE TABLE IF NOT EXISTS vaults(
+  id TEXT PRIMARY KEY, chain_id TEXT NOT NULL, address TEXT NOT NULL, owner TEXT NOT NULL, agent TEXT, attested_ref TEXT,
+  status TEXT NOT NULL DEFAULT 'attached', mandate_decision_id TEXT, created_at INTEGER NOT NULL, last_state TEXT, last_read_at INTEGER,
+  UNIQUE(chain_id, address));
+CREATE TABLE IF NOT EXISTS vault_ledger(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, vault_id TEXT NOT NULL, time INTEGER NOT NULL, kind TEXT NOT NULL, decision_id TEXT, tx_hash TEXT,
+  amount TEXT, status TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '', prev_hash TEXT NOT NULL UNIQUE, hash TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS vault_ledger_by_vault ON vault_ledger(vault_id, id DESC);
+CREATE TABLE IF NOT EXISTS mandate_runs(
+  decision_id TEXT PRIMARY KEY, vault_id TEXT NOT NULL, epoch INTEGER NOT NULL, tx_hash TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS mandate_runs_by_vault ON mandate_runs(vault_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS mandate_runs_one_inflight ON mandate_runs(vault_id) WHERE status IN ('claimed','submitted');
+`;
+
 class Lock {
   #p = Promise.resolve();
   run(fn) { const r = this.#p.then(fn, fn); this.#p = r.catch(() => {}); return r; }
@@ -152,6 +170,7 @@ export async function openDb({ url = '', authToken = '', path = ':memory:', d1 =
   const db = url ? await openLibsql(url, authToken) : await openLocal(path);
   await db.exec(SCHEMA);
   await db.exec(SCHEMA_V2);
+  await db.exec(SCHEMA_V3);
   return db;
 }
 

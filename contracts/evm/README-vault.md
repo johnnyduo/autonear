@@ -46,7 +46,7 @@ any mandate (even revoked/expired), bumps `epoch`, resets usage, sets `start = b
 **Agent op order** (first failing rule wins; one shared check function per op also backs the previews):
 `NoMandate` (no mandate exists, for any caller) -> `Unauthorized` (caller != `mandate.agent`) -> `Paused` -> `MandateInactive` -> then
 - `draw`: `BadAmount` (0) -> `PerDrawCap` -> `PeriodCap` -> `TotalCap` -> `InsufficientBalance`. Effects (counters, event) before the value send, which goes to `mandate.agent` only, via `call`, `nonReentrant`.
-- `deploy`: `TemplateNotAllowed` -> `CodeMismatch` (`keccak256(code) != templateId`) -> `DeployLimit` -> `AddressTaken` (the CREATE2 address already has code). Then counter, then `CREATE2(value 0, salt, code)` from the vault.
+- `deploy`: `TemplateNotAllowed` -> `CodeMismatch` (`keccak256(code) != templateId`) -> `DeployLimit` -> `AddressTaken` (the CREATE2 address already has code, or this vault already deployed there). Then counter, then `CREATE2(value 0, salt, code)` from the vault.
 
 **Templates.** `templateId = keccak256(initcode)`, and the initcode *includes the constructor arguments*, so the owner fixes them at allowlist
 time. `allowTemplate(bytes32 id, string label, uint256 deposit)`: `deposit` must be 0 (`BadTemplate`; EVM forwards no value), label <= 64 bytes
@@ -94,7 +94,7 @@ paths run the same check function and the revert is the raw selector (identical 
 
 EVM-only extras, **not spec codes** (the JS model and NEAR never emit them; the backend should map them to a generic failure):
 `TransferFailed()` (the agent's or owner's `receive` rejected the value send; whole tx reverts, nothing is spent), `Reentrancy()` (guarded
-function re-entered), `DeployFailed()` (CREATE2 returned 0: constructor reverted/out of gas, or the address has a nonce but no code).
+function re-entered), `DeployFailed()` (CREATE2 returned 0: constructor reverted/out of gas, or a pre-existing account with a nonce at that address, which the vault's own bookkeeping cannot see).
 `BadName` exists in the interface for cross-chain parity only.
 
 ## Threat model
@@ -118,7 +118,7 @@ plus up to `maxDeploys` deployments of owner-approved code.
 Accepted / known limits:
 - A compromised agent can still drain its remaining `totalCap` (that is the point of a mandate) and deploy up to `maxDeploys` instances of allowlisted code, each owned by the owner-fixed addresses.
 - If the **owner** is a contract whose `receive` reverts, `withdraw` fails with `TransferFailed` (change the owner with `transferOwnership` first; that never sends ETH).
-- A template whose constructor returns *empty* runtime code leaves an address with a nonce but no code; a second deploy there would fail as `DeployFailed`, not `AddressTaken`. Allowlist only templates that deploy code.
+- A template whose constructor returns *empty* runtime code leaves an account with a nonce but no code. The vault records every CREATE2 target it deploys to (`_deployedAt`, one extra SSTORE, ~22k gas per deploy), so a second deploy at that salt is `AddressTaken` in both `previewDeploy` and the real call (tested: `test_deploy_emptyRuntimeTemplate_secondDeployIsAddressTaken_inPreviewAndCall`). Chosen over reverting on empty runtime code because that would make preview and execution disagree on the first deploy instead.
 - A hostile **template** is owner-approved code: the vault guarantees only that exactly those bytes are deployed, not that they are safe.
 - `agent == owner` (or the agent is a contract that is also the owner) is permitted by the spec; the lock still prevents `withdraw` -> `draw` re-entry.
 - Block timestamp skew (seconds) is irrelevant at the 60 s minimum period / 30 day scale.
@@ -131,10 +131,10 @@ vault deployed stays deployed and owned by the owner-fixed addresses; it needs n
 
 ## Gas notes
 
-Measured (not estimated) on a local anvil, `script/e2e-vault-anvil.sh`: vault deployment 1,548,438 gas (runtime 6,790 bytes, EIP-170 limit 24,576); `setMandate`
+Measured (not estimated) on a local anvil, `script/e2e-vault-anvil.sh`: vault deployment 1,548,438 gas (runtime 6,857 bytes, EIP-170 limit 24,576); `setMandate`
 ~150k first time (cold slots) and ~52k when replacing an existing mandate; `allowTemplate` ~117k (label + index storage); `draw` ~92k for the first draw of an epoch
 and ~58-61k afterwards (includes the value send to an EOA); `revoke` ~32k; `pause` ~28k; `withdraw` ~32k; plain deposit ~22k. A `deploy` of the real ProposalRegistry
-cost ~1.53M gas, almost all of which is the registry's own CREATE2 (the vault's bookkeeping is small); in `forge test --gas-report` a successful `deploy` of a 10-byte fixture peaks at ~94k (the 23k lower bound is a revert path). The reentrancy lock uses transient
+cost ~1.53M gas, almost all of which is the registry's own CREATE2 (the vault's bookkeeping is small; since the `_deployedAt` change it includes one extra ~22k SSTORE; gas figures in this section were measured before that change); in `forge test --gas-report` a successful `deploy` of a 10-byte fixture peaks at ~94k (the 23k lower bound is a revert path). The reentrancy lock uses transient
 storage (`tload`/`tstore`, cancun), so it adds no persistent-storage writes; I did not measure its exact overhead.
 
 ## Build, test, run
@@ -162,15 +162,15 @@ OWNER=<multisig> forge script script/DeployVault.s.sol --rpc-url "$RPC" --accoun
 
 | Check | Result |
 | --- | --- |
-| `forge test` (whole project) | 240 tests pass (96 vault + 144 pre-existing registry tests) |
-| Vault suites | Conformance 2 (11 scenarios / 115 steps run, 2 NEAR-only scenarios skipped), Access 15, Behavior 35, Reentrancy 9, Events 10, Source 5, RegistryViaVault 2, DeployScript 3, Fuzz 7, Invariant 8 |
-| Deep profile (`FOUNDRY_PROFILE=deep`, vault suites) | all pass: fuzz 50,000 runs each; 8 invariants x 4,096 runs x 256 depth (1,048,576 handler calls each) |
+| `forge test` (whole project) | 241 tests pass (97 vault + 144 pre-existing registry tests) |
+| Vault suites | Conformance 2 (11 scenarios / 115 steps run, 2 NEAR-only scenarios skipped), Access 15, Behavior 36, Reentrancy 9, Events 10, Source 5, RegistryViaVault 2, DeployScript 3, Fuzz 7, Invariant 8 |
+| Deep profile (`FOUNDRY_PROFILE=deep`, vault suites; run BEFORE the `_deployedAt` change and not rerun after it; default-profile fuzz/invariants were rerun and pass) | all pass: fuzz 50,000 runs each; 8 invariants x 4,096 runs x 256 depth (1,048,576 handler calls each) |
 | `forge fmt --check` | clean |
-| `forge coverage --ir-minimum` on `src/AgentVault.sol` | lines 96.34% (158/164), statements 97.12% (202/208), **branches 100% (39/39)**, functions 100% (34/34) |
+| `forge coverage --ir-minimum` on `src/AgentVault.sol` | lines 96.39% (160/166), statements 97.17% (206/212), **branches 100% (39/39)**, functions 100% (34/34) |
 | `script/e2e-vault-anvil.sh` | PASS=97 FAIL=0 on local anvil (chain 31337) |
 | Mutation spot checks (manual, 10 attempted) | 1 did not compile; of the 9 valid mutants all were caught by the non-conformance suites and 7 also by the conformance harness. The 2 conformance misses: removing the reentrancy lock on `draw` (not observable in the conformance model) and `draw` paying `msg.sender` instead of `mandate.agent` (equivalent at runtime since only the agent can pass the gate; caught by the source-scan test) |
 
-Coverage honesty: the 6 uncovered lines (80, 84, 88, 270, 418, 419) are all **inline-assembly statements** (`tload`/`tstore` in the lock, `create2`, the raw
+Coverage honesty: the 6 uncovered lines are all **inline-assembly statements** (`tload`/`tstore` in the lock, `create2`, the raw
 `revert(selector)`), which forge's coverage does not attribute; they are executed by the tests (reentrancy blocked, CREATE2 deploys landing on `predictAddress`, every revert selector asserted). With
 `--ir-minimum` source mappings are approximate. The test files also trigger forge-lint `unsafe-typecast` warnings (none in `src/`).
 

@@ -34,6 +34,15 @@ export function operatorToken() {
   return t;
 }
 
+/** Autonomy kill switch. Read from the environment at CALL time (not import time) and OFF unless exactly "1" / "true". */
+export const autonomyEnabled = (e = process.env) => e.AUTONOMY_ENABLED === '1' || e.AUTONOMY_ENABLED === 'true';
+/** Compiled-in ceiling on agent executions per rolling 24h, whatever the env or an approved payload says. */
+export const AUTONOMY_HARD_MAX_PER_DAY = 50;
+export const autonomyMaxPerDay = (e = process.env) => {
+  const n = Number(e.AUTONOMY_MAX_PER_DAY);
+  return Number.isInteger(n) && n >= 1 ? Math.min(n, AUTONOMY_HARD_MAX_PER_DAY) : 5;
+};
+
 export const config = {
   port: num('PORT', 8787),
   host: env('HOST', '127.0.0.1'),
@@ -59,6 +68,9 @@ export const config = {
     mainnetRpc: env('NEAR_MAINNET_RPC', 'https://rpc.mainnet.near.org'),
     deployAccount: env('NEAR_DEPLOY_ACCOUNT'),
   },
+  // Mandate Vault / agent wallet. Secrets are NEVER read here (src/agent/keystore.js owns AGENT_*_PRIVATE_KEY and the key file).
+  agent: { keysPath: env('AGENT_KEYS_PATH'), publicUrl: env('AGENT_PUBLIC_URL') },
+  vault: { maxTotalCap: env('VAULT_MAX_TOTAL_CAP'), autonomyIntervalMs: Math.max(10_000, num('AUTONOMY_INTERVAL_MS', 60_000)) },
   engines: {
     pythia: env('PYTHIA_ENABLED', 'false') === 'true',
     mirofishUrl: env('MIROFISH_URL'),

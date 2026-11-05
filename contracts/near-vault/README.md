@@ -47,9 +47,9 @@ period/total budget (`per_draw_cap` applies to draws only).
 | `withdraw(amount)` | owner | `0 < amount <= available` (`BadAmount` / `InsufficientBalance`); pays the **owner only**; works while paused / revoked / expired / template-less |
 | `transfer_ownership(to)` / `accept_ownership()` | owner / pending owner | two-step; `to` empty, invalid, zero, self or the vault => `BadOwner`; wrong acceptor => `Unauthorized` |
 | `deposit()` | anyone, payable | gift; must attach > 0 (`BadAmount`). A plain transfer also works but emits no event |
-| `draw(amount)` | agent | `NoMandate`, `Unauthorized`, `Paused`, `MandateInactive`, then `BadAmount`, `PerDrawCap`, `PeriodCap`, `TotalCap`, `InsufficientBalance`. Counters change first, then one `Transfer` to `mandate.agent` |
+| `draw(amount)` | agent | `NoMandate`, `Unauthorized`, `Paused`, `MandateInactive`, then `BadAmount`, `PerDrawCap`, `PeriodCap`, `TotalCap`, `InsufficientBalance`. Counters change first, then one `Transfer` to `mandate.agent` followed by the `on_drawn` callback (5 Tgas) |
 | `deploy(template, name, code)` | agent | the four agent gates, then `TemplateNotAllowed`, `CodeMismatch` (`sha256(code) != template`), `DeployLimit`, `PeriodCap`, `TotalCap`, `InsufficientBalance` (all with `template.deposit`), `AddressTaken`, `BadName` |
-| `on_deployed(...)` | the vault itself (`#[private]`) | callback, see below |
+| `on_deployed(...)`, `on_drawn(...)` | the vault itself (`#[private]`) | callbacks, see below |
 
 Owner ops check `Unauthorized` before anything else, so non-owners learn nothing. Agent ops check `NoMandate` (for any caller)
 before `Unauthorized`.
@@ -81,7 +81,9 @@ A name that was reserved stays used forever once its deploy is confirmed (`Addre
 
 ### Optimistic charging and the callback window
 
-The deploy is asynchronous. `deploy` **charges the budget first** (total, period, deploys counter, name reservation) and emits
+Both `deploy` and `draw` are asynchronous and charge optimistically; both have a private callback that reverses the charge on failure (`draw` is described at the end of this section).
+
+For `deploy`: `deploy` **charges the budget first** (total, period, deploys counter, name reservation) and emits
 `deployed`; the deposit leaves the vault balance immediately. If the batch fails (e.g. the deposit cannot pay storage for the wasm,
 `new` panics, the account id is invalid), the runtime refunds the deposit to the vault and the callback `on_deployed` then:
 
@@ -97,8 +99,15 @@ never under-counted), `available()` is lower, the name is reserved (a second dep
 `usage().deploys` includes the in-flight deploy. Consequences: a failed deploy cannot be retried with the same name until the
 callback ran; the agent can briefly be blocked by its own failed attempt. If the callback itself could not run (it has static gas
 reserved, so only an out-of-gas in the callback body, which does a handful of storage writes, would do this) the charge stays: the
-failure direction is "agent has less budget", never "more". The same direction applies to `draw`: if the transfer to the agent
-fails (e.g. the agent account was deleted) the NEAR is refunded to the vault but the counters stay charged (no callback by design).
+failure direction is "agent has less budget", never "more".
+
+**`draw`** works the same way: counters are charged before the `Transfer` to `mandate.agent`, and the callback `on_drawn(epoch, period_index, agent, amount)`
+reverses the charge if the transfer failed (typically: the bound named agent account was deleted; the runtime refunds the amount to the vault).
+Reversal is applied only inside the same mandate epoch, `period_spent` only if the stored period is still the one that was charged, with saturating
+arithmetic (a replay cannot underflow); `deploys` and the deploy name set are never touched. A failure emits `draw_failed {agent, amount, epoch, reversed}`;
+success emits nothing. Window: between the `draw` transaction and the callback (1-3 blocks) the draw counts against the budget and `available()` is lower.
+If the callback cannot run (out of gas in its tiny body) the charge stays, i.e. again "less budget, never more". `withdraw` has no callback: a failed transfer
+to a deleted owner account is refunded to the vault and nothing is charged.
 
 ### Keyless sub-account: consequences
 
@@ -124,6 +133,7 @@ strings, times are seconds. Exactly one event per state change (idempotent no-op
 | `paused` / `unpaused` | by |
 | `template_allowed` | template, label, deposit, init_gas, init_args, updated, by |
 | `template_disallowed` | template, by |
+| `draw_failed` | agent, amount, epoch, reversed |
 | `drawn` | agent, amount, epoch, total_spent, period_spent |
 | `deployed` | agent, template, name, target, deposit, epoch, deploys, total_spent, period_spent (batch **dispatched**, charge applied) |
 | `deploy_confirmed` | template, name, target |
@@ -133,8 +143,8 @@ strings, times are seconds. Exactly one event per state change (idempotent no-op
 | `ownership_transfer_started` | owner, pending |
 | `ownership_transferred` | old, new |
 
-`deploy_confirmed` is an addition to the spec's event list (the spec only names `Deployed` and `DeployFailed`); `deployed` alone does
-not prove the sub-account exists. Test: `events_are_nep297_json_for_every_mutation`.
+`deploy_confirmed` and `draw_failed` are additions to the spec's event list (the spec names `Drawn`, `Deployed`, `DeployFailed`); `deployed` alone does
+not prove the sub-account exists, `drawn` alone does not prove the agent was paid. Test: `events_are_nep297_json_for_every_mutation`.
 
 ## Errors
 
@@ -184,7 +194,7 @@ Not part of the table (plain messages): `new` called twice, invalid `network_id`
 | Agent re-uses the keyless account or takes keys | no `AddKey` in code, wasm does not import the add_key/delete_key/delete_account/stake host functions | `deploy_sends_stored_init_args...`, `vault_wasm_imports_no_key_...` (integration), sandbox access-key list is empty |
 | Agent calls an owner method | every owner method starts with an owner check | `agent_cannot_reach_any_owner_method`, sandbox |
 | Owner locked out / funds trapped | `withdraw` ignores pause, revocation, expiry and templates | `owner_can_still_withdraw_when_everything_else_is_blocked` |
-| Replayed / forged callback | `on_deployed` is `#[private]`; stale epoch is not applied; saturating arithmetic | sandbox (`private` rejection), `double_callback_cannot_underflow` |
+| Replayed / forged callback | `on_deployed` and `on_drawn` are `#[private]`; stale epoch is not applied; saturating arithmetic | sandbox (`private` rejection), `double_callback_cannot_underflow`, `draw_callback_replay_cannot_underflow` |
 | Arithmetic overflow | `saturating_*` on caller-controlled amounts, `overflow-checks = true` in release | `draw_never_overflows_on_huge_amounts` |
 | **Holder of a full-access key on the vault account** | NOT mitigated by the contract: they can redeploy it or move its balance. Keep that key under the owner multisig, or delete it once you accept immutability (deploy script note) | out of scope of the code |
 | Owner key compromise | owner is all-powerful by design; use a multisig and two-step transfer | n/a |
@@ -224,8 +234,9 @@ Verified (see the project report for exact output): `cargo fmt --check`, `cargo 
 "a failing step changes nothing"); mutation spot-checks (flipping five rules made the suite fail); two builds with identical sha256 and
 `wasm-tools validate --features mvp,sign-extension`; and **a real nearcore sandbox run** (`integration/`, near-sandbox 2.13.4): the
 registry wasm deployed through the vault has the exact code hash and **no access keys**, `config().owner_id` is the owner's, the
-agent cannot `allowlist_add` on it while the owner can, real-runtime `E_*` errors, `#[private]` and non-payable guards, and the
-callback reversal for both a too-small deposit and a failing `new` (no sub-account left, counters and `available` restored).
+agent cannot `allowlist_add` on it while the owner can, real-runtime `E_*` errors, `#[private]` (both callbacks) and non-payable guards, the
+callback reversal for both a too-small deposit and a failing `new` (no sub-account left, counters and `available` restored), and the `draw` reversal when the
+bound agent account has been deleted (fixture `integration/fixtures/draw_then_self_delete.wat`: a contract agent that calls `draw` and deletes itself in one receipt).
 
 **Not proven / not done:**
 
@@ -234,7 +245,7 @@ callback reversal for both a too-small deposit and a failing `new` (no sub-accou
 * The shared conformance file runs in the in-process mock (`near-sdk` unit-testing), **not** in the sandbox; the sandbox test covers deploy / callback /
   guards / errors, not every scenario.
 * The optimistic window was exercised for failed and successful batches in the sandbox, but not under concurrency (two in-flight deploys, a mandate
-  replaced between `deploy` and callback happen only in unit tests with a hand-driven callback), not with a callback running out of gas.
+  replaced between `deploy`/`draw` and its callback happen only in unit tests with a hand-driven callback), not with a callback running out of gas.
 * Gas and storage figures are one sandbox data point; per-template / per-name storage and the maximum wasm size accepted by a transaction are unmeasured.
 * No external audit, no formal verification, no fuzzing beyond the sweep tests. The vault account's full-access key is outside the contract's control.
 * Mainnet is out of scope and unreviewed. `deploy_confirmed` and the 1..=32 name range are choices where the spec/brief left room.

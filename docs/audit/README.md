@@ -1,11 +1,12 @@
 # AI-assisted code reviews (not an independent audit)
 
-Two read-only reviews were run with the OpenAI Codex CLI (`codex exec --sandbox read-only`) against this repository on 2026-11-05. They are **automated reviews by an AI model**. They are not a human security audit, name no independent reviewer, and do not change the project's audit status, which remains **none**.
+Three read-only reviews were run with the OpenAI Codex CLI (`codex exec --sandbox read-only`) against this repository on 2026-11-05. They are **automated reviews by an AI model**. They are not a human security audit, name no independent reviewer, and do not change the project's audit status, which remains **none**.
 
 | Review | Scope | Raw output |
 | --- | --- | --- |
 | 1 · Backend | `src/**`, `tests/**`, `scripts/attest.mjs`, `wrangler.jsonc`, `migrations/` | [codex-backend-audit.raw.md](codex-backend-audit.raw.md) |
 | 2 · Contracts + verification | `contracts/evm/src`, `contracts/near-registry/src`, chain verifiers, decision flow | [codex-contracts-audit.raw.md](codex-contracts-audit.raw.md) |
+| 3 · Mandate Vault (agent wallet) | `contracts/evm/src/AgentVault.sol`, `contracts/near-vault/src/lib.rs`, `src/autonomy.js`, `src/vault/*`, `src/agent/*`, vault routes, vault path of `src/decisions.js` | [codex-vault-audit.raw.md](codex-vault-audit.raw.md) |
 
 Each finding was checked against the code before acting. Resolution status below; regression tests are in `tests/`.
 
@@ -59,3 +60,16 @@ Not changed, by decision: all views are in the main chunk (116 KB gzip) so first
 ## What these reviews did not do
 
 They ran no tests or builds, queried no chain, and did not exercise deployed bytecode. Treat any residual risk as undetected, not absent. Before any use beyond a testnet demo: commission a human audit, put the owner behind a multisig, and run the deep fuzz/invariant profile in CI.
+
+## Review 3: Mandate Vault (4 findings: all fixed, each with a regression test)
+
+Run 2026-11-05 on the code as first delivered. The reviewer also listed what it checked and found OK (EVM roles/budget/reentrancy, template ids binding full initcode, no `AddKey` in NEAR deploy batches, signer call restrictions, operator-token auth on mutations). This is still an AI-assisted review, not an audit.
+
+| # | Severity | Finding | Resolution |
+| --- | --- | --- | --- |
+| V-1 | High | Vault code verification could fail open: if the code-check RPC failed while the state read succeeded, the loop continued toward signing | Fixed. A check that could not run is `unknown` and a ledgered refusal on every read that can lead to an action (no claim, no signing); a positively observed code mismatch still blocks the loop. Tests: code-check RPC throwing at the first tick and after a good read, zero `eth_sendRawTransaction`, decision executes once the check recovers (`tests/autonomy.test.js`) |
+| V-2 | Medium | An approved grant stayed valid after the owner re-set an identical mandate (usage reset on-chain, another full cap under one approval) | Fixed. The activated epoch is pinned; a changed epoch is a refusal that requires a NEW approved `grant_mandate` and re-activation; the verification verdict names the epoch change. Test: identical `setMandate` re-sent, tick refused, new grant works |
+| V-3 | Medium | NEAR `draw` stayed charged when the transfer failed (e.g. deleted agent account) | Fixed. `draw` now schedules a private `on_drawn` callback that reverses the charge with epoch/period safeguards and emits `draw_failed`. 6 unit tests + a real-sandbox test that deletes the agent account |
+| V-4 | Low | EVM `previewDeploy` disagreed with `deploy` for a template whose runtime code is empty (preview ok, CREATE2 then failed) | Fixed. Deployed CREATE2 targets are recorded and both preview and call return `AddressTaken`; costs about 22k extra gas per deploy. Test with an empty-runtime fixture |
+
+Residual gaps are listed in each component README and in PROGRESS.md Gate G (no Slither, NEAR not run on testnet, no independent audit).

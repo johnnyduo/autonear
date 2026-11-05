@@ -118,6 +118,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chip.ok { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 45%, var(--line)); }
 .chip.bad { color: var(--risk); border-color: color-mix(in srgb, var(--risk) 55%, var(--line)); }
 .chip.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.chip.mandate { color: var(--signal); border: 1px dashed var(--signal); background: color-mix(in srgb, var(--signal) 8%, transparent); }
+.chip.human { color: var(--chalk); border-color: var(--chalk-3); }
+.chip svg { flex: none; }
 .chip.mineral { color: var(--mineral-hi); border-color: color-mix(in srgb, var(--mineral-hi) 40%, var(--line)); }
 button.chip, a.chip { cursor: pointer; text-decoration: none; } button.chip:hover, a.chip:hover { border-color: var(--chalk-2); color: var(--chalk); }
 .led { width: 8px; height: 8px; border-radius: 50%; background: var(--chalk-3); flex: none; display: inline-block; }
