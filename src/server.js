@@ -25,7 +25,8 @@ export async function startServer({ dbPath = config.dbPath, port = config.port, 
       if (url.pathname.startsWith('/api/')) {
         const chunks = []; let size = 0;
         for await (const c of req) { size += c.length; if (size > 70_000) { res.writeHead(413).end(); return; } chunks.push(c); }
-        const webReq = new Request(url, { method: req.method, headers: req.headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) });
+        const headers = { ...req.headers, 'x-peer-ip': req.socket.remoteAddress ?? 'local' }; // overwrites anything the client sent under this name
+        const webReq = new Request(url, { method: req.method, headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) });
         const r = await app(webReq);
         let buf = Buffer.from(await r.arrayBuffer()); const h = Object.fromEntries(r.headers);
         if (buf.length > 1024 && /\bgzip\b/.test(req.headers['accept-encoding'] ?? '')) { buf = gzipSync(buf); h['content-encoding'] = 'gzip'; h.vary = 'accept-encoding'; }

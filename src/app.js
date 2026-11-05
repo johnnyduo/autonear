@@ -252,7 +252,13 @@ export function createApp(deps) {
 
   return async function handle(req) {
     const url = new URL(req.url);
-    const ip = req.headers.get('cf-connecting-ip') ?? (process.env.TRUST_PROXY === '1' ? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() : null) ?? 'local';
+    // Rate-limit key. Client-supplied forwarding headers are spoofable, so they are only believed where something trusted sets them:
+    // Cloudflare overwrites cf-connecting-ip on Workers (deps.trustCfIp), and TRUST_PROXY=1 declares a proxy that sets x-forwarded-for.
+    // Otherwise the Node adapter's own socket address (x-peer-ip, always overwritten by src/server.js) is used, so clients do not share one bucket.
+    const proxied = process.env.TRUST_PROXY === '1';
+    const ip = (deps.trustCfIp || proxied ? req.headers.get('cf-connecting-ip') : null)
+      ?? (proxied ? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() : null)
+      ?? req.headers.get('x-peer-ip') ?? 'local';
     try {
       if (!url.pathname.startsWith('/api/')) return out({ error: 'not found' }, 404);
       const write = req.method !== 'GET' && req.method !== 'HEAD';

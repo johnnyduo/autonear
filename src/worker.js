@@ -39,7 +39,7 @@ export default {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     const d = await getDb(env);
-    const app = createApp({ db: d, operatorToken: env.OPERATOR_TOKEN ?? '', cronSecret: env.CRON_SECRET ?? '', defer: (p) => ctx.waitUntil(p.catch((e) => console.error('deferred', e))), schedulerMode: 'cloudflare-cron', schedulerNote: 'Workers Cron Trigger (wrangler.jsonc triggers.crons)' });
+    const app = createApp({ db: d, trustCfIp: true, operatorToken: env.OPERATOR_TOKEN ?? '', cronSecret: env.CRON_SECRET ?? '', defer: (p) => ctx.waitUntil(p.catch((e) => console.error('deferred', e))), schedulerMode: 'cloudflare-cron', schedulerNote: 'Workers Cron Trigger (wrangler.jsonc triggers.crons)' });
     return app(request);
   },
   async scheduled(event, env, ctx) {

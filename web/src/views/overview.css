@@ -2,6 +2,7 @@
 .ov-hero .display { font-size: clamp(48px, 9vw, 148px); margin: 8px 0 24px; }
 .ov-paused { color: var(--risk) !important; }
 .ov-sub { font-size: clamp(16px, 1.6vw, 20px); color: var(--chalk-2); max-width: 64ch; margin-bottom: 32px; }
+@media (max-width: 600px) { .ov-sub { min-height: 3.1em; } } /* reserve two lines so the loaded sentence does not push the KPIs down */
 .ov-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
 .ov-kpi { padding: 16px 16px 16px 0; text-decoration: none; min-height: 44px; border-right: 1px solid var(--line); margin-right: 16px; align-content: start; }
 .ov-kpi:last-child { border-right: 0; margin-right: 0; }

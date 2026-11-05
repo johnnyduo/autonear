@@ -36,6 +36,26 @@ Each finding was checked against the code before acting. Resolution status below
 | C-01 | Low | Rotated-out proposer cannot cancel old proposals | **Accepted, documented.** Owner can always cancel; matches both contracts' READMEs. |
 | B-03 | Low | NEAR `network_id` not verified | Verifier compares registry `network_id` with the decision network. |
 
+## Review 3: end-to-end pass (live browser + API probing, 2026-11-05)
+
+Ran the real server on a copy of the seeded database; drove all 8 screens in Chromium at 360 / 768 / 1440 px, signed out and with the operator token (console errors, failed requests, layout shift, tap targets, labels, duplicate ids, keyboard flows); probed the API with hostile and malformed input; re-ran `npm test`, `wrangler deploy --dry-run` and `npm run e2e:local` (real contract on local anvil).
+
+| ID | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| E-01 | Med | `/api/evidence?limit=-5` returned every row (SQLite treats a negative LIMIT as unbounded); `limit=1.5` was a 500 | `intParam` clamps every numeric query parameter to a valid integer range. Test added. |
+| E-02 | Med | Rate-limit key trusted `cf-connecting-ip` on every runtime, so a Node client could dodge limits by spoofing it; without a proxy all clients shared one bucket | Forwarding headers are trusted only on Workers (`trustCfIp`) or with `TRUST_PROXY=1`; otherwise the socket address set by `server.js` is used. Test added. |
+| E-03 | Low | `deploy-data` threw a 500 for an approved decision with no attested build | 404 with a clear message. Test added. |
+| E-04 | Low | Wrong HTTP method on a known route was a 404 (and `/api/health` accepted any method); unknown run events returned 200 `terminal:true` | 405 + `Allow`, HEAD handled, unknown run is 404. Test added. |
+| E-05 | Med (perf) | Evidence paging scanned and sorted the whole table (`COALESCE` order, no index); several lookups had no index | `migrations/0002_indexes.sql` (generated from `SCHEMA_V2`; 0001 unchanged). Query plans asserted in a test. `/api/status` now issues one query for last ingest runs instead of one per source. |
+| E-06 | Med (UX) | Dialogs re-focused their first control on every parent render, so the 15 s status poll yanked focus out of the token field while typing | `onClose` kept in a ref; effect runs once per open. Verified in-browser across a poll. |
+| E-07 | Low (UX) | Ctrl+K opened the palette with focus on the Close button, so typing did nothing | Initial focus goes to the first form control in the dialog body. Verified in-browser. |
+| E-08 | Med | `Md` did not escape quotes and ran emphasis inside URLs (attribute injection; broken links containing `_`). The Node CSP blocked script execution, the Worker sends none | Quotes escaped, links cut out before emphasis. Payloads checked (`"onmouseover=`, `<img onerror>`, `javascript:`). |
+| E-09 | Med (UX) | Overview layout shift 0.21 at 360 px: the 2-line loading headline became 1 line | Loading headline is one line; sub-text reserves 2 lines on narrow screens. CLS 0.008. |
+| E-10 | Low (UX) | Top bar: the LED and its "LIVE" label stacked on two lines below 400 px | `flex-wrap: nowrap` inside the top bar. |
+| E-11 | Low | The italic serif face used by every headline `<em>` was not preloaded; citation chips 18 px tall (WCAG 2.5.8 wants 24) | Italic face added to the existing font-preload plugin; chip padding raised. Workers traces enabled in `wrangler.jsonc`. |
+
+Not changed, by decision: all views are in the main chunk (116 KB gzip) so first content needs one hop; only the wagmi/viem wallet layer (368 KB) is lazy. Remaining small inline text links ("open radar", "Upstream repository") are 18-19 px tall; they are inline links, which WCAG 2.5.8 exempts.
+
 ## What these reviews did not do
 
 They ran no tests or builds, queried no chain, and did not exercise deployed bytecode. Treat any residual risk as undetected, not absent. Before any use beyond a testnet demo: commission a human audit, put the owner behind a multisig, and run the deep fuzz/invariant profile in CI.

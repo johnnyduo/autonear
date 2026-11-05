@@ -85,13 +85,18 @@ export function NeedsOperator({ token, children, hint = 'Operator token required
 /* ---------- dialog: focus trap, Esc closes, focus restored, labelled ---------- */
 export function Dialog({ title, onClose, children, wide, drawer }) {
   const ref = useRef(null); const tid = useId(); const prev = useRef(null);
+  // Parents pass inline arrows; keeping onClose in a ref means the focus effect runs once per open, not on every parent render
+  // (status polling re-rendered the shell every 15 s and yanked focus out of whatever the user was typing in).
+  const closeRef = useRef(onClose); closeRef.current = onClose;
   useEffect(() => {
     prev.current = document.activeElement;
     const el = ref.current;
     const focusables = () => [...el.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter((n) => !n.disabled);
-    (focusables()[0] ?? el).focus();
+    // Initial focus: an explicit [data-autofocus], else the first form control in the body (the palette/token fields), else the first focusable.
+    // Without this the Close button, which precedes the content in the DOM, took focus and Ctrl+K then typing went nowhere.
+    (el.querySelector('[data-autofocus]') ?? el.querySelector('.dlg-body input:not([disabled]),.dlg-body select:not([disabled]),.dlg-body textarea:not([disabled])') ?? focusables()[0] ?? el).focus();
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
+      if (e.key === 'Escape') { e.stopPropagation(); closeRef.current(); }
       if (e.key === 'Tab') {
         const f = focusables(); if (!f.length) return;
         const first = f[0]; const last = f.at(-1);
@@ -102,14 +107,14 @@ export function Dialog({ title, onClose, children, wide, drawer }) {
     document.addEventListener('keydown', onKey, true);
     document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', onKey, true); document.body.style.overflow = ''; prev.current?.focus?.(); };
-  }, [onClose]);
+  }, []);
   const body = (
     <div ref={ref} className={drawer ? 'drawer' : 'dlg'} role="dialog" aria-modal="true" aria-labelledby={tid} tabIndex={-1} style={wide ? { width: 'min(760px,100%)' } : undefined} onClick={(e) => e.stopPropagation()}>
       <div className="row sp" style={{ marginBottom: 16 }}>
         <h2 id={tid} className="h2">{title}</h2>
         <button className="btn ghost sm" onClick={onClose} aria-label="Close dialog"><Icon name="x" size={16} /></button>
       </div>
-      {children}
+      <div className="dlg-body">{children}</div>
     </div>
   );
   return drawer ? <><div className="scrim" onClick={onClose} style={{ zIndex: 54 }} />{body}</> : <div className="scrim" onClick={onClose}>{body}</div>;
@@ -134,10 +139,17 @@ export function ToastProvider({ children }) {
 }
 
 /* ---------- tiny markdown (headings, lists, links, bold): enough for briefs; escapes everything else ---------- */
-const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LINK = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+const emph = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^\w])_(.+?)_(?!\w)/g, '$1<em>$2</em>');
+/** Links are cut out first so emphasis never rewrites a URL (snake_case paths), and every attribute value is quote-escaped. */
+function inline(s) {
+  let out = ''; let last = 0;
+  for (const m of s.matchAll(LINK)) { out += emph(s.slice(last, m.index)) + `<a href="${esc(m[2])}" target="_blank" rel="noreferrer noopener">${emph(m[1])}</a>`; last = m.index + m[0].length; }
+  return out + emph(s.slice(last));
+}
 export function Md({ text = '' }) {
   const out = []; let list = null; let k = 0;
-  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/_(.+?)_/g, '<em>$1</em>').replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer noopener">$1</a>');
   const flush = () => { if (list) { out.push(<ul key={k++} dangerouslySetInnerHTML={{ __html: list.map((i) => `<li>${inline(i)}</li>`).join('') }} />); list = null; } };
   for (const line of text.split('\n')) {
     if (/^# /.test(line)) { flush(); out.push(<h1 key={k++}>{line.slice(2)}</h1>); }

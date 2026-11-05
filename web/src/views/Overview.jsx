@@ -166,8 +166,9 @@ export default function Overview({ status }) {
   const stale = src.filter((x) => x.status === 'ok' && x.stale).length;
   const recent = src.filter((x) => isRecent(x)).length;
 
+  // The loading headline must be one line like the final one: a two-line placeholder shifted the whole page by 45px at 360px.
   let head; let sub;
-  if (!s) { head = <>Reading the <em>pipeline</em>…</>; sub = 'Connecting to the AutoNEAR API.'; }
+  if (!s) { head = <>Reading <em>status</em>…</>; sub = 'Connecting to the AutoNEAR API.'; }
   else if (s.paused) { head = <>AutoNEAR is <em className="ov-paused">paused</em>.</>; sub = 'The kill switch is engaged: new research runs and approvals are blocked until an operator releases it.'; }
   else { head = <>AutoNEAR is <em>live</em>.</>; sub = bad ? `${bad} of ${src.length} sources need attention.` : stale ? `${stale} source${stale > 1 ? 's are' : ' is'} stale; the rest are healthy.` : `All ${src.length} sources are reporting.`; }
 
