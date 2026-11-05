@@ -1,0 +1,106 @@
+{
+ "messages": [
+  {
+   "data": {
+    "type": "MESSAGE_TYPE_CAST_ADD",
+    "fid": 3854,
+    "timestamp": 162505904,
+    "network": "FARCASTER_NETWORK_MAINNET",
+    "castAddBody": {
+     "text": "Lots of interesting and useful new primitives coming out of the NEAR ecosystem lately (intents, private / P2P DeFi, LLMs and agents running inside TEEs):\n\nhttps://x.com/nearprotocol/status/2026047334468157764\n\nhttps://x.com/nearprotocol/status/2026386700721700975\n\nhttps://x.com/nearprotocol/status/2026371553437286669\n\nhttps://x.com/nearprotocol/status/2026078013386055892",
+     "parentUrl": "https://warpcast.com/~/channel/near",
+     "parentCastId": null,
+     "embeds": [
+      {
+       "url": "https://x.com/nearprotocol/status/2026047334468157764"
+      },
+      {
+       "url": "https://x.com/nearprotocol/status/2026386700721700975"
+      },
+      {
+       "url": "https://x.com/nearprotocol/status/2026371553437286669"
+      },
+      {
+       "url": "https://x.com/nearprotocol/status/2026078013386055892"
+      }
+     ],
+     "mentions": []
+    }
+   },
+   "hash": "0x8c9f97081889a09df6224c1bb95e66beb6caff8b"
+  },
+  {
+   "data": {
+    "type": "MESSAGE_TYPE_CAST_ADD",
+    "fid": 5254,
+    "timestamp": 162407928,
+    "network": "FARCASTER_NETWORK_MAINNET",
+    "castAddBody": {
+     "text": "near agent wars\n\nhttps://nearcon.org/the-agent-hackathon/",
+     "parentUrl": "https://warpcast.com/~/channel/near",
+     "parentCastId": null,
+     "embeds": [],
+     "mentions": []
+    }
+   },
+   "hash": "0x550289f1581ecc5537ba88cab7b11140b35de82b"
+  },
+  {
+   "data": {
+    "type": "MESSAGE_TYPE_CAST_ADD",
+    "fid": 893064,
+    "timestamp": 156695850,
+    "network": "FARCASTER_NETWORK_MAINNET",
+    "castAddBody": {
+     "text": "⏩ 𝗗𝗮𝘆 𝟱 𝗼𝗳 𝟭𝟮 𝗪𝗲𝗯𝟯 𝘅 𝗔𝗜 𝗠𝗮𝗿𝗸𝗲𝘁 𝗠𝗮𝗽 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀: 𝗡𝗘𝗔𝗥\n\nNEAR stands out by prioritizing abstraction and usability. \n\nBy reducing protocol and developer complexity, NEAR enables applications that feel intuitive while scaling toward real consumer adoption. 🧵",
+     "parentUrl": "https://warpcast.com/~/channel/near",
+     "parentCastId": null,
+     "embeds": [
+      {
+       "url": "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/5cde4475-f77c-413d-2cd4-6340bbce7200/original"
+      }
+     ],
+     "mentions": []
+    }
+   },
+   "hash": "0x883c2c853c7b01cc171e262f0b8a2e240033a066"
+  },
+  {
+   "data": {
+    "type": "MESSAGE_TYPE_CAST_ADD",
+    "fid": 1489021,
+    "timestamp": 155650771,
+    "network": "FARCASTER_NETWORK_MAINNET",
+    "castAddBody": {
+     "text": "Near legion",
+     "parentUrl": "https://warpcast.com/~/channel/near",
+     "parentCastId": null,
+     "embeds": [],
+     "mentions": []
+    }
+   },
+   "hash": "0xb4c4b0e96f3ecec9952f2206770017a91b258866"
+  },
+  {
+   "data": {
+    "type": "MESSAGE_TYPE_CAST_ADD",
+    "fid": 400192,
+    "timestamp": 154122438,
+    "network": "FARCASTER_NETWORK_MAINNET",
+    "castAddBody": {
+     "text": "🌉 NEARCON 2026 is coming!\n\nJoin industry pioneers who are shaping the frontier of intelligence and building an AI economy without compromise.\n\n✦ February 23-24, 2026\n✦ Fort Mason, San Francisco 🇺🇸\n\nPrivate. Intelligent. Yours.\n\nSecure your spot today: nearcon.org",
+     "parentUrl": "https://warpcast.com/~/channel/near",
+     "parentCastId": null,
+     "embeds": [
+      {
+       "url": "https://stream.farcaster.xyz/v1/video/019a9da7-ca8c-06e0-d0f0-11931cb61813.m3u8"
+      }
+     ],
+     "mentions": []
+    }
+   },
+   "hash": "0xf1231de7c4de889adba7f69ba454f7d2e6511238"
+  }
+ ],
+ "nextPageToken": ""
+}

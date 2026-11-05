@@ -8,6 +8,7 @@ import { compareQuotes } from './treasury.js';
 import { engineRegistry } from './adapters/index.js';
 import { PROTOCOLS, findNetwork } from '../protocols.js';
 import { config } from '../config.js';
+import { isSocialSource } from '../connectors/source-weights.js';
 
 const uniq = (a) => [...new Set(a)];
 const hrs = (ms) => Math.round(ms / 36e5);
@@ -45,7 +46,7 @@ const ANALYST_SCHEMA = {
 };
 
 export function baselineAnalysis(opp, evidence) {
-  const clean = evidence.filter((e) => e.relation === 'supports' && !e.flags.includes('bot-author') && !e.flags.some((f) => f.startsWith('duplicate')));
+  const clean = evidence.filter((e) => e.relation === 'supports' && !e.flags.includes('bot-author') && !e.flags.some((f) => f.startsWith('duplicate') || f.startsWith('low-signal:')));
   const groups = new Map();
   for (const e of clean) {
     const key = e.signals.repo ?? (e.signals.topicId ? `gov topic ${e.signals.topicId}` : e.source_id);
@@ -54,7 +55,7 @@ export function baselineAnalysis(opp, evidence) {
   }
   const ranked = [...groups.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 5);
   const findings = ranked.map(([key, items]) => ({
-    claim: `${items.length} public record(s) from ${uniq(items.map((i) => i.author)).length} distinct author(s) in ${key} relate to "${opp.topic}" (most recent: "${items[0].title.slice(0, 90)}").`,
+    claim: `${items.length} public record(s) from ${uniq(items.map((i) => i.author)).length} distinct author(s) in ${key}${isSocialSource(key) ? ' (social, unverified)' : ''} relate to "${opp.topic}" (most recent: "${items[0].title.slice(0, 90)}").`,
     citations: items.slice(0, 3).map((i) => i.id),
   }));
   const usage = evidence.find((e) => e.kind === 'usage');
@@ -118,20 +119,23 @@ export async function skeptic(ctx) {
   const contra = ctx.evidence.filter((e) => e.relation === 'contradicts');
   const sc = ctx.opp.score_breakdown;
   const missing = [];
-  if (sc.counts.sources < 3) missing.push(`Only ${sc.counts.sources} independent demand source(s); three required for normal confidence.`);
+  // Social sources are corroboration only: the 3-source gate counts NON-social sources (scoring.js), and social authors are down-weighted.
+  const indepSources = sc.counts.sourcesNonSocial ?? sc.counts.sources;
+  const effAuthors = sc.counts.authorsEffective ?? sc.counts.authors;
+  if (indepSources < 3) missing.push(`Only ${indepSources} independent non-social demand source(s)${sc.counts.sourcesSocial ? ` (plus ${sc.counts.sourcesSocial} social, corroboration only)` : ''}; three required for normal confidence.`);
   if (!sc.counts.usage) missing.push('No on-chain usage corroboration for this topic.');
-  if (sc.counts.authors < 8) missing.push(`Only ${sc.counts.authors} distinct authors; demand may be concentrated.`);
+  if (effAuthors < 8) missing.push(`Only ${sc.counts.authors} distinct authors (effective ${Number(effAuthors).toFixed(1)} after social down-weighting); demand may be concentrated.`);
   missing.push('No direct interviews or willingness-to-pay evidence: GitHub issues and forum posts are friction signals, not purchase intent.');
   if (ctx.opp.topic === 'treasury') missing.push('No live executable swap quote was obtained in this environment; execution economics are unvalidated.');
   const issueOnly = sc.counts.demand > 0 && ctx.evidence.every((e) => e.source_id === 'github-near' || e.kind === 'usage');
   if (issueOnly) missing.push('All demand evidence comes from one source family (GitHub).');
   let multiplier = 1;
-  if (sc.counts.sources < 3) multiplier *= 0.8;
+  if (indepSources < 3) multiplier *= 0.8;
   if (!sc.counts.usage) multiplier *= 0.9;
   if (contra.length / Math.max(1, sc.counts.demand) > 0.25) multiplier *= 0.7;
   if (comps.some((c) => c.coverage >= 0.7)) multiplier *= 0.85;
   const adjusted = Number((ctx.opp.confidence * multiplier).toFixed(3));
-  const verdict = adjusted < 0.25 ? 'reject' : adjusted < 0.45 || sc.counts.sources < 2 ? 'research_more' : 'build';
+  const verdict = adjusted < 0.25 ? 'reject' : adjusted < 0.45 || indepSources < 2 ? 'research_more' : 'build';
   const out = {
     competitors: comps.map((c) => ({ name: c.name, url: c.url, coverage: c.coverage, note: c.note, source: c.source, reviewed: c.reviewed })),
     competitorMentions: mentioned.map((e) => ({ evidenceId: e.id, title: e.title })),

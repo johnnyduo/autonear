@@ -4,7 +4,7 @@ import { parse, j, now, verifyAuditChain, getBlob, audit } from './db.js';
 import { config } from './config.js';
 import { CONNECTORS } from './connectors/index.js';
 import { ingestAll } from './ingest.js';
-import { refreshOpportunities, FORMULA, WEIGHTS } from './scoring.js';
+import { refreshOpportunities, FORMULA, WEIGHTS, SCORING_NOTES } from './scoring.js';
 import { createRun, executeRun, emit, verifyRunChain, isPaused, setPaused, pipelineTick } from './orchestrator/coordinator.js';
 import { oppEvidence, getOpp, hydrateEvidence } from './store.js';
 import { approveDecision, rejectDecision, recordDeployment, getDecision, listDecisions } from './decisions.js';
@@ -79,6 +79,7 @@ export function createApp(deps) {
   async function status() {
     const sources = await db.all('SELECT * FROM sources ORDER BY id');
     const lastRuns = new Map((await db.all('SELECT r.* FROM ingest_runs r JOIN (SELECT MAX(id) id FROM ingest_runs GROUP BY source_id) m ON r.id=m.id')).map((r) => [r.source_id, r]));
+    const metas = new Map((await db.all("SELECT k,v FROM kv WHERE k LIKE 'meta:%'")).map((r) => [r.k.slice(5), parse(r.v, null)]));
     const tick = parse((await db.get("SELECT v FROM kv WHERE k='tick:last'"))?.v, null);
     const active = await db.get("SELECT * FROM runs WHERE state IN ('queued','running') ORDER BY started_at DESC LIMIT 1");
     const counts = await db.get('SELECT (SELECT COUNT(*) FROM evidence) evidence, (SELECT COUNT(*) FROM opportunities) opportunities, (SELECT COUNT(*) FROM runs) runs, (SELECT COUNT(*) FROM decisions WHERE status=\'pending\') pending_decisions');
@@ -90,7 +91,7 @@ export function createApp(deps) {
       sources: sources.map((s) => ({
         id: s.id, name: s.name, kind: s.kind, endpoint: s.endpoint, status: s.status, docs: s.docs_url, terms: s.terms, rateLimit: s.rate_limit,
         lastSuccess: s.last_success, lastError: s.last_error, lastErrorAt: s.last_error_at, failures: s.consecutive_failures, circuitOpenUntil: s.circuit_open_until,
-        stale: !s.last_success || t - s.last_success > 6 * 36e5, lastRun: lastRuns.get(s.id) ?? null,
+        stale: !s.last_success || t - s.last_success > 6 * 36e5, lastRun: lastRuns.get(s.id) ?? null, meta: metas.get(s.id) ?? null,
       })),
       scheduler: { mode: deps.schedulerMode ?? 'external', intervalMs: interval, lastTick: tick, nextRunAt: tick ? tick.at + interval : null, note: deps.schedulerNote ?? '' },
       activeRun: active ?? null,
@@ -120,7 +121,7 @@ export function createApp(deps) {
     if (p === '/api/status' && m === 'GET') return out(await status());
     if (p === '/api/protocols' && m === 'GET') return cached({ protocols: PROTOCOLS });
     if (p === '/api/engines' && m === 'GET') return cached({ engines: engineRegistry(), llm: llmStatus() });
-    if (p === '/api/scoring' && m === 'GET') return cached({ formula: FORMULA, weights: WEIGHTS });
+    if (p === '/api/scoring' && m === 'GET') return cached({ formula: FORMULA, weights: WEIGHTS, ...SCORING_NOTES });
 
     if (p === '/api/evidence' && m === 'GET') {
       const q = (url.searchParams.get('q') ?? '').slice(0, 100); const source = url.searchParams.get('source');

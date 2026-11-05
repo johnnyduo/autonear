@@ -1,0 +1,262 @@
+{
+ "recordedAt": "2026-11-05",
+ "host": "mastodon.social",
+ "headers": {
+  "link": "<https://mastodon.social/api/v1/timelines/tag/nearprotocol?limit=40&max_id=107263697119418526>; rel=\"next\", <https://mastodon.social/api/v1/timelines/tag/nearprotocol?limit=40&min_id=117383920115161323>; rel=\"prev\"",
+  "x-ratelimit-limit": "300",
+  "x-ratelimit-remaining": "299"
+ },
+ "body": [
+  {
+   "id": "117383920115161323",
+   "uri": "https://mastodon.social/users/MarketForcesA/statuses/117383920115161323",
+   "url": "https://mastodon.social/@MarketForcesA/117383920115161323",
+   "created_at": "2026-10-04T17:54:36.370Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>NEAR Protocol (NEARUSD) rose 6.10% to $4.97 on Sunday, significantly outperforming a broadly flat crypto market, driven mainly by capital rotation into high-momentum assets.</p><p><a href=\"https://dmarketforces.com/near-protocol-rises-6-bounces-back-from-security-scare/\" target=\"_blank\" rel=\"nofollow noopener\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"ellipsis\">dmarketforces.com/near-protoco</span><span class=\"invisible\">l-rises-6-bounces-back-from-security-scare/</span></a></p><p><a href=\"https://mastodon.social/tags/NEARProtocol\" class=\"mention hashtag\" rel=\"tag\">#<span>NEARProtocol</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "MarketForcesA",
+    "bot": false,
+    "created_at": "2025-08-03T00:00:00.000Z",
+    "followers_count": 19,
+    "statuses_count": 5962
+   },
+   "tags": [
+    {
+     "name": "NEARProtocol"
+    }
+   ]
+  },
+  {
+   "id": "117357849007071150",
+   "uri": "https://mastodon.social/users/newisty/statuses/117357849007071150",
+   "url": "https://mastodon.social/@newisty/117357849007071150",
+   "created_at": "2026-09-30T03:24:22.829Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>Bitwise Launches First US Spot NEAR ETF</p><p>Bitwise launched the first US spot NEAR ETF, tracking NEAR Protocol&#39;s token, which has nearly tripled since August.</p><p><a href=\"https://newisty.com/blog/bitwise-launches-first-us-spot-near-etf?utm_source=social&amp;utm_campaign=crypto_news\" target=\"_blank\" rel=\"nofollow noopener\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"ellipsis\">newisty.com/blog/bitwise-launc</span><span class=\"invisible\">hes-first-us-spot-near-etf?utm_source=social&amp;utm_campaign=crypto_news</span></a></p><p><a href=\"https://mastodon.social/tags/near\" class=\"mention hashtag\" rel=\"tag\">#<span>near</span></a> <a href=\"https://mastodon.social/tags/nearprotocol\" class=\"mention hashtag\" rel=\"tag\">#<span>nearprotocol</span></a> <a href=\"https://mastodon.social/tags/etf\" class=\"mention hashtag\" rel=\"tag\">#<span>etf</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "newisty",
+    "bot": false,
+    "created_at": "2022-03-10T00:00:00.000Z",
+    "followers_count": 21,
+    "statuses_count": 3838
+   },
+   "tags": [
+    {
+     "name": "near"
+    },
+    {
+     "name": "NEARProtocol"
+    },
+    {
+     "name": "etf"
+    }
+   ]
+  },
+  {
+   "id": "117355380477844820",
+   "uri": "https://mastodon.social/ap/users/117202566207139168/statuses/117355380477844820",
+   "url": "https://mastodon.social/@zubiqo/117355380477844820",
+   "created_at": "2026-09-29T16:56:36.063Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>Bitwise rolled out the Bitwise NEAR ETF (NRR) on NYSE Arca today, marketing the fund as AI infrastructure while baking in-house staking yields straight into the NAV.</p><p>Packaging a proof-of-stake blockchain inside an exchange wrapper with a 0.75% management fee shows asset managers will brand almost any decentralized network as AI-ready to collect fees on.</p><p><a href=\"https://mastodon.social/tags/NearProtocol\" class=\"mention hashtag\" rel=\"tag\">#<span>NearProtocol</span></a> <a href=\"https://mastodon.social/tags/CryptoETF\" class=\"mention hashtag\" rel=\"tag\">#<span>CryptoETF</span></a></p><p><a href=\"https://zubiqo.com/news/bitwise-launches-first-spot-near-etf-targets-ai-agent-economy-narrative-lngdjl\" target=\"_blank\" rel=\"nofollow noopener\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"ellipsis\">zubiqo.com/news/bitwise-launch</span><span class=\"invisible\">es-first-spot-near-etf-targets-ai-agent-economy-narrative-lngdjl</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "zubiqo",
+    "bot": true,
+    "created_at": "2026-09-02T00:00:00.000Z",
+    "followers_count": 6,
+    "statuses_count": 890
+   },
+   "tags": [
+    {
+     "name": "NEARProtocol"
+    },
+    {
+     "name": "cryptoETF"
+    }
+   ]
+  },
+  {
+   "id": "117352233386873120",
+   "uri": "https://mastodon.social/users/newisty/statuses/117352233386873120",
+   "url": "https://mastodon.social/@newisty/117352233386873120",
+   "created_at": "2026-09-29T03:36:15.268Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>Bitwise NEAR ETF Gains Listing Approval and Registration Effectiveness</p><p>Bitwise&#39;s new NEAR ETF has received NYSE Arca listing approval and SEC registration effectiveness, enabling brokerage access to the token and staking rewards.</p><p><a href=\"https://newisty.com/blog/bitwise-near-etf-gains-listing-approval-and-registration-effectiveness?utm_source=social&amp;utm_campaign=crypto_news\" target=\"_blank\" rel=\"nofollow noopener\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"ellipsis\">newisty.com/blog/bitwise-near-</span><span class=\"invisible\">etf-gains-listing-approval-and-registration-effectiveness?utm_source=social&amp;utm_campaign=crypto_news</span></a></p><p><a href=\"https://mastodon.social/tags/nearprotocol\" class=\"mention hashtag\" rel=\"tag\">#<span>nearprotocol</span></a> <a href=\"https://mastodon.social/tags/etf\" class=\"mention hashtag\" rel=\"tag\">#<span>etf</span></a> <a href=\"https://mastodon.social/tags/bitwise\" class=\"mention hashtag\" rel=\"tag\">#<span>bitwise</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "newisty",
+    "bot": false,
+    "created_at": "2022-03-10T00:00:00.000Z",
+    "followers_count": 21,
+    "statuses_count": 3838
+   },
+   "tags": [
+    {
+     "name": "NEARProtocol"
+    },
+    {
+     "name": "etf"
+    },
+    {
+     "name": "bitwise"
+    }
+   ]
+  },
+  {
+   "id": "117232144809374031",
+   "uri": "https://flipboard.com/users/OluOyekanmi/statuses/q0AGmTF4RUyIiJhRwsAP5g:a:461636169",
+   "url": "https://flipboard.com/@oluoyekanmi/nosacryptonista-j3tqhstgz/-/a-q0AGmTF4RUyIiJhRwsAP5g%3Aa%3A461636169-%2F0",
+   "created_at": "2026-09-07T22:34:39.000Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>NEAR’s Next Move Could Hinge on $2.28 <a href=\"https://flipboard.com/tag/nosacapital\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>nosacapital</span></a> <a href=\"https://flipboard.com/tag/cryptoanalysis\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>cryptoanalysis</span></a> <a href=\"https://flipboard.com/tag/liquidations\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>liquidations</span></a> <a href=\"https://flipboard.com/tag/shorts\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>shorts</span></a> <a href=\"https://flipboard.com/tag/nearprotocol\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>nearprotocol</span></a> https://youtu.be/8KPywMOjpY4?si=Afx_6OhTWdHZ7nu_ via\n@YouTube</p><p><a href=\"https://www.youtube.com/watch?v=8KPywMOjpY4&amp;utm_source=flipboard&amp;utm_medium=activitypub\" rel=\"nofollow noopener\" translate=\"no\" target=\"_blank\"><span class=\"invisible\">https://www.</span><span class=\"ellipsis\">youtube.com/watch?v=8KPywMOjpY</span><span class=\"invisible\">4&amp;utm_source=flipboard&amp;utm_medium=activitypub </span></a></p><p>Posted into NOSACRYPTONISTA <span class=\"h-card\" translate=\"no\"><a href=\"https://flipboard.com/@oluoyekanmi/nosacryptonista-j3tqhstgz\" class=\"u-url mention\" rel=\"nofollow noopener\" target=\"_blank\">@<span>nosacryptonista-OluOyekanmi</span></a></span></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "OluOyekanmi@flipboard.com",
+    "bot": false,
+    "created_at": "2024-04-11T00:00:00.000Z",
+    "followers_count": 11131,
+    "statuses_count": 83833
+   },
+   "tags": [
+    {
+     "name": "liquidations"
+    },
+    {
+     "name": "NEARProtocol"
+    },
+    {
+     "name": "cryptoanalysis"
+    },
+    {
+     "name": "nosacapital"
+    },
+    {
+     "name": "shorts"
+    }
+   ]
+  },
+  {
+   "id": "117055559755565718",
+   "uri": "https://mastodon.social/users/WhisprNews/statuses/117055559755565718",
+   "url": "https://mastodon.social/@WhisprNews/117055559755565718",
+   "created_at": "2026-08-07T18:08:14.916Z",
+   "visibility": "public",
+   "language": "es",
+   "spoiler_text": "",
+   "content": "<p>📉 Los tokens de <a href=\"https://mastodon.social/tags/IA\" class=\"mention hashtag\" rel=\"tag\">#<span>IA</span></a> frenan la caída: <a href=\"https://mastodon.social/tags/Chainlink\" class=\"mention hashtag\" rel=\"tag\">#<span>Chainlink</span></a> en $8.25, pegado a su EMA de 50 días ($8.26), y <a href=\"https://mastodon.social/tags/NearProtocol\" class=\"mention hashtag\" rel=\"tag\">#<span>NearProtocol</span></a> en $1.6550, por debajo de todas sus medias. El Miedo y Codicia sube de 25 a 29. La calma en <a href=\"https://mastodon.social/tags/Ormuz\" class=\"mention hashtag\" rel=\"tag\">#<span>Ormuz</span></a> aún no es un acuerdo cerrado.</p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "WhisprNews",
+    "bot": false,
+    "created_at": "2025-05-13T00:00:00.000Z",
+    "followers_count": 100,
+    "statuses_count": 45558
+   },
+   "tags": [
+    {
+     "name": "ia"
+    },
+    {
+     "name": "chainlink"
+    },
+    {
+     "name": "NEARProtocol"
+    },
+    {
+     "name": "ormuz"
+    }
+   ]
+  },
+  {
+   "id": "116417373269580267",
+   "uri": "https://mastodon.social/ap/users/116383605178468498/statuses/116417373269580267",
+   "url": "https://mastodon.social/@gulifare2/116417373269580267",
+   "created_at": "2026-04-17T01:09:01.938Z",
+   "visibility": "public",
+   "language": "pt",
+   "spoiler_text": "",
+   "content": "<p>O hub DeFi Rhea Finance, do NEAR Protocol, registrou uma perda de US$ 7,6 milhões após uma vulnerabilidade técnica.</p><p>🔹 Plataforma operava no ecossistema NEAR<br />🔹 Valor total comprometido: US$ 7,6 mi<br />🔹 Equipes monitoram a segurança da rede</p><p><a href=\"https://mastodon.social/tags/NearProtocol\" class=\"mention hashtag\" rel=\"tag\">#<span>NearProtocol</span></a> <a href=\"https://mastodon.social/tags/RheaFinance\" class=\"mention hashtag\" rel=\"tag\">#<span>RheaFinance</span></a> <a href=\"https://mastodon.social/tags/DeFiNews\" class=\"mention hashtag\" rel=\"tag\">#<span>DeFiNews</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "gulifare2",
+    "bot": false,
+    "created_at": "2026-04-11T00:00:00.000Z",
+    "followers_count": 3,
+    "statuses_count": 2640
+   },
+   "tags": [
+    {
+     "name": "NEARProtocol"
+    },
+    {
+     "name": "rheafinance"
+    },
+    {
+     "name": "DeFiNews"
+    }
+   ]
+  },
+  {
+   "id": "116160917879348959",
+   "uri": "https://techhub.social/users/auriccrypto/statuses/116160917815801391",
+   "url": "https://techhub.social/@auriccrypto/116160917815801391",
+   "created_at": "2026-03-02T18:09:02.000Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>Near Protocol (NEAR) surged 35% in a week!</p><p>Up 15% today alone, the token is showing strong short-term momentum - but still remains over 90% below its ATH.</p><p>Can bulls sustain control? We explain key technical indicators here: <a href=\"https://auriccrypto.com/altcoins/near/near-surges-35-in-a-week-key-levels-now-in-focus/\" rel=\"nofollow noopener\" translate=\"no\" target=\"_blank\"><span class=\"invisible\">https://</span><span class=\"ellipsis\">auriccrypto.com/altcoins/near/</span><span class=\"invisible\">near-surges-35-in-a-week-key-levels-now-in-focus/</span></a></p><p><a href=\"https://techhub.social/tags/NearProtocol\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>NearProtocol</span></a> <a href=\"https://techhub.social/tags/Crypto\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>Crypto</span></a> <a href=\"https://techhub.social/tags/AI\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>AI</span></a> <a href=\"https://techhub.social/tags/Tech\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>Tech</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "auriccrypto@techhub.social",
+    "bot": false,
+    "created_at": "2024-09-13T00:00:00.000Z",
+    "followers_count": 70,
+    "statuses_count": 1260
+   },
+   "tags": [
+    {
+     "name": "NEARProtocol"
+    },
+    {
+     "name": "crypto"
+    },
+    {
+     "name": "ai"
+    },
+    {
+     "name": "tech"
+    }
+   ]
+  }
+ ]
+}

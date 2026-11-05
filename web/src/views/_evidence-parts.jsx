@@ -11,6 +11,8 @@ export const TOPIC_LABEL = {
 };
 const SRC = {
   'github-near': ['GitHub', '#5fa3c2'], 'gov-near': ['Gov forum', '#d9a6e8'], 'hn-algolia': ['Hacker News', '#f0c27b'], 'near-rpc-mainnet': ['NEAR RPC', '#7fd6c4'],
+  // social / news sources (lower scoring weight; see /api/scoring)
+  'near-social': ['NEAR Social', '#9bd36b'], mastodon: ['Mastodon', '#8f9cf5'], farcaster: ['Farcaster', '#c79bf0'], devto: ['Dev.to', '#e8d36b'], bluesky: ['Bluesky', '#6bb7ff'],
 };
 const FALLBACK = ['#e58fa0', '#a3b8f0', '#c9d98a', '#f0a37b'];
 const fallbackColor = (id) => FALLBACK[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % FALLBACK.length];

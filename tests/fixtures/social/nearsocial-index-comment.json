@@ -1,0 +1,23 @@
+[
+ {
+  "accountId": "web3stick.near",
+  "blockHeight": 204440108,
+  "value": {
+   "type": "md"
+  }
+ },
+ {
+  "accountId": "web3stick.near",
+  "blockHeight": 203863588,
+  "value": {
+   "type": "md"
+  }
+ },
+ {
+  "accountId": "web3stick.near",
+  "blockHeight": 203863508,
+  "value": {
+   "type": "md"
+  }
+ }
+]

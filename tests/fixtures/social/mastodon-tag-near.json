@@ -1,0 +1,211 @@
+{
+ "recordedAt": "2026-11-05",
+ "host": "mastodon.social",
+ "headers": {},
+ "body": [
+  {
+   "id": "117557114503054172",
+   "uri": "https://piaille.fr/users/gamingfamily/statuses/117557114070289207",
+   "url": "https://piaille.fr/@gamingfamily/117557114070289207",
+   "created_at": "2026-11-04T08:00:06.000Z",
+   "visibility": "public",
+   "language": "fr",
+   "spoiler_text": "",
+   "content": "<p>🎲 Notre test de Near – L’écho des Civilisations est en ligne !</p><p>Cartes à plusieurs usages, expansion et objectifs communs : un jeu de civilisation pour les amateurs d’optimisation. Douze tours ne veulent pas dire une partie courte : comptez environ 30 minutes par joueur, de 2 à 4 joueurs dès 14 ans.</p><p>⭐ 4/5 — Exemplaire reçu de l’éditeur.</p><p><a href=\"https://www.gaming-family.com/test-near-echo-des-civilisations/\" rel=\"nofollow noopener\" translate=\"no\" target=\"_blank\"><span class=\"invisible\">https://www.</span><span class=\"ellipsis\">gaming-family.com/test-near-ec</span><span class=\"invisible\">ho-des-civilisations/</span></a></p><p><a href=\"https://piaille.fr/tags/Near\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>Near</span></a> <a href=\"https://piaille.fr/tags/JeuxDeSociete\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>JeuxDeSociete</span></a> <a href=\"https://piaille.fr/tags/GamingFamily\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>GamingFamily</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "gamingfamily@piaille.fr",
+    "bot": false,
+    "created_at": "2022-11-18T00:00:00.000Z",
+    "followers_count": 96,
+    "statuses_count": 719
+   },
+   "tags": [
+    {
+     "name": "near"
+    },
+    {
+     "name": "jeuxdesociete"
+    },
+    {
+     "name": "gamingfamily"
+    }
+   ]
+  },
+  {
+   "id": "117552950060722940",
+   "uri": "https://mastodon.social/users/newisty/statuses/117552950060722940",
+   "url": "https://mastodon.social/@newisty/117552950060722940",
+   "created_at": "2026-11-03T14:21:08.654Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>NEAR network moves to cut annual token issuance from 2.5% to 1.6%</p><p>NEAR governance approved a plan to lower its maximum annual token issuance rate to 1.6%, ending a period of high growth in supply.</p><p><a href=\"https://newisty.com/blog/near-network-moves-to-cut-annual-token-issuance-from-25-to-16?utm_source=social&amp;utm_campaign=crypto_news\" target=\"_blank\" rel=\"nofollow noopener\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"ellipsis\">newisty.com/blog/near-network-</span><span class=\"invisible\">moves-to-cut-annual-token-issuance-from-25-to-16?utm_source=social&amp;utm_campaign=crypto_news</span></a></p><p><a href=\"https://mastodon.social/tags/near\" class=\"mention hashtag\" rel=\"tag\">#<span>near</span></a> <a href=\"https://mastodon.social/tags/tokenomics\" class=\"mention hashtag\" rel=\"tag\">#<span>tokenomics</span></a> <a href=\"https://mastodon.social/tags/governance\" class=\"mention hashtag\" rel=\"tag\">#<span>governance</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "newisty",
+    "bot": false,
+    "created_at": "2022-03-10T00:00:00.000Z",
+    "followers_count": 21,
+    "statuses_count": 3838
+   },
+   "tags": [
+    {
+     "name": "near"
+    },
+    {
+     "name": "tokenomics"
+    },
+    {
+     "name": "governance"
+    }
+   ]
+  },
+  {
+   "id": "117520495323272535",
+   "uri": "https://mastodon.social/users/atomjack604/statuses/117520495323272535",
+   "url": "https://mastodon.social/@atomjack604/117520495323272535",
+   "created_at": "2026-10-28T20:47:28.668Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>soon...</p><p><a href=\"https://mastodon.social/tags/soon\" class=\"mention hashtag\" rel=\"tag\">#<span>soon</span></a> <a href=\"https://mastodon.social/tags/end\" class=\"mention hashtag\" rel=\"tag\">#<span>end</span></a> <a href=\"https://mastodon.social/tags/near\" class=\"mention hashtag\" rel=\"tag\">#<span>near</span></a> <a href=\"https://mastodon.social/tags/cardboard\" class=\"mention hashtag\" rel=\"tag\">#<span>cardboard</span></a> <a href=\"https://mastodon.social/tags/sidewalk\" class=\"mention hashtag\" rel=\"tag\">#<span>sidewalk</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "atomjack604",
+    "bot": false,
+    "created_at": "2018-05-25T00:00:00.000Z",
+    "followers_count": 247,
+    "statuses_count": 4795
+   },
+   "tags": [
+    {
+     "name": "soon"
+    },
+    {
+     "name": "end"
+    },
+    {
+     "name": "near"
+    },
+    {
+     "name": "cardboard"
+    },
+    {
+     "name": "sidewalk"
+    }
+   ]
+  },
+  {
+   "id": "117520495207969417",
+   "uri": "https://mastodon.cloud/users/atomjack/statuses/117520495107983360",
+   "url": "https://mastodon.cloud/@atomjack/117520495107983360",
+   "created_at": "2026-10-28T20:47:25.000Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>soon...</p><p><a href=\"https://mastodon.cloud/tags/soon\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>soon</span></a> <a href=\"https://mastodon.cloud/tags/end\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>end</span></a> <a href=\"https://mastodon.cloud/tags/near\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>near</span></a> <a href=\"https://mastodon.cloud/tags/cardboard\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>cardboard</span></a> <a href=\"https://mastodon.cloud/tags/sidewalk\" class=\"mention hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#<span>sidewalk</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "atomjack@mastodon.cloud",
+    "bot": false,
+    "created_at": "2017-04-06T00:00:00.000Z",
+    "followers_count": 1290,
+    "statuses_count": 14558
+   },
+   "tags": [
+    {
+     "name": "soon"
+    },
+    {
+     "name": "end"
+    },
+    {
+     "name": "near"
+    },
+    {
+     "name": "cardboard"
+    },
+    {
+     "name": "sidewalk"
+    }
+   ]
+  },
+  {
+   "id": "117520494870918689",
+   "uri": "https://pixelfed.social/p/atomjack/1021160513101151763",
+   "url": "https://pixelfed.social/p/atomjack/1021160513101151763",
+   "created_at": "2026-10-28T20:47:18.000Z",
+   "visibility": "public",
+   "language": null,
+   "spoiler_text": "",
+   "content": "soon...<br>\n<br>\n<a href=\"https://pixelfed.social/discover/tags/soon?src=hash\" class=\"u-url hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#soon</a> <a href=\"https://pixelfed.social/discover/tags/end?src=hash\" class=\"u-url hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#end</a> <a href=\"https://pixelfed.social/discover/tags/near?src=hash\" class=\"u-url hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#near</a> <a href=\"https://pixelfed.social/discover/tags/cardboard?src=hash\" class=\"u-url hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#cardboard</a> <a href=\"https://pixelfed.social/discover/tags/sidewalk?src=hash\" class=\"u-url hashtag\" rel=\"nofollow noopener\" target=\"_blank\">#sidewalk</a>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "atomjack@pixelfed.social",
+    "bot": false,
+    "created_at": "2018-12-02T00:00:00.000Z",
+    "followers_count": 225,
+    "statuses_count": 3041
+   },
+   "tags": [
+    {
+     "name": "soon"
+    },
+    {
+     "name": "end"
+    },
+    {
+     "name": "sidewalk"
+    },
+    {
+     "name": "near"
+    },
+    {
+     "name": "cardboard"
+    }
+   ]
+  },
+  {
+   "id": "117505133039961904",
+   "uri": "https://mastodon.social/users/newisty/statuses/117505133039961904",
+   "url": "https://mastodon.social/@newisty/117505133039961904",
+   "created_at": "2026-10-26T03:40:38.820Z",
+   "visibility": "public",
+   "language": "en",
+   "spoiler_text": "",
+   "content": "<p>NEAR governance proposes 36% reduction in token issuance, dividing validators</p><p>NEAR&#39;s House of Stake proposal HSP-029 would lower the annual token issuance cap from 2.5% to 1.6%, reducing staking rewards and requiring validator upgrades.</p><p><a href=\"https://newisty.com/blog/near-governance-proposes-36-reduction-in-token-issuance-dividing-validators?utm_source=social&amp;utm_campaign=crypto_news\" target=\"_blank\" rel=\"nofollow noopener\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"ellipsis\">newisty.com/blog/near-governan</span><span class=\"invisible\">ce-proposes-36-reduction-in-token-issuance-dividing-validators?utm_source=social&amp;utm_campaign=crypto_news</span></a></p><p><a href=\"https://mastodon.social/tags/near\" class=\"mention hashtag\" rel=\"tag\">#<span>near</span></a> <a href=\"https://mastodon.social/tags/staking\" class=\"mention hashtag\" rel=\"tag\">#<span>staking</span></a> <a href=\"https://mastodon.social/tags/governance\" class=\"mention hashtag\" rel=\"tag\">#<span>governance</span></a></p>",
+   "replies_count": 0,
+   "reblogs_count": 0,
+   "favourites_count": 0,
+   "account": {
+    "acct": "newisty",
+    "bot": false,
+    "created_at": "2022-03-10T00:00:00.000Z",
+    "followers_count": 21,
+    "statuses_count": 3838
+   },
+   "tags": [
+    {
+     "name": "near"
+    },
+    {
+     "name": "staking"
+    },
+    {
+     "name": "governance"
+    }
+   ]
+  }
+ ]
+}

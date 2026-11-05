@@ -1,0 +1,142 @@
+{
+ "posts": [
+  {
+   "uri": "at://did:plc:2b4sg433ajebfh32vpwzy5c7/app.bsky.feed.post/3mzl6rcciwj2t",
+   "cid": "bafyreib76ckncj7x65ihheo5i5gnd2tyjty2a2nqnrdc245tt3hbcqesom",
+   "author": {
+    "did": "did:plc:2b4sg433ajebfh32vpwzy5c7",
+    "handle": "thebitcoinstrategy.bsky.social",
+    "createdAt": "2026-05-08T09:16:14.757Z",
+    "labels": []
+   },
+   "record": {
+    "text": "💰 NEAR Earned More On Less\n\nNEAR Intents, the swap router of NEAR Protocol, earned about 2.2 million dollars in October, its best revenue month ever. The strange part: swap volume fell about 17 % against September…\n\n#nearprotocol #defi #crypto\n\nTry Premium for 7 days:\nhttps://mybtcguy.com/cghoDeXV",
+    "createdAt": "2026-11-05T15:30:51.000Z",
+    "langs": [
+     "en"
+    ]
+   },
+   "replyCount": 1,
+   "repostCount": 0,
+   "likeCount": 0,
+   "quoteCount": 0,
+   "indexedAt": "2026-11-05T15:30:58.276Z",
+   "labels": []
+  },
+  {
+   "uri": "at://did:plc:j45ya25kx3wrg7quawn2dtp5/app.bsky.feed.post/3mzl4kzvb2f25",
+   "cid": "bafyreiffqahm5jn52iw2ljvwpuv3pnmvwz7k5tbisjrkjtfjslpsgmzlw4",
+   "author": {
+    "did": "did:plc:j45ya25kx3wrg7quawn2dtp5",
+    "handle": "patternplus.bsky.social",
+    "createdAt": "2026-10-08T12:14:59.554Z",
+    "labels": []
+   },
+   "record": {
+    "text": "📉 $NEAR -7% in 24 hours\n\nNow $3.90. No news on our calendar behind it.\n\nSince 2020, 324 days saw NEAR fall 5%+. 160 of them ended higher a week later (49%), against 48% of all weeks. Typical week after: -0.1%.\n\nHistory, not financial advice.\npattern.plus/token/near-near-protocol\n#crypto #near",
+    "createdAt": "2026-11-05T14:51:37.189903Z",
+    "langs": [
+     "en"
+    ]
+   },
+   "replyCount": 0,
+   "repostCount": 0,
+   "likeCount": 0,
+   "quoteCount": 0,
+   "indexedAt": "2026-11-05T14:51:38.878Z",
+   "labels": []
+  },
+  {
+   "uri": "at://did:plc:ix65bzlespyme7nnqnvtmmp7/app.bsky.feed.post/3mzkvj3k2ty2z",
+   "cid": "bafyreidakhqibemznmq76tf45c3rnuueva7gtr35mytjaouljieo4nkp5i",
+   "author": {
+    "did": "did:plc:ix65bzlespyme7nnqnvtmmp7",
+    "handle": "bscn.bsky.social",
+    "createdAt": "2025-11-04T22:30:38.050Z",
+    "labels": []
+   },
+   "record": {
+    "text": "NEAR Protocol processed $10.4 billion through its cross-chain Intents layer in Q3 2026 and just launched NEAR Business, a confidential treasury tool supporting payments across 35+ blockchains.",
+    "createdAt": "2026-11-05T12:45:16.417840Z",
+    "langs": [
+     "en"
+    ]
+   },
+   "replyCount": 0,
+   "repostCount": 0,
+   "likeCount": 0,
+   "quoteCount": 0,
+   "indexedAt": "2026-11-05T12:45:17.280Z",
+   "labels": []
+  },
+  {
+   "uri": "at://did:plc:2b4sg433ajebfh32vpwzy5c7/app.bsky.feed.post/3mzkqyce32r27",
+   "cid": "bafyreid4c6vgdznp3yhngveohkxziwyke6tofcptmysd62h2upncg24q6e",
+   "author": {
+    "did": "did:plc:2b4sg433ajebfh32vpwzy5c7",
+    "handle": "thebitcoinstrategy.bsky.social",
+    "createdAt": "2026-05-08T09:16:14.757Z",
+    "labels": []
+   },
+   "record": {
+    "text": "NEAR Protocol had its best revenue month ever in October. $2.2M earned by its swap router. Volume actually dropped 17%. Revenue still climbed 19%. That math deserves an explanation.\n\n#NEAR #NEARProtocol",
+    "createdAt": "2026-11-05T11:24:17.000Z",
+    "langs": [
+     "en"
+    ]
+   },
+   "replyCount": 1,
+   "repostCount": 0,
+   "likeCount": 0,
+   "quoteCount": 0,
+   "indexedAt": "2026-11-05T11:24:18.671Z",
+   "labels": []
+  },
+  {
+   "uri": "at://did:plc:v2hxrodid2iujcdxtp44k4n5/app.bsky.feed.post/3mzk3jhz5ii2y",
+   "cid": "bafyreidahdb53f4iuwzhod5dmri54h5sqsigjstqsxvizv5dtop3wy63eq",
+   "author": {
+    "did": "did:plc:v2hxrodid2iujcdxtp44k4n5",
+    "handle": "gazewires.bsky.social",
+    "createdAt": "2026-11-03T20:12:09.276Z",
+    "labels": []
+   },
+   "record": {
+    "text": "💰 NEAR Protocol Approves Proposal to Reduce Token Issuance\n\nNEAR Protocol's governance body has passed a measure to lower its maximum yearly token issuance ceiling from 2.5% to 1.6%. The move aims to curb token…\n\n🔗 Read the full story on GazeWire\n\n#Fintech #tokenomics #NearProtocol #GazeWire",
+    "createdAt": "2026-11-05T05:00:10Z",
+    "langs": [
+     "en"
+    ]
+   },
+   "replyCount": 0,
+   "repostCount": 0,
+   "likeCount": 0,
+   "quoteCount": 0,
+   "indexedAt": "2026-11-05T05:00:13.071Z",
+   "labels": []
+  },
+  {
+   "uri": "at://did:plc:ix65bzlespyme7nnqnvtmmp7/app.bsky.feed.post/3mzjnbmjekh2w",
+   "cid": "bafyreictrc6aa7tpomho3zmgiburr2pezyenmnsisif7pftjzevqfjkdza",
+   "author": {
+    "did": "did:plc:ix65bzlespyme7nnqnvtmmp7",
+    "handle": "bscn.bsky.social",
+    "createdAt": "2025-11-04T22:30:38.050Z",
+    "labels": []
+   },
+   "record": {
+    "text": "NEAR Protocol's onchain governance has voted to reduce maximum annual token issuance from 2.5% to 1.6% over 24 months, a change expected to cut supply by 66 million tokens over six years.",
+    "createdAt": "2026-11-05T00:45:16.101549Z",
+    "langs": [
+     "en"
+    ]
+   },
+   "replyCount": 0,
+   "repostCount": 0,
+   "likeCount": 0,
+   "quoteCount": 0,
+   "indexedAt": "2026-11-05T00:45:17.075Z",
+   "labels": []
+  }
+ ]
+}

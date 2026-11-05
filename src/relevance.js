@@ -3,7 +3,8 @@
 // Strong NEAR-Protocol markers. Bare "near" never counts.
 const STRONG = [ // decisive: unambiguous NEAR Protocol reference on its own
   [/\bNEAR Protocol\b/i, 'mentions "NEAR Protocol"'],
-  [/\bNEAR Intents?\b/i, 'mentions "NEAR Intents"'],
+  [/\bNEAR[-_ ]?Intents?\b/i, 'mentions "NEAR Intents"'], // also the hashtag form #NEARIntents / #near_intents used on social networks
+  [/\bnearprotocol\b/i, 'mentions NearProtocol (hashtag / handle)'], // the one-word form is never the English word
   [/\bnearcore\b/i, 'mentions nearcore'],
   [/\bnear[-_ ]?sdk\b/i, 'mentions near-sdk'],
   [/\bnear[-_ ]?cli\b/i, 'mentions near-cli'],

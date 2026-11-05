@@ -31,7 +31,11 @@ Never add wallet or agent private keys to Vercel: the autonomy loop (agent signi
 * **Hobby cron runs once per day** and expressions that run more often fail the deployment. For a 15-minute cadence use an external
   scheduler (GitHub Actions `schedule`, any uptime pinger) calling `GET /api/cron/tick` with `Authorization: Bearer $CRON_SECRET`, or Vercel Pro.
 * `defer()` uses `waitUntil` from `@vercel/functions`, so a background run continues after the 202 response within `maxDuration`.
-* A full ingestion tick must finish inside `maxDuration` (60 s here). Not yet measured on Vercel.
+* A full ingestion tick must finish inside `maxDuration` (60 s here). Not yet measured on Vercel. Measured locally on 2026-11-05 with all 9 sources: about 35 s
+  (cold database, 1,814 queries) and 37 s (warm, 434 queries); the four reachable social sources are about 15 to 16 s of that, mostly network. Turso adds per-query latency
+  that a local sqlite file does not, so re-measure after deploying. Tuning: `SOCIAL_MAX_ITEMS`, `SOCIAL_BUDGET_MS` (see `.env.example`).
+* Optional social-source variables (`MASTODON_*`, `DEVTO_TAGS`, `FARCASTER_*`, `BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD`) go in the same place; mark the Bluesky app password Sensitive.
+  Bluesky stays `not_configured` (no request, no error) until both are set.
 
 ## After deploying
 Open `/api/status` (JSON), then the site root. Follow [INCIDENT-RUNBOOK.md](INCIDENT-RUNBOOK.md) for the kill switch and rotation; use

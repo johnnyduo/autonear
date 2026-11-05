@@ -8,7 +8,7 @@
 
 | | |
 | --- | --- |
-| **Live sources** | GitHub issues in the `near` org, the NEAR governance forum (gov.near.org), Hacker News (strict NEAR-Protocol relevance filter), NEAR mainnet RPC (Intents escrow holdings). Source errors are shown, never papered over. |
+| **Live sources** | GitHub issues in the `near` org, the NEAR governance forum (gov.near.org), Hacker News (strict NEAR-Protocol relevance filter), NEAR mainnet RPC (Intents escrow holdings). Plus five FREE social/news sources, all low-weight and unverified: NEAR Social (on-chain `social.near`), Mastodon public hashtag timelines, Farcaster (community hub, currently returns nothing recent), Dev.to articles, and Bluesky (opt-in, needs your app password, untested). X/Twitter and Reddit are intentionally absent (no free API tier / not self-serve). Source errors are shown, never papered over. |
 | **Runs unattended** | An in-process scheduler (local) or Cloudflare Cron Trigger (deployed) ingests, dedupes, re-scores, recovers stalled runs, and may start a research run when something material changed. No browser needed. |
 | **Agents** | Signal Collector · Evidence Analyst · Skeptic · Product Architect · Builder · Security Reviewer · Launch Planner (+ Monitor for deployments). Deterministic baseline by default; an LLM (Anthropic, Vercel AI Gateway, or local Codex CLI) can be enabled and its output is schema- and citation-checked or discarded. |
 | **Contracts** | One state machine, two native implementations: NEAR (Rust, near-sdk) and EVM (Solidity, Foundry). Attestation registries: no funds, no external calls. |
@@ -67,6 +67,8 @@ Public sources / NEAR RPC ──► connectors (timeout, circuit breaker, backof
 - `design-system/autonear/`: ui-ux-pro-max design-system output; the chosen palette and type differ where noted in `web/src/styles.css`.
 
 Scoring formula (published at `/api/scoring`): `score = Σ weight × component` over independent demand, recency, on-chain corroboration, friction severity, competition gap, NEAR fit, feasibility and evidence quality. NEAR fit and feasibility are **curated priors**, labelled as such in the UI.
+
+**Social evidence in the score.** GitHub, gov.near.org, Hacker News and on-chain usage are *core* sources. NEAR Social, Mastodon, Farcaster, Dev.to and Bluesky are *social* sources: demand evidence at **0.4x** the weight of a core record in every demand component (recency, friction and evidence quality are weighted means), at most **3 effective authors and 1 effective source** can come from social in `independent_demand`, and social sources **never count toward the 3-independent-source rule** and add nothing to the source term of confidence. The `LOW CONFIDENCE` warning therefore counts *non-social* sources, and also reports the social-source and distinct-author counts. Records flagged `bot-author`, `low-signal:*` (new account, link-only, repeated text, market ticker, ...), duplicate content or prompt-injection are kept and listed but de-weighted. The 0.4 and the caps are judgements, not measurements (rationale in `src/connectors/source-weights.js`); the live `/api/scoring` text states the same. No social record is presented as verified fact.
 
 ## Deploy
 

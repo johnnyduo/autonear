@@ -11,6 +11,8 @@ export async function registerSources(db, connectors = CONNECTORS) {
       `INSERT INTO sources(id,name,kind,endpoint,terms,rate_limit,docs_url) VALUES(?,?,?,?,?,?,?)
        ON CONFLICT(id) DO UPDATE SET name=excluded.name,kind=excluded.kind,endpoint=excluded.endpoint,terms=excluded.terms,rate_limit=excluded.rate_limit,docs_url=excluded.docs_url`,
       [c.id, c.name, c.kind, c.endpoint, c.terms, c.rateLimit, c.docsUrl]);
+    const avail = c.availability?.(); // opt-in sources show `not_configured` in /api/status from the first request, before any tick
+    if (avail && avail.status !== 'ready') await db.run('UPDATE sources SET status=? WHERE id=? AND status IN (?,?)', [avail.status, c.id, 'unknown', 'ok']);
   }
 }
 
@@ -25,29 +27,40 @@ export async function ingestSource(db, connector, { trigger = 'manual', fetchImp
       [connector.id, trigger, t0, t0, 'skipped', `circuit open until ${new Date(src.circuit_open_until).toISOString()}`]);
     return { sourceId: connector.id, status: 'skipped', runId: r.lastInsertRowid };
   }
+  const avail = connector.availability?.();
+  if (avail && avail.status !== 'ready') { // e.g. opt-in source without credentials: say so, do not call it an error, do not touch the network
+    await db.run('UPDATE sources SET status=?,last_error=NULL WHERE id=?', [avail.status, connector.id]);
+    const r = await db.run('INSERT INTO ingest_runs(source_id,trigger,started_at,ended_at,status,error) VALUES(?,?,?,?,?,?)', [connector.id, trigger, t0, t0, 'skipped', String(avail.reason ?? avail.status).slice(0, 300)]);
+    return { sourceId: connector.id, status: avail.status, reason: avail.reason, runId: r.lastInsertRowid };
+  }
   const run = await db.run('INSERT INTO ingest_runs(source_id,trigger,started_at,status) VALUES(?,?,?,?)', [connector.id, trigger, t0, 'running']);
   const runId = run.lastInsertRowid;
   const stats = { fetched: 0, inserted: 0, updated: 0, duplicates: 0, filtered: 0 };
+  let capped = 0; let flagged = 0; // capped: relevant items beyond the connector's per-tick cap (not stored this tick); flagged: kept with low-signal/bot flags
   try {
     const { items, meta } = await connector.fetch({ fetchImpl });
     stats.fetched = items.length;
+    const cap = Number(connector.maxItems?.()) || Infinity; // per-source work bound per tick (social sources: default 40)
+    let processed = 0;
     const seen = new Set();
     for (const it of items) {
       if (seen.has(it.externalId)) { stats.duplicates++; continue; }
       seen.add(it.externalId);
       const rel = it.forceTags
         ? { score: 1, isNear: true, reasons: ['official NEAR RPC observation'], tags: it.forceTags, flags: [] }
-        : assessRelevance({ title: it.title, body: it.body, url: it.url, org: it.org, author: it.author, authorType: it.authorType });
+        : assessRelevance({ title: it.title, body: it.body, url: it.relevanceUrl ?? it.url, org: it.org, author: it.author, authorType: it.authorType });
       if (!rel.isNear || rel.score < RELEVANCE_THRESHOLD) { stats.filtered++; continue; }
+      if (++processed > cap) { capped++; continue; }
       const full = norm(`${it.title}\n${it.body}`);
       const contentHash = sha256(full);
-      const rawRef = await putBlob(db, JSON.stringify(it.raw));
       const id = 'ev_' + sha256(`${connector.id}|${it.externalId}`).slice(0, 16);
       const existing = await db.get('SELECT content_hash FROM evidence WHERE id=?', [id]);
-      const flags = [...rel.flags];
+      if (existing && existing.content_hash === contentHash) { stats.duplicates++; continue; } // unchanged: one query, nothing else
+      const rawRef = await putBlob(db, JSON.stringify(it.raw));
+      const flags = [...new Set([...rel.flags, ...(it.flags ?? [])])]; // connector flags (e.g. low-signal:*) are kept next to relevance flags, never dropped
+      if (flags.some((f) => f.startsWith('low-signal:') || f === 'bot-author')) flagged++;
       const twin = await db.get('SELECT id FROM evidence WHERE content_hash=? AND id<>? LIMIT 1', [contentHash, id]);
       if (twin) flags.push(`duplicate-content-of:${twin.id}`);
-      if (existing && existing.content_hash === contentHash) { stats.duplicates++; continue; }
       const excerpt = full.slice(it.title.length).trim().slice(0, 1200);
       const title = it.title.slice(0, 300);
       if (existing) {
@@ -64,8 +77,10 @@ export async function ingestSource(db, connector, { trigger = 'manual', fetchImp
     }
     await db.run('UPDATE sources SET status=?,consecutive_failures=0,circuit_open_until=NULL,last_success=?,last_error=NULL WHERE id=?', ['ok', now(), connector.id]);
     await db.run('UPDATE ingest_runs SET ended_at=?,status=?,fetched=?,inserted=?,updated=?,duplicates=?,filtered=? WHERE id=?', [now(), 'ok', stats.fetched, stats.inserted, stats.updated, stats.duplicates, stats.filtered, runId]);
-    if (meta) await db.run('INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v', [`meta:${connector.id}`, j(meta)]);
-    await audit(db, 'ingest', 'source.ok', { source: connector.id, trigger, ...stats });
+    if (meta || capped || cap !== Infinity) { // per-run diagnostics shown by /api/status: partial failures, filtered/capped/flagged counts
+      await db.run('INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v', [`meta:${connector.id}`, j({ ...(meta ?? {}), at: now(), cap: cap === Infinity ? null : cap, capped, flaggedLowSignal: flagged, relevanceFiltered: stats.filtered })]);
+    }
+    await audit(db, 'ingest', 'source.ok', { source: connector.id, trigger, ...stats, capped, flagged });
     return { sourceId: connector.id, status: 'ok', runId, ...stats };
   } catch (e) {
     const fails = (src?.consecutive_failures ?? 0) + 1;

@@ -1,0 +1,161 @@
+[
+ {
+  "id": 4504859,
+  "title": "What Synthetics' Last Cradle actually tests",
+  "description": "Most agent demos end at a successful tool call. Synthetics' Last Cradle starts there.  It is a...",
+  "url": "https://dev.to/discernible-io/what-synthetics-last-cradle-actually-tests-hcp",
+  "canonical_url": "https://dev.to/discernible-io/what-synthetics-last-cradle-actually-tests-hcp",
+  "published_at": "2026-08-27T12:38:46Z",
+  "tag_list": [
+   "agents",
+   "nearprotocol",
+   "ai",
+   "gamedev"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 0,
+  "reading_time_minutes": 6,
+  "user": {
+   "username": "discernible-io"
+  }
+ },
+ {
+  "id": 4020082,
+  "title": "NEAR-CORE (Stable) AI Trading: Low-Risk Autotrading Strategy",
+  "description": "Discover Radiant's NEAR-CORE (Stable) algorithm, a low-risk, AI-powered autotrading solution for NEAR/USDT. Understand its breakout strategy and suitability.",
+  "url": "https://dev.to/getradiant/near-core-stable-ai-trading-low-risk-autotrading-strategy-gd2",
+  "canonical_url": "https://getradiant.tech/updates/near-core-stable-low-risk-near-usdt-autotrading",
+  "published_at": "2026-06-29T10:00:45Z",
+  "tag_list": [
+   "autotrading",
+   "aitrading",
+   "nearprotocol",
+   "cryptostrategy"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 0,
+  "reading_time_minutes": 4,
+  "user": {
+   "username": "getradiant"
+  }
+ },
+ {
+  "id": 3729976,
+  "title": "I solo-built a reputation layer for AI agents on NEAR — and here's what I learned",
+  "description": "AI agents are handling real money in 2026. Trading bots, DeFi automation, analytics tools — and...",
+  "url": "https://dev.to/b7systems/i-solo-built-a-reputation-layer-for-ai-agents-on-near-and-heres-what-i-learned-4acc",
+  "canonical_url": "https://dev.to/b7systems/i-solo-built-a-reputation-layer-for-ai-agents-on-near-and-heres-what-i-learned-4acc",
+  "published_at": "2026-05-23T04:41:24Z",
+  "tag_list": [
+   "ai",
+   "buildinpublic",
+   "webdev",
+   "nearprotocol"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 1,
+  "reading_time_minutes": 2,
+  "user": {
+   "username": "b7systems"
+  }
+ },
+ {
+  "id": 3747819,
+  "title": "13 Crypto Winners Can't Make CoinDesk 20 Budge an Inch",
+  "description": "Thirteen CoinDesk 20 assets rose, but the index stayed flat as NEAR and BCH failed to signal a broad crypto breakout.",
+  "url": "https://dev.to/mlxio_ai/13-crypto-winners-cant-make-coindesk-20-budge-an-inch-1d87",
+  "canonical_url": "https://mlxio.com/crypto/coindesk-20-flat-bch",
+  "published_at": "2026-05-25T09:02:51Z",
+  "tag_list": [
+   "crypto",
+   "coindesk20",
+   "bitcoincash",
+   "nearprotocol"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 0,
+  "reading_time_minutes": 1,
+  "user": {
+   "username": "mlxio_ai"
+  }
+ },
+ {
+  "id": 3625827,
+  "title": "Near Protocol Warns of Quantum Threat to Blockchain Ownership Verification Systems",
+  "description": "Near One highlights critical vulnerability as quantum computing could undermine fundamental ownership proofs in blockchain networks.",
+  "url": "https://dev.to/codego_group_c184db25b758/near-protocol-warns-of-quantum-threat-to-blockchain-ownership-verification-systems-4ccb",
+  "canonical_url": "https://news.codegotech.com/near-protocol-quantum-threat-blockchain-ownership-verification/",
+  "published_at": "2026-05-07T09:07:18Z",
+  "tag_list": [
+   "quantumcomputing2",
+   "blockchainsecurity",
+   "nearprotocol",
+   "cryptocurrency"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 0,
+  "reading_time_minutes": 3,
+  "user": {
+   "username": "codego_group_c184db25b758"
+  }
+ },
+ {
+  "id": 3727106,
+  "title": "27% NEAR Token Rally Bets on Blockchain That Scales Itself",
+  "description": "NEAR jumped 27% as traders bet June’s dynamic resharding upgrade can make the blockchain scale automatically.",
+  "url": "https://dev.to/mlxio_ai/27-near-token-rally-bets-on-blockchain-that-scales-itself-2o4o",
+  "canonical_url": "https://mlxio.com/crypto/near-token-dynamic-resharding",
+  "published_at": "2026-05-22T16:36:58Z",
+  "tag_list": [
+   "nearprotocol",
+   "neartoken",
+   "dynamicresharding",
+   "layer1"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 0,
+  "reading_time_minutes": 1,
+  "user": {
+   "username": "mlxio_ai"
+  }
+ },
+ {
+  "id": 3735924,
+  "title": "NEAR Inflation Analysis · September 2026 · Supply growing, projected to keep growing",
+  "description": "NEAR supply is growing: a 2.5% epoch mint added 7.98M NEAR in 90 days while the gas burn took back 61.6K, and fee buybacks are held, not burned. Net +0.61%.",
+  "url": "https://dev.to/mrnasdog/near-protocol-near-validator-inflation-empty-buy-side-5gdf",
+  "canonical_url": "https://mrnasdog.com/research/near/inflation",
+  "published_at": "2026-05-23T21:57:25Z",
+  "tag_list": [
+   "crypto",
+   "near",
+   "nearprotocol",
+   "layer1"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 0,
+  "reading_time_minutes": 6,
+  "user": {
+   "username": "mrnasdog"
+  }
+ },
+ {
+  "id": 3346166,
+  "title": "Building an AI Agent That Earns Cryptocurrency: A Practical Tutorial",
+  "description": "Most AI agent tutorials end at \"it can answer questions.\" This one ends at \"it has a wallet...",
+  "url": "https://dev.to/duc_hoangviet_a39192cfbe0/building-an-ai-agent-that-earns-cryptocurrency-a-practical-tutorial-5don",
+  "canonical_url": "https://dev.to/duc_hoangviet_a39192cfbe0/building-an-ai-agent-that-earns-cryptocurrency-a-practical-tutorial-5don",
+  "published_at": "2026-03-13T04:56:34Z",
+  "tag_list": [
+   "ai",
+   "nearprotocol",
+   "blockchain"
+  ],
+  "comments_count": 0,
+  "public_reactions_count": 0,
+  "reading_time_minutes": 2,
+  "user": {
+   "username": "duc_hoangviet_a39192cfbe0"
+  }
+ }
+]

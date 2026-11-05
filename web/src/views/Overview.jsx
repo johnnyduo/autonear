@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { fmt, useApi } from '../api.js';
 import { Chip, Empty, ErrorPanel, Icon, Led, Meter, Panel, Skeleton, SkeletonRows, Status, StaleNote } from '../ui.jsx';
 import { TOPIC_LABEL, srcColor } from './_evidence-parts.jsx';
-import { Constellation, isRecent, lastIngest } from './_overview-parts.jsx';
+import { ConstellationPanel, isRecent } from './_overview-parts.jsx';
 import './overview.css';
 
 const parseJson = (s, d) => { try { return typeof s === 'string' ? JSON.parse(s) : s ?? d; } catch { return d; } };
@@ -157,7 +157,6 @@ function Changes({ s, sec }) {
 
 export default function Overview({ status }) {
   const s = status.data;
-  const evidence = useApi('/api/evidence?limit=100', { poll: 60000 });
   const opps = useApi('/api/opportunities', { poll: 60000 });
   const runs = useApi('/api/runs', { poll: 30000 });
   const sec = useApi('/api/security', { poll: 30000 });
@@ -187,11 +186,7 @@ export default function Overview({ status }) {
       </header>
 
       <div className="stack">
-        <Panel title="Evidence constellation" pad={false} aside={<a className="faint mono" href="#/radar">open radar</a>}>
-          <div className="ov-const-wrap">
-            <Constellation items={evidence.data?.items} sources={src} activeRun={s?.activeRun} loading={evidence.loading || !s} error={evidence.error} onRetry={evidence.reload} />
-          </div>
-        </Panel>
+        <ConstellationPanel status={status} opps={opps.data?.items} evidenceCount={s?.counts?.evidence} />
 
         <div className="grid">
           <div className="span-8 stack">

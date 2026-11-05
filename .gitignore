@@ -178,3 +178,6 @@ CLAUDE.local.md
 # local copies of deployed secrets
 data/*.token
 data/*.secret
+
+# animation proof frames (large); keep only the headline screenshots in git
+docs/screenshots/constellation-frame-*.png

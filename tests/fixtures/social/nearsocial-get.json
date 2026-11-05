@@ -1,0 +1,58 @@
+{
+ "jollydragonroger.near/post/main@222356825": {
+  "jollydragonroger.near": {
+   "post": {
+    "main": "{\"type\":\"md\",\"text\":\"**ZEDEC/ZXV Blue Book: supplementary documentation now in DevHub review**\\n\\n@devhub.near @developer.near\\n\\nWe have published the Blue Book for the ZEDEC/ZXV post-quantum kernel: a complete, transparent account of the original freestanding C11 kernel (x86-64, AArch64, RISC-V 64/32, ARMv7, wasm32) and the satellite contracts fused to it on NEAR.\\n\\nIt covers the design philosophy, the four-valued paraconsistent logic (\\\"only TRUE settles\\\"), the integer mathematics of the 144x144 matrix, why freestanding C compiled to Wasm suits critical NEAR infrastructure, live code hashes for every contract, a full [fixture truncated]\"}"
+   }
+  }
+ },
+ "devhub.near/post/main@222356762": {
+  "devhub.near": {
+   "post": {
+    "main": "{\"type\":\"md\",\"text\":\"We have just received a new *Tooling & Infrastructure* proposal.\\n\\n———\\n\\n**By**: @jollydragonroger.near\\n\\n**Title**: “[Blue Book] ZEDEC/ZXV Post-Quantum Kernel, Volume III of III“\\n\\n**Summary**:\\n\\nSupplementary documentation (no funding requested) for Proposals #400, #401 and #406. Volume III of III: Feature catalogue, assurance and verification handbook, limits, implications, NEP drafts, services. Full book on social.near, SHA-256 7236c2b1...80fc1b.\\n\\n———\\n\\nRead the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=409)\"}"
+   }
+  }
+ },
+ "devhub.near/post/main@222356737": {
+  "devhub.near": {
+   "post": {
+    "main": "{\"type\":\"md\",\"text\":\"We have just received a new *Tooling & Infrastructure* proposal.\\n\\n———\\n\\n**By**: @jollydragonroger.near\\n\\n**Title**: “[Blue Book] ZEDEC/ZXV Post-Quantum Kernel, Volume II of III“\\n\\n**Summary**:\\n\\nSupplementary documentation (no funding requested) for Proposals #400, #401 and #406. Volume II of III: The original kernel, six-platform build, C-to-Wasm methodology, fusion, live code hashes. Full book on social.near, SHA-256 7236c2b1...80fc1b.\\n\\n———\\n\\nRead the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=408)\"}"
+   }
+  }
+ },
+ "devhub.near/post/main@222356714": {
+  "devhub.near": {
+   "post": {
+    "main": "{\"type\":\"md\",\"text\":\"We have just received a new *Tooling & Infrastructure* proposal.\\n\\n———\\n\\n**By**: @jollydragonroger.near\\n\\n**Title**: “[Blue Book] ZEDEC/ZXV Post-Quantum Kernel, Volume I of III“\\n\\n**Summary**:\\n\\nSupplementary documentation (no funding requested) for Proposals #400, #401 and #406. Volume I of III: Summary, NEAR alignment, design philosophy, paraconsistent logic, the 144-D matrix. Full book on social.near, SHA-256 7236c2b1...80fc1b.\\n\\n———\\n\\nRead the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=407)\"}"
+   }
+  }
+ },
+ "jollydragonroger.near/post/main@222356142": {
+  "jollydragonroger.near": {
+   "post": {
+    "main": "{\"type\":\"md\",\"text\":\"# THE ZEDEC / ZXV BLUE BOOK\\n\\n## The Original Post-Quantum Kernel, Its Fused Satellites on NEAR, and How to Verify Every Part\\n\\n- **Edition:** Volume I, first public edition\\n- **Authors:** Michael Laurence Curzi, Scenic Bypass Consulting, LLC and 36N9 Genetics, LLC\\n- **Public-good steward:** The ILLUMAHEART Foundation (`illumaheart.near`, `illumaheart.sputnik-dao.near`)\\n- **Licence:** Apache-2.0 (source, documentation and deployed contracts)\\n- **Companion DevHub submissions:** `#400` (architectural white paper), `#401` (retroactive public-good grant), `#402`–`#405` (addenda), `#406` (terminal-lo [fixture truncated]\"}"
+   }
+  }
+ },
+ "devhub.near/post/main@222355879": {
+  "devhub.near": {
+   "post": {
+    "main": "{\"type\":\"md\",\"text\":\"We have just received a new *Tooling & Infrastructure* proposal.\\n\\n———\\n\\n**By**: @jollydragonroger.near\\n\\n**Title**: “[Blue Book & Methodology] ZEDEC/ZXV Post-Quantum Kernel: Architecture, Paraconsistent Logic, 144-D Lattice, Six-Platform Build & Verification“\\n\\n**Summary**:\\n\\nSupplementary documentation to Proposals #400, #401 and #406. The complete, transparent Blue Book of the original freestanding C11 ZXV kernel (x86-64, AArch64, RISC-V 64/32, ARMv7, wasm32) and its fused NEAR satellites: design philosophy, four-valued paraconsistent logic and the 145-state ladder, the 144x144 Fibonacci/Zeckend [fixture truncated]\"}"
+   }
+  }
+ },
+ "web3stick.near/post/comment@204440108": {
+  "web3stick.near": {
+   "post": {
+    "comment": "{\"item\":{\"type\":\"social\",\"path\":\"wahidann.tg/post/main\",\"blockHeight\":204260842},\"text\":\"hi\",\"type\":\"md\",\"rootItem\":{\"type\":\"social\",\"path\":\"wahidann.tg/post/main\",\"blockHeight\":204260842}}"
+   }
+  }
+ },
+ "web3stick.near/post/comment@203863588": {
+  "web3stick.near": {
+   "post": {
+    "comment": "{\"item\":{\"type\":\"social\",\"path\":\"mob.near/post/main\",\"blockHeight\":81106792},\"text\":\"ok so trying this twice!\",\"type\":\"md\",\"rootItem\":{\"type\":\"social\",\"path\":\"mob.near/post/main\",\"blockHeight\":81106792}}"
+   }
+  }
+ }
+}

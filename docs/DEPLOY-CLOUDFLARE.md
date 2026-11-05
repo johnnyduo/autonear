@@ -30,9 +30,10 @@ Consequences for AutoNEAR (this is a design finding, not a guess):
 * Ingestion issues roughly 4 to 6 D1 queries per kept evidence item. One real tick locally fetched about 300 items. That is
   more than 1,000 D1 queries and far more than 10 ms of CPU. On Workers Free a full tick will hit the 50-query limit
   and/or the 10 ms CPU limit. The page does not say what happens at the limit for D1 (error vs throttle), so treat the failure
-  mode as unverified.
+  mode as unverified. The five social sources add about 240 queries on a cold database and 80 on a warm one (measured locally, PROGRESS.md);
+  `SOCIAL_MAX_ITEMS` bounds them per source.
 * Two knobs exist in `src/worker.js` (cron path only, unset = full ingestion):
-  * `INGEST_SOURCES_PER_TICK=N`: ingest only N of the 4 sources per tick, round-robin (cursor stored in `kv` row `ingest:rr`).
+  * `INGEST_SOURCES_PER_TICK=N`: ingest only N of the 9 sources per tick (4 core + 5 social), round-robin (cursor stored in `kv` row `ingest:rr`).
   * `INGEST_MAX_ITEMS=M`: keep at most M items per source per tick.
   Set them as plain vars (`"vars"` in `wrangler.jsonc` or `--var`). Even `1` and `5` cannot be proven to fit the Free budget
   without a real account, because the scoring and auto-proposal steps of the same tick also run queries.

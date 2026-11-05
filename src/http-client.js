@@ -8,7 +8,13 @@ export class HttpError extends Error {
 
 const RPC_HOSTS = ['rpc.mainnet.near.org', 'rpc.testnet.near.org', 'ethereum-sepolia-rpc.publicnode.com', 'sepolia.base.org', 'sepolia-rollup.arbitrum.io', 'sepolia.optimism.io', 'testnet-rpc.monad.xyz', 'bsc-testnet-rpc.publicnode.com'];
 export const ALLOWED_HOSTS = {
-  collector: new Set(['api.github.com', 'hn.algolia.com', 'gov.near.org', 'rpc.mainnet.near.org', 'rpc.testnet.near.org', '1click.chaindefuser.com']),
+  // Public, unauthenticated evidence reads. Social hosts (each verified by a live request 2026-11-05, see PROGRESS.md):
+  //   api.near.social (SocialDB index/get API) · mastodon.social, mastodon.online (public hashtag timelines) · haatz.quilibrium.com (community Farcaster hub)
+  //   dev.to (Forem articles API). api.bsky.app is deliberately NOT allowed: Bluesky search goes through the credentialed role below.
+  collector: new Set(['api.github.com', 'hn.algolia.com', 'gov.near.org', 'rpc.mainnet.near.org', 'rpc.testnet.near.org', '1click.chaindefuser.com',
+    'api.near.social', 'mastodon.social', 'mastodon.online', 'haatz.quilibrium.com', 'dev.to']),
+  // Credentialed reads: the ONLY role that may carry a login (Bluesky app password -> session token) and only to the PDS host.
+  credentialed: new Set(['bsky.social']),
   monitor: new Set(RPC_HOSTS),
   launch: new Set([...RPC_HOSTS, '1click.chaindefuser.com']),
   llm: new Set(['api.anthropic.com', 'ai-gateway.vercel.sh']),

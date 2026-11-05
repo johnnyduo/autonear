@@ -1,7 +1,7 @@
 import { guardedFetch } from '../http-client.js';
 import { config } from '../config.js';
 
-async function rpc(method, params, ctx) {
+export async function rpc(method, params, ctx) {
   const res = await guardedFetch('collector', config.near.mainnetRpc, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), fetchImpl: ctx.fetchImpl,
