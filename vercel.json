@@ -7,7 +7,10 @@
   "functions": {
     "api/**/*.js": {
       "maxDuration": 300,
-      "includeFiles": "contracts/{near-registry,near-vault}/dist/*.wasm"
+      "includeFiles": "contracts/{near-registry,near-vault}/dist/*.wasm",
+      "regions": [
+        "hnd1"
+      ]
     }
   },
   "crons": [
