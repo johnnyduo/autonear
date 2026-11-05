@@ -57,7 +57,7 @@ Public sources / NEAR RPC ──► connectors (timeout, circuit breaker, backof
                                          receipt verified on-chain vs attested artifact ──► Monitor
 ```
 
-- `src/` zero-dependency backend (Node `node:sqlite` locally, Cloudflare D1 deployed, libSQL optional). One Web-standard handler serves both runtimes.
+- `src/` backend with no runtime dependencies on the Node and Cloudflare paths (Node `node:sqlite` locally, Cloudflare D1 deployed; the Vercel path adds `@libsql/client` and `@vercel/functions`). One Web-standard handler serves both runtimes.
 - `contracts/near-registry`, `contracts/evm`: the registries and their tests. Spec: [docs/contracts-spec.md](docs/contracts-spec.md).
 - `web/`: React 19 + Vite console. wagmi/viem are lazy-loaded only on the approval screen (same wallet-layer approach as the cats.fund project, without ConnectKit).
 - `design-system/autonear/`: ui-ux-pro-max design-system output; the chosen palette and type differ where noted in `web/src/styles.css`.
@@ -66,7 +66,7 @@ Scoring formula (published at `/api/scoring`): `score = Σ weight × component` 
 
 ## Deploy
 
-Primary target is Cloudflare Workers + D1: [docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md). **Caveat:** the Workers *Free* plan (10 ms CPU, 50 D1 queries per invocation) cannot complete a full ingestion tick; use Workers Paid, or run `npm start` on any small host. The read API and UI fit the free tier. Vercel + Turso is documented as secondary and untested: [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). Contract deployment is always done by a human; see the Approval room and `scripts/near-deploy.sh` / `contracts/evm/script/Deploy.s.sol`.
+Primary target is Cloudflare Workers + D1: [docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md). **Caveat:** the Workers *Free* plan (10 ms CPU, 50 D1 queries per invocation) cannot complete a full ingestion tick; use Workers Paid, or run `npm start` on any small host. The read API and UI fit the free tier. Vercel + Turso is supported through `vercel.json` and `api/[...path].js` (build verified with Vercel's builder; live status in PROGRESS.md): [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). Contract deployment is always done by a human; see the Approval room and `scripts/near-deploy.sh` / `contracts/evm/script/Deploy.s.sol`.
 
 ## Security
 
