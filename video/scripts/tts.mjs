@@ -47,11 +47,18 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const styleShort = style.split('.')[0];
 
 async function post(url, body) {
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  for (let attempt = 1; attempt <= 8; attempt++) {
     const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) });
     if (r.ok) return r.json();
     const txt = (await r.text()).slice(0, 400);
-    if ([429, 500, 503].includes(r.status) && attempt < 4) { await sleep(1500 * attempt ** 2); continue; }
+    if (r.status === 429 && /per day/i.test(txt)) { const e = new Error(`HTTP 429 (daily quota): ${txt}`); e.status = 429; e.daily = true; throw e; }
+    if ([429, 500, 503].includes(r.status) && attempt < 8) {
+      // Free tier is ~3 requests/min: honour the server's "retry in Ns" hint.
+      const hint = Number(/retry in (\d+(?:\.\d+)?)s/i.exec(txt)?.[1]);
+      const wait = r.status === 429 && hint ? (hint + 2) * 1000 : 1500 * attempt ** 2;
+      console.warn(`  HTTP ${r.status}, waiting ${Math.round(wait / 1000)}s (attempt ${attempt})`);
+      await sleep(wait); continue;
+    }
     const e = new Error(`HTTP ${r.status}: ${txt}`); e.status = r.status; throw e;
   }
 }
@@ -85,11 +92,11 @@ async function synth(model, text, outBase) {
 let chosenModel = null;
 async function synthWithFallback(text, outBase) {
   const override = arg('model') || process.env.GEMINI_TTS_MODEL;
-  const list = override ? [override] : chosenModel ? [chosenModel] : CANDIDATES;
+  const list = override ? [override] : chosenModel ? [chosenModel, ...CANDIDATES.filter((m) => m !== chosenModel)] : CANDIDATES;
   let lastErr;
   for (const m of list) {
     try { const r = await synth(m, text, outBase); chosenModel = m; return { ...r, model: m }; }
-    catch (e) { lastErr = e; if (![400, 403, 404].includes(e.status)) throw e; console.warn(`  model ${m} unavailable (${e.message.slice(0, 120)}); trying next`); }
+    catch (e) { lastErr = e; if (![400, 403, 404].includes(e.status) && !e.daily) throw e; console.warn(`  model ${m} unavailable (${e.message.slice(0, 120)}); trying next`); }
   }
   throw lastErr;
 }
