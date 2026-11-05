@@ -8,6 +8,10 @@
 //  3. 0.4 keeps it clearly below 1 (so it can corroborate) and well above 0 (so a real builder complaint is still visible).
 // Social breadth is additionally CAPPED in scoring (SOCIAL_BREADTH_CAP) and never counts toward the 3-independent-source rule.
 export const SOCIAL_WEIGHT = 0.4;
+// Aggregate ceiling: ALL social records together can never carry more than this fraction of the CORE weight in any weighted mean, breadth count or confidence
+// term of one topic, however many posts or accounts exist (and they carry 0 when there are no core records). Without it, N cheap distinct-author posts at
+// 0.4 each would outweigh a few real core records. 0.25 is a judgement: social can nudge a mean by at most 0.25/1.25 = 20%.
+export const SOCIAL_AGGREGATE_FRACTION = 0.25;
 export const SOCIAL_SOURCE_IDS = Object.freeze(['near-social', 'mastodon', 'farcaster', 'devto', 'bluesky']);
 export const isSocialSource = (sourceId) => SOCIAL_SOURCE_IDS.includes(sourceId);
 export const sourceWeight = (sourceId) => (isSocialSource(sourceId) ? SOCIAL_WEIGHT : 1);

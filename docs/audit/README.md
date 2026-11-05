@@ -1,11 +1,12 @@
 # AI-assisted code reviews (not an independent audit)
 
-Three read-only reviews were run with the OpenAI Codex CLI (`codex exec --sandbox read-only`) against this repository on 2026-11-05. They are **automated reviews by an AI model**. They are not a human security audit, name no independent reviewer, and do not change the project's audit status, which remains **none**.
+Four read-only reviews were run with the OpenAI Codex CLI (`codex exec --sandbox read-only`) against this repository on 2026-11-05. They are **automated reviews by an AI model**. They are not a human security audit, name no independent reviewer, and do not change the project's audit status, which remains **none**.
 
 | Review | Scope | Raw output |
 | --- | --- | --- |
 | 1 · Backend | `src/**`, `tests/**`, `scripts/attest.mjs`, `wrangler.jsonc`, `migrations/` | [codex-backend-audit.raw.md](codex-backend-audit.raw.md) |
 | 2 · Contracts + verification | `contracts/evm/src`, `contracts/near-registry/src`, chain verifiers, decision flow | [codex-contracts-audit.raw.md](codex-contracts-audit.raw.md) |
+| 4 · Re-review of the review-3 fixes + social connectors + Vercel entry | `src/autonomy.js`, `src/vault/index.js`, `contracts/near-vault/src/lib.rs`, `contracts/evm/src/AgentVault.sol`, `src/connectors/*`, `src/scoring.js`, `src/policy.js`, `api/index.js` | [codex-vault-rereview.raw.md](codex-vault-rereview.raw.md) |
 | 3 · Mandate Vault (agent wallet) | `contracts/evm/src/AgentVault.sol`, `contracts/near-vault/src/lib.rs`, `src/autonomy.js`, `src/vault/*`, `src/agent/*`, vault routes, vault path of `src/decisions.js` | [codex-vault-audit.raw.md](codex-vault-audit.raw.md) |
 
 Each finding was checked against the code before acting. Resolution status below; regression tests are in `tests/`.
@@ -73,3 +74,13 @@ Run 2026-11-05 on the code as first delivered. The reviewer also listed what it 
 | V-4 | Low | EVM `previewDeploy` disagreed with `deploy` for a template whose runtime code is empty (preview ok, CREATE2 then failed) | Fixed. Deployed CREATE2 targets are recorded and both preview and call return `AddressTaken`; costs about 22k extra gas per deploy. Test with an empty-runtime fixture |
 
 Residual gaps are listed in each component README and in PROGRESS.md Gate G (no Slither, NEAR not run on testnet, no independent audit).
+
+## Review 4: re-review of the fixes, social connectors and the Vercel entry (3 new findings: all fixed)
+
+Run 2026-11-06 on the code after the review-3 fixes. The reviewer confirmed V-1 to V-4 are fixed correctly (inconclusive code checks refuse, a changed epoch refuses reuse of a grant, NEAR `on_drawn` reverses only in the same epoch/period with saturating math, EVM preview and deploy share the `AddressTaken` check) and that connector requests use the host allowlist, manual redirects, size caps and timeouts. Still an AI-assisted review, not an audit.
+
+| # | Severity | Finding | Resolution |
+| --- | --- | --- | --- |
+| R-1 | Medium | Social spam could dominate score components (0.4 weight per record in the recency, friction and quality means; only author/source breadth was capped) | Fixed. All social records of a topic together are capped at 0.25x the core weight (at most 20% of any weighted mean) and count for nothing when a topic has no core records; the cap also bounds the breadth and confidence terms. `/api/scoring` publishes the cap. Tests: 1 core + 200 spam records scores exactly like 1 core + 10 |
+| R-2 | Medium | Instructions in social text that evade the literal injection patterns reached LLM prompts | Mitigated, not eliminated. By default social text is withheld from LLM prompts (metadata only); `LLM_INCLUDE_SOCIAL=1` adds it truncated, stripped of angle brackets and fenced as untrusted; an LLM finding must cite at least one non-social record or the whole output is rejected. **Still open:** no check that a claim matches the cited text, no constrained extraction step |
+| R-3 | Low | One vault with an unreadable state aborted the whole autonomy tick (no refusal ledgered, later vaults skipped) | Fixed. Refuse-and-ledger before verification, per-vault isolation in the tick, `verifyMandate` fails closed on missing state. Live-anvil test with two vaults. The implementing engineer found its earlier guard edit had silently not applied; this review is what caught it |

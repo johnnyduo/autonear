@@ -121,9 +121,9 @@ export const MANDATE = { perDrawCap: (ETH / 20n).toString(), periodSecs: 3600, p
  * OWNER, every human step of GET /api/vault/plan executed VERBATIM from the owner wallet, then re-attached so the server activates the loop.
  */
 export async function makeWorld(anvil, opts = {}) {
-  const { db, artifactHash } = await seededDb();
+  const { db, artifactHash } = opts.db ? { db: opts.db, artifactHash: opts.artifactHash } : await seededDb(); // opts.db/keys/artifactHash: a SECOND vault in the same database
   const vault = await deployVault(anvil);
-  const keys = tempKeystore();
+  const keys = opts.keys ?? tempKeystore();
   const agent = keys.ks.publicView().evm.address;
   if ((opts.seed ?? SEED) > 0n) await sendAs(anvil, 'other', { to: agent, value: opts.seed ?? SEED });
   const fetchImpl = opts.fetchImpl ?? anvil.baseFetch;

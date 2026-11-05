@@ -3,7 +3,7 @@
 import { now, j, parse } from './db.js';
 import { TOPICS } from './relevance.js';
 import { COMPETITORS } from './competitors.js';
-import { SOCIAL_WEIGHT, SOCIAL_SOURCE_IDS, isSocialSource, sourceWeight } from './connectors/source-weights.js';
+import { SOCIAL_WEIGHT, SOCIAL_AGGREGATE_FRACTION, SOCIAL_SOURCE_IDS, isSocialSource } from './connectors/source-weights.js';
 
 export const WEIGHTS = {
   independent_demand: 0.22, recency: 0.10, onchain_corroboration: 0.12, friction_severity: 0.12,
@@ -20,9 +20,13 @@ export const SCORING_NOTES = {
     core: { weight: 1, note: 'GitHub issues (near org), gov.near.org, Hacker News, on-chain usage. Count toward the 3-independent-source rule.' },
     social: {
       weight: SOCIAL_WEIGHT, sources: SOCIAL_SOURCE_IDS, breadthCap: SOCIAL_BREADTH_CAP,
-      note: `Social records are demand evidence at ${SOCIAL_WEIGHT}× the weight of a core record in every demand component (weighted means for recency, friction and evidence_quality), `
-        + `can add at most ${SOCIAL_BREADTH_CAP.authors} effective authors and ${SOCIAL_BREADTH_CAP.sources} effective source to independent_demand, never count toward the 3-independent-source rule, `
-        + 'and contribute nothing to the source term of confidence. Social posts are unverified, so no social record is shown as a fact.',
+      aggregateFraction: SOCIAL_AGGREGATE_FRACTION,
+      note: `Social records are demand evidence at ${SOCIAL_WEIGHT}× the weight of a core record in every demand component (weighted means for recency, friction and evidence_quality). `
+        + `All social records of a topic TOGETHER are additionally capped at an aggregate ${SOCIAL_AGGREGATE_FRACTION} × the core weight in those means, in the breadth counts and in confidence, `
+        + 'so adding more social posts or accounts beyond the cap changes nothing, and social carries zero weight when a topic has no core records. '
+        + `Breadth: social adds at most ${SOCIAL_BREADTH_CAP.authors} effective authors and ${SOCIAL_BREADTH_CAP.sources} effective source to independent_demand (and never more than the aggregate cap), `
+        + 'its sources never count toward the 3-independent-source rule, and it contributes nothing to the source term of confidence. Social posts are unverified, so no social record is shown as a fact. '
+        + 'The weight, caps and fraction are judgements, not measurements.',
     },
   },
   rules: [
@@ -62,11 +66,19 @@ export function scoreTopic(topic, evidence, competitorHits) {
   const authors = new Set([...coreAuthors, ...socialAuthors]);
   const coreSources = new Set(core.map((e) => e.source_id)); const socialSources = new Set(social.map((e) => e.source_id));
   const sources = new Set([...coreSources, ...socialSources]);
-  // effective breadth: core counts fully, social is down-weighted AND capped
-  const authEff = coreAuthors.size + Math.min(socialAuthors.size * SOCIAL_WEIGHT, SOCIAL_BREADTH_CAP.authors);
-  const srcEff = coreSources.size + Math.min(socialSources.size * SOCIAL_WEIGHT, SOCIAL_BREADTH_CAP.sources);
-  const w = (e) => sourceWeight(e.source_id);
-  const sumW = (list) => list.reduce((a, e) => a + w(e), 0);
+  // effective breadth: core counts fully; social is down-weighted, capped, and never exceeds the aggregate fraction of the core breadth (0 without core)
+  const authEff = coreAuthors.size + Math.min(socialAuthors.size * SOCIAL_WEIGHT, SOCIAL_BREADTH_CAP.authors, SOCIAL_AGGREGATE_FRACTION * coreAuthors.size);
+  const srcEff = coreSources.size + Math.min(socialSources.size * SOCIAL_WEIGHT, SOCIAL_BREADTH_CAP.sources, SOCIAL_AGGREGATE_FRACTION * coreSources.size);
+  // per-record weights for the weighted means: core = 1; each social record = SOCIAL_WEIGHT, scaled down so that ALL social records of the list together weigh at most
+  // SOCIAL_AGGREGATE_FRACTION × (number of core records), and 0 when there are none
+  const weighter = (list) => {
+    const nCore = list.filter((e) => !isSocialSource(e.source_id)).length; const raw = SOCIAL_WEIGHT * (list.length - nCore);
+    const scale = raw > 0 ? Math.min(raw, SOCIAL_AGGREGATE_FRACTION * nCore) / raw : 0;
+    return (e) => (isSocialSource(e.source_id) ? SOCIAL_WEIGHT * scale : 1);
+  };
+  const wC = weighter(clean); const wD = weighter(demand);
+  const sumW = (list, w) => list.reduce((a, e) => a + w(e), 0);
+  const wmean = (list, w, f) => { const d = sumW(list, w); return d > 0 ? list.reduce((a, e) => a + w(e) * f(e), 0) / d : 0; };
   const t = now();
   const ageDays = (e) => Math.max(0, (t - (e.published_at ?? e.observed_at)) / DAY);
   const fric = clean.filter((e) => FRICTION.test(`${e.title} ${e.body_excerpt}`));
@@ -75,13 +87,13 @@ export function scoreTopic(topic, evidence, competitorHits) {
   const coverage = comp.length ? Math.max(...comp.map((c) => c.coverage)) : 0;
   const c = {
     independent_demand: clamp((authEff / 10) * 0.6 + (srcEff / 3) * 0.4),
-    recency: clean.length ? clamp(clean.reduce((a, e) => a + w(e) * Math.exp(-ageDays(e) / 45), 0) / sumW(clean)) : 0,
+    recency: clamp(wmean(clean, wC, (e) => Math.exp(-ageDays(e) / 45))),
     onchain_corroboration: usage.length ? 1 : 0,
-    friction_severity: clean.length ? clamp((sumW(fric) / sumW(clean)) * 1.5) : 0,
+    friction_severity: clamp(wmean(clean, wC, (e) => (FRICTION.test(`${e.title} ${e.body_excerpt}`) ? 1 : 0)) * 1.5),
     competition_gap: clamp(1 - coverage - 0.05 * competitorHits),
     near_fit: prior.near_fit,
     feasibility: prior.feasibility,
-    evidence_quality: demand.length ? clamp((demand.reduce((a, e) => a + w(e) * e.relevance, 0) / sumW(demand)) * (sumW(clean) / sumW(demand))) : 0,
+    evidence_quality: sumW(demand, wD) > 0 ? clamp(wmean(demand, wD, (e) => e.relevance) * (sumW(clean, wD) / sumW(demand, wD))) : 0,
   };
   const score = Object.entries(WEIGHTS).reduce((a, [k, wt]) => a + wt * c[k], 0);
   const warnings = [];
@@ -90,7 +102,7 @@ export function scoreTopic(topic, evidence, competitorHits) {
   }
   if (!usage.length) warnings.push('No on-chain usage corroboration for this topic.');
   if (clean.length < demand.length) warnings.push(`${demand.length - clean.length} of ${demand.length} demand records de-weighted (bot, duplicate content, low-signal or injection-flagged).`);
-  if (social.length) warnings.push(`${social.length} clean social record(s) from ${socialSources.size} source(s) are weighted ${SOCIAL_WEIGHT}× and capped; social posts are unverified and are never presented as fact.`);
+  if (social.length) warnings.push(`${social.length} clean social record(s) from ${socialSources.size} source(s) are weighted ${SOCIAL_WEIGHT}× and capped (all social together at most ${SOCIAL_AGGREGATE_FRACTION}× the core weight, 0 without core records); social posts are unverified and are never presented as fact.`);
   if (authEff < 5) warnings.push(`Only ${authors.size} distinct authors (${coreAuthors.size} non-social, ${socialAuthors.size} social; effective ${authEff.toFixed(1)}): single-voice campaigns cannot be ruled out.`);
   warnings.push('Author counts are an unverified breadth signal: one actor can use several accounts across sources.');
   warnings.push('near_fit and feasibility are curated priors, not measured.');
@@ -102,7 +114,7 @@ export function scoreTopic(topic, evidence, competitorHits) {
       demand: demand.length, clean: clean.length, usage: usage.length, authors: authors.size, sources: sources.size, friction: fric.length,
       sourcesNonSocial: coreSources.size, authorsEffective: Number(authEff.toFixed(2)), sourcesSocial: socialSources.size, authorsNonSocial: coreAuthors.size, authorsSocial: socialAuthors.size, socialRecords: social.length,
     },
-    formula: FORMULA, weights: WEIGHTS, priors: ['near_fit', 'feasibility'], sourceWeights: { social: SOCIAL_WEIGHT, socialBreadthCap: SOCIAL_BREADTH_CAP },
+    formula: FORMULA, weights: WEIGHTS, priors: ['near_fit', 'feasibility'], sourceWeights: { social: SOCIAL_WEIGHT, socialBreadthCap: SOCIAL_BREADTH_CAP, socialAggregateFraction: SOCIAL_AGGREGATE_FRACTION },
   };
 }
 

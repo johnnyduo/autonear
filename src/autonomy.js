@@ -81,7 +81,13 @@ async function tickInner(ctx) {
   let lastError = null;
   for (const vault of active) {
     if ((await getLoop(db)).state === 'blocked') break;
-    const r = await processVault(ctx, vault);
+    let r;
+    try { r = await processVault(ctx, vault); } catch (e) {
+      // isolation: one vault's failure (RPC, DB, adapter bug) is a ledgered refusal for THAT vault, never a crashed tick, an anomaly or a global block
+      const msg = ctx.redact(e); ctx.errors.push(msg);
+      await appendLedgerOnce(db, vault.id, 'vault-error', { kind: 'refused', status: 'refused', detail: `vault processing failed: ${msg}` }, { redact: ctx.redact }).catch(() => {});
+      r = { refused: `vault processing failed: ${msg}` };
+    }
     ctx.report.vaults.push({ id: vault.id, ...r });
     if (r.refused) lastError = r.refused;
     if (r.blocked) break;
@@ -116,6 +122,7 @@ async function processVault(ctx, vault) {
   // vault-level gates need chain state
   const read = await readVault(db, vault, { fetchImpl: ctx.fetchImpl, force: true, redact: ctx.redact });
   if (read.codeChecked && !read.codeOk) { await setVaultStatus(db, vault.id, 'drift'); await blockLoop(db, `vault runtime code does not equal the attested AgentVault build (${read.codeChecks.filter((c) => !c.ok).map((c) => c.detail || c.name).join('; ').slice(0, 160)})`, { vaultId: vault.id, redact: ctx.redact }); return { blocked: true }; }
+  if (!read.state || read.stale || !read.codeOk) return refuse('read', `vault unreadable: ${read.readError ?? 'no state, or the code check did not complete'}`); // fail closed BEFORE verifying anything against state
   const grant = vault.mandate_decision_id ? parse((await db.get('SELECT payload FROM decisions WHERE id=?', [vault.mandate_decision_id]))?.payload, null) : null;
   if (!grant) return refuse('grant', 'no activated grant_mandate decision for this vault');
   const vm = verifyMandate(read.state, grant, { protocol: net.protocol, adapter });

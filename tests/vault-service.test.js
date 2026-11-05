@@ -164,6 +164,12 @@ describe('state, model, budget, verifyMandate', () => {
     assert.equal(m.previewDeploy('0x' + 'c'.repeat(64), '0x01', 200n), 'TemplateNotAllowed');
   });
   const payload = () => grantPayload({ templates: [{ artifactHash: 'a'.repeat(64), templateId: '0x' + 'b'.repeat(64), label: 'ProposalRegistry', deposit: '0' }], mandate: { expiresAt: '5000', perDrawCap: '1000', periodSecs: '3600', periodCap: '2000', totalCap: '5000', maxDeploys: '2' } });
+  test('verifyMandate is defensive: a missing state is a failing verdict, never a throw', () => {
+    for (const st of [null, undefined, {}]) {
+      const r = verifyMandate(st, payload());
+      assert.equal(r.ok, false); assert.equal(r.fieldsOk, false); assert.equal(r.epochOk, false); assert.ok(r.checks.some((c) => !c.ok && /state readable/.test(c.name)));
+    }
+  });
   test('verifyMandate: equal state passes; EVERY approved field is checked individually', () => {
     const st = normalizeState(raw());
     const good = verifyMandate(st, payload());

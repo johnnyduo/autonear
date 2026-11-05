@@ -121,6 +121,7 @@ export const previewCode = (x) => String(x ?? '').replace(/^E_/, '').split(/[:\s
  * is sha256(wasm) only and does NOT bind the init args, so id equality alone would not prove the registry gets the approved owner.
  */
 export function verifyMandate(state, payload, { protocol = 'evm', adapter = null, activatedEpoch } = {}) {
+  if (!state || !state.config) return { ok: false, fieldsOk: false, live: false, epochOk: false, checks: [{ name: 'vault state readable', ok: false, detail: 'no state available: nothing can be verified', expected: 'a successful chain read', actual: 'none' }] };
   const checks = []; const add = (name, ok, detail = '', expected, actual) => checks.push({ name, ok: Boolean(ok), detail: String(detail), ...(expected !== undefined ? { expected: String(expected), actual: String(actual) } : {}) });
   const m = state.mandate;
   add('vault owner on-chain == approved owner', low(state.config.owner) === low(payload.vault?.owner), `${state.config.owner} vs ${payload.vault?.owner}`, payload.vault?.owner, state.config.owner);

@@ -470,6 +470,33 @@ describe('autonomous cycle on a LOCAL anvil (31337)', { skip: !haveAnvil && 'anv
       assert.match((await getDecision(w.db, d.id)).approver, new RegExp(`^mandate:${w.vaultId}:2$`));
       w.cleanup();
     });
+    test('per-vault isolation: vault A\'s state RPC fails, vault B is still processed and executes; A gets ONE ledgered refusal (no anomaly, no block, no tick crash)', async () => {
+      let failA = false; let aAddr = '';
+      const f = async (u, init) => {
+        const b = init?.body ? JSON.parse(init.body) : null;
+        if (failA && b?.method === 'eth_call' && String(b.params?.[0]?.to).toLowerCase() === aAddr.toLowerCase()) throw new TypeError('state RPC down for vault A');
+        return anvil.baseFetch(u, init);
+      };
+      const a = await makeWorld(anvil, { fetchImpl: f });
+      aAddr = a.vault;
+      const b = await makeWorld(anvil, { fetchImpl: f, db: a.db, keys: a.keys, artifactHash: a.artifactHash });
+      assert.equal(b.activation.activation.activated, true);
+      const d = await a.newDecision();
+      failA = true;
+      await a.db.run('UPDATE vaults SET last_state=NULL, last_read_at=NULL WHERE id=?', [a.vaultId]); // no cached state to fall back on: the read result carries NO state
+      const r = await a.tick();
+      assert.ok(!r.error, `tick must not crash: ${JSON.stringify(r)}`);
+      const byId = Object.fromEntries(r.vaults.map((x) => [x.id, x]));
+      assert.match(byId[a.vaultId].refused, /unreadable/);
+      assert.deepEqual(byId[b.vaultId].done, [d.id], 'vault B was still processed');
+      assert.equal((await getDecision(a.db, d.id)).status, 'executed');
+      await a.tick();
+      const refA = (await ledgerOf(a)).filter((x) => x.vaultId === a.vaultId && x.kind === 'refused' && /unreadable/.test(x.detail));
+      assert.equal(refA.length, 1, 'ledgered once, not every tick');
+      assert.equal((await ledgerOf(a)).filter((x) => x.kind === 'anomaly').length, 0);
+      assert.notEqual((await getLoop(a.db)).state, 'blocked');
+      a.cleanup();
+    });
     test('rule (d): a template allowlisted on-chain is required too (owner removes it after activation -> drift, nothing deployed)', async () => {
       const w = await makeWorld(anvil); const d = await w.newDecision();
       const tid = w.grant.payload.templates[0].templateId;
