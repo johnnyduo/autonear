@@ -37,5 +37,9 @@
     "contract:evm:vault:test": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" sh -c \"cd contracts/evm && forge test --match-path 'test/vault/*'\"",
     "contract:evm:vault:e2e": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" bash contracts/evm/script/e2e-vault-anvil.sh",
     "contract:evm:vault:coverage": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" sh -c \"cd contracts/evm && forge coverage --ir-minimum --match-path 'test/vault/*' --report summary\""
+  },
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "@vercel/functions": "^3.10.6"
   }
 }
