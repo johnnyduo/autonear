@@ -68,6 +68,7 @@ Status vocabulary: **tested** = automated test or scripted run passes now · **w
 | README matches behaviour; SECURITY; runbook; deploy docs; `.env.example` | working | `README.md`, `SECURITY.md`, `docs/` | |
 | CI | planned | `.github/workflows/ci.yml` written, YAML parses, **never executed** (no GitHub run yet) | Push and watch |
 | AI-assisted code reviews with every finding resolved or accepted | tested | `docs/audit/` (17 findings; regression tests) | Human audit before any non-test use |
+| Vercel + Turso deployment | **partial** | 2026-11-05: production deploy `Ready`; `https://autonear-eight.vercel.app` serves the console and `/api/status` (200) against a real Turso database; nested API routes verified (`/api/cron/tick` answers 401 without the secret, was 404 before the rewrite fix) | **A full ingestion tick timed out at 60 s (HTTP 504)**: the function runs in `iad1` and each query to Turso costs ~200 ms. Fix needs the function region set to the database region and/or fewer round-trips / per-tick source limits; not done yet. Until then Vercel serves the read API and UI, not scheduled ingestion. Deployment Protection (Vercel Authentication) is on for the default domain; `autonear-eight.vercel.app` is public |
 | Public repo, demo video, X post, official form | **blocked** | human-owned publication steps | |
 
 ## Gate G: autonomous agent wallet ("Mandate Vault")

@@ -6,7 +6,7 @@
   "outputDirectory": "web/dist",
   "functions": {
     "api/**/*.js": {
-      "maxDuration": 60,
+      "maxDuration": 300,
       "includeFiles": "contracts/{near-registry,near-vault}/dist/*.wasm"
     }
   },
