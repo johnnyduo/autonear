@@ -45,14 +45,14 @@ export function PageHead({ eyebrow, title, em, children, aside }) {
   );
 }
 
-export function CopyButton({ text, label = 'Copy' }) {
+export function CopyButton({ text, label = 'Copy', aria }) {
   const toast = useToast();
   const [done, setDone] = useState(false);
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); }
     catch { toast('Clipboard is not available here: select the text and copy it manually.', 'bad'); }
   };
-  return <button type="button" className="btn sm copy-btn" onClick={copy} aria-label={`${label}${done ? ' (copied)' : ''}`}><Icon name={done ? 'check' : 'copy'} size={14} />{done ? 'Copied' : label}</button>;
+  return <button type="button" className="btn sm copy-btn" onClick={copy} aria-label={`${aria ?? label}${done ? ' (copied)' : ''}`}><Icon name={done ? 'check' : 'copy'} size={14} />{done ? 'Copied' : label}</button>;
 }
 
 /** A value shown in full (wrapping), never truncated: hashes and addresses are only useful complete. */

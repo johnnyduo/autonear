@@ -170,6 +170,33 @@ fn callback(fx: &mut Fx, failed: bool, epoch: u64, period: u64, id: &str, name: 
     fx.avail += if failed { dep } else { 0 }; // the runtime refunds the failed batch's deposit
 }
 
+/// Runs the `on_drawn` callback as the contract itself.
+fn drawn_callback(fx: &mut Fx, failed: bool, epoch: u64, period: u64, agent: &str, amount: u128) {
+    let result = if failed {
+        PromiseResult::Failed
+    } else {
+        PromiseResult::Successful(vec![])
+    };
+    testing_env!(
+        VMContextBuilder::new()
+            .current_account_id(acct(VAULT))
+            .predecessor_account_id(acct(VAULT))
+            .signer_account_id(acct(AGENT))
+            .block_timestamp(fx.t * NS_PER_SEC)
+            .storage_usage(fx.su)
+            .account_balance(NearToken::from_yoctonear(balance_for(fx.avail, fx.su)))
+            .build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![result]
+    );
+    fx.v.on_drawn(U64(epoch), U64(period), acct(agent), U128(amount));
+    fx.logs = get_logs();
+    fx.su = env::storage_usage();
+    fx.avail += if failed { amount } else { 0 }; // the runtime refunds a failed transfer
+}
+
 // ------------------------------------------------------------------ fresh state / views
 
 #[test]
@@ -931,9 +958,11 @@ fn no_method_lets_the_agent_redirect_funds() {
         v.draw(U128(3 * NEAR));
     })
     .unwrap();
-    assert_eq!(fx.receipts.len(), 1);
+    assert_eq!(fx.receipts.len(), 2, "transfer + on_drawn callback");
     assert_eq!(fx.receipts[0].receiver_id, acct(AGENT));
     assert_eq!(transfers_of(&fx.receipts[0]), 3 * NEAR);
+    assert_eq!(fx.receipts[1].receiver_id, acct(VAULT));
+    assert_eq!(transfers_of(&fx.receipts[1]), 0);
     // A mandate whose agent is somebody else: draws go to THAT account, never to the caller.
     fx.set_mandate(OTHER);
     assert_eq!(
@@ -1263,6 +1292,144 @@ fn state_round_trips_through_borsh_storage() {
     assert_eq!(back.templates(None, None).len(), 1);
     assert_eq!(
         back.preview_deploy(id.clone(), "persist".into()),
+        "AddressTaken"
+    );
+}
+
+// ------------------------------------------------------------------ on_drawn callback
+
+#[test]
+fn draw_callback_failure_reverses_the_charge_and_emits_draw_failed() {
+    let mut fx = Fx::with_mandate();
+    fx.run(AGENT, |v| {
+        v.draw(U128(4 * NEAR));
+    })
+    .unwrap();
+    let u = fx.view(|v| v.usage());
+    assert_eq!(
+        (u.total_spent, u.period_spent),
+        (U128(4 * NEAR), U128(4 * NEAR))
+    );
+    assert_eq!(fx.avail, 996 * NEAR, "left the balance immediately");
+    let pi = u.period_index.0;
+    drawn_callback(&mut fx, true, 1, pi, AGENT, 4 * NEAR);
+    let u = fx.view(|v| v.usage());
+    assert_eq!(
+        (u.total_spent, u.period_spent, u.deploys),
+        (U128(0), U128(0), 0)
+    );
+    assert_eq!(fx.avail, 1000 * NEAR, "refund returned the amount");
+    let e = events_of(&fx.logs);
+    assert_eq!(ev(&e[0]), "draw_failed");
+    assert_eq!(e[0]["data"]["reversed"], true);
+    assert_eq!(e[0]["data"]["agent"], AGENT);
+    assert_eq!(e[0]["data"]["amount"], (4 * NEAR).to_string());
+    // The full budget is usable again (period cap is 25: 25 can be drawn in 10-sized pieces).
+    for _ in 0..2 {
+        fx.run(AGENT, |v| {
+            v.draw(U128(10 * NEAR));
+        })
+        .unwrap();
+    }
+    assert_eq!(fx.view(|v| v.preview_draw(U128(5 * NEAR))), "");
+    assert_eq!(fx.view(|v| v.preview_draw(U128(5 * NEAR + 1))), "PeriodCap");
+}
+
+#[test]
+fn draw_callback_success_changes_nothing_and_emits_nothing() {
+    let mut fx = Fx::with_mandate();
+    fx.run(AGENT, |v| {
+        v.draw(U128(4 * NEAR));
+    })
+    .unwrap();
+    drawn_callback(&mut fx, false, 1, 0, AGENT, 4 * NEAR);
+    let u = fx.view(|v| v.usage());
+    assert_eq!(
+        (u.total_spent, u.period_spent),
+        (U128(4 * NEAR), U128(4 * NEAR))
+    );
+    assert!(events_of(&fx.logs).is_empty());
+}
+
+#[test]
+fn draw_callback_after_mandate_replacement_does_not_touch_the_new_epoch() {
+    let mut fx = Fx::with_mandate();
+    fx.run(AGENT, |v| {
+        v.draw(U128(4 * NEAR));
+    })
+    .unwrap();
+    fx.set_mandate(AGENT); // epoch 2, usage reset
+    fx.run(AGENT, |v| {
+        v.draw(U128(2 * NEAR));
+    })
+    .unwrap();
+    drawn_callback(&mut fx, true, 1, 0, AGENT, 4 * NEAR);
+    let u = fx.view(|v| v.usage());
+    assert_eq!(
+        (u.total_spent, u.period_spent),
+        (U128(2 * NEAR), U128(2 * NEAR))
+    );
+    let e = events_of(&fx.logs);
+    assert_eq!(ev(&e[0]), "draw_failed");
+    assert_eq!(
+        e[0]["data"]["reversed"], false,
+        "stale epoch: reported, not applied"
+    );
+}
+
+#[test]
+fn draw_callback_after_period_rollover_reverses_total_but_not_the_new_period() {
+    let mut fx = Fx::with_mandate();
+    fx.run(AGENT, |v| {
+        v.draw(U128(4 * NEAR));
+    })
+    .unwrap(); // period 0
+    fx.t += 3600;
+    fx.run(AGENT, |v| {
+        v.draw(U128(3 * NEAR));
+    })
+    .unwrap(); // period 1, total 7
+    drawn_callback(&mut fx, true, 1, 0, AGENT, 4 * NEAR);
+    let u = fx.view(|v| v.usage());
+    assert_eq!(u.total_spent, U128(3 * NEAR));
+    assert_eq!(u.period_index, U64(1));
+    assert_eq!(
+        u.period_spent,
+        U128(3 * NEAR),
+        "period 1 is not reduced by a period-0 reversal"
+    );
+}
+
+#[test]
+fn draw_callback_replay_cannot_underflow() {
+    let mut fx = Fx::with_mandate();
+    fx.run(AGENT, |v| {
+        v.draw(U128(4 * NEAR));
+    })
+    .unwrap();
+    drawn_callback(&mut fx, true, 1, 0, AGENT, 4 * NEAR);
+    drawn_callback(&mut fx, true, 1, 0, AGENT, 4 * NEAR); // replay: saturating, never panics
+    let u = fx.view(|v| v.usage());
+    assert_eq!((u.total_spent, u.period_spent), (U128(0), U128(0)));
+}
+
+#[test]
+fn draw_callback_does_not_touch_deploy_counters() {
+    let mut fx = Fx::with_mandate();
+    let id = fx.allow(WASM_T1, 2 * NEAR);
+    fx.deploy(&id, "keep", WASM_T1).unwrap();
+    fx.run(AGENT, |v| {
+        v.draw(U128(3 * NEAR));
+    })
+    .unwrap();
+    drawn_callback(&mut fx, true, 1, 0, AGENT, 3 * NEAR);
+    let u = fx.view(|v| v.usage());
+    assert_eq!(
+        (u.total_spent, u.period_spent, u.deploys),
+        (U128(2 * NEAR), U128(2 * NEAR), 1)
+    );
+    assert_eq!(
+        fx.view(|v| v.preview_deploy(id.clone(), "keep".into())),
         "AddressTaken"
     );
 }

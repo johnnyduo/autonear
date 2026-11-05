@@ -1,5 +1,5 @@
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { api, fmt, setToken, useApi, useToken } from './api.js';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { api, fmt, isFixtureMode, setToken, useApi, useToken } from './api.js';
 import { CommandPalette, Dialog, ErrorPanel, Icon, Led, NeedsOperator, SkeletonRows, ToastProvider, useToast } from './ui.jsx';
 
 // Route table. Views are bundled with the shell (one network hop to first content = better LCP);
@@ -12,7 +12,9 @@ import Studio from './views/Studio.jsx';
 import Approval from './views/Approval.jsx';
 import Security from './views/Security.jsx';
 import Engines from './views/Engines.jsx';
-const V = { overview: Overview, radar: Radar, opportunity: Opportunity, run: RunTheater, studio: Studio, approval: Approval, security: Security, engines: Engines };
+// The Vault flight deck is its own route chunk (loaded on first visit): it adds nothing to the initial bundle. Its fixture and the wallet tx sender are separate lazy chunks again.
+const Vault = lazy(() => import('./views/vault/Vault.jsx'));
+const V = { overview: Overview, radar: Radar, opportunity: Opportunity, run: RunTheater, studio: Studio, approval: Approval, vault: Vault, security: Security, engines: Engines };
 const NAV = [
   ['overview', 'Overview', 'overview', '#/'],
   ['radar', 'Radar', 'radar', '#/radar'],
@@ -20,6 +22,7 @@ const NAV = [
   ['run', 'Runs', 'run', '#/run'],
   ['studio', 'Studio', 'studio', '#/studio'],
   ['approval', 'Approve', 'approve', '#/approval'],
+  ['vault', 'Vault', 'vault', '#/vault'],
   ['security', 'Security', 'security', '#/security'],
   ['engines', 'Engines', 'engine', '#/engines'],
 ];
@@ -91,7 +94,7 @@ function Shell() {
         </header>
         <main id="main" tabIndex={-1} style={{ outline: 'none' }}>
           <Suspense fallback={<div className="page"><SkeletonRows n={5} /></div>}>
-            {status.error && !s ? <div className="page"><ErrorPanel error={status.error} onRetry={status.reload} what="system status" /></div> : <View params={route.params} status={status} token={token} />}
+            {status.error && !s && !isFixtureMode() ? <div className="page"><ErrorPanel error={status.error} onRetry={status.reload} what="system status" /></div> : <View params={route.params} status={status} token={token} />}
           </Suspense>
         </main>
       </div>

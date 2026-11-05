@@ -87,6 +87,14 @@ pub enum Event {
         epoch: U64,
         reversed: bool,
     },
+    /// The transfer of a `draw` failed (refunded to the vault): charge reversed unless the epoch changed.
+    #[event_version("1.0.0")]
+    DrawFailed {
+        agent: AccountId,
+        amount: U128,
+        epoch: U64,
+        reversed: bool,
+    },
     #[event_version("1.0.0")]
     Withdrawn { to: AccountId, amount: U128 },
     #[event_version("1.0.0")]

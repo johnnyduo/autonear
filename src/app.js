@@ -12,8 +12,10 @@ import { recordAttestation } from './attest.js';
 import { engineRegistry } from './orchestrator/adapters/index.js';
 import { llmStatus } from './orchestrator/llm.js';
 import { PROTOCOLS, findNetwork } from './protocols.js';
-import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate } from './policy.js';
+import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from './policy.js';
 import { ALLOWED_HOSTS } from './http-client.js';
+import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant } from './vault/index.js';
+import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 
 const SEC_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -50,6 +52,8 @@ const ALLOW = [
   [/^\/api\/decisions\/dec_\w+\/deploy-data$/, 'GET, HEAD'],
   [/^\/api\/security\/(pause|resume)$/, 'POST'],
   [/^\/api\/ingest$/, 'POST'],
+  [/^\/api\/vault(\/ledger|\/plan|\/verify)?$/, 'GET, HEAD'],
+  [/^\/api\/vault\/(loop\/(pause|resume)|mandates\/propose|attach)$/, 'POST'],
 ];
 const safeEq = (a, b) => { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
 const bearer = (req) => (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
@@ -58,6 +62,9 @@ export function createApp(deps) {
   const { db, defer = (p) => p.catch((e) => console.error('deferred:', e)), fetchImpl } = deps;
   const operatorToken = deps.operatorToken ?? '';
   const cronSecret = deps.cronSecret ?? config.cronSecret;
+  const keystore = deps.keystore ?? null;                       // public view only is ever read from it (agent addresses)
+  const signingSupported = Boolean(deps.signingSupported);       // false on the Worker: the signing loop only exists on the Node runtime
+  const agentPublicUrl = deps.agentPublicUrl ?? config.agent.publicUrl;
 
   const isOperator = (req) => Boolean(operatorToken) && safeEq(bearer(req), operatorToken);
   const needOperator = (req) => { if (!isOperator(req)) throw new PolicyError(operatorToken ? 'operator token required' : 'mutations disabled: OPERATOR_TOKEN is not configured', 'auth'); };
@@ -91,6 +98,7 @@ export function createApp(deps) {
       llm: llmStatus(),
       budget: { perRunUsd: config.budget.usd, perRunTokens: config.budget.tokens },
       engines: engineRegistry().map(({ id, status: st, enabled }) => ({ id, status: st, enabled })),
+      vault: await vaultStatusSummary(db),
       version: '0.1.0',
     };
   }
@@ -206,13 +214,44 @@ export function createApp(deps) {
       needOperator(req);
       const d = await db.get('SELECT * FROM decisions WHERE id=?', [g[1]]);
       if (!d) return out({ error: 'not found' }, 404);
+      if (d.action !== 'deploy_testnet') throw new PolicyError(`a ${d.action} decision has no deploy data`, 'state');
       if (d.status !== 'approved') throw new PolicyError('deploy data is only released for an approved decision', 'state');
+      if (String(d.approver ?? '').startsWith('mandate:')) throw new PolicyError('this decision is executed by the agent under a mandate: no human signs it', 'state');
       const net = findNetwork(d.chain_id); const payload = parse(d.payload, {});
       if (!net) throw new PolicyError(`unknown network ${d.chain_id}`, 'not_found');
       const att = await db.get('SELECT * FROM artifacts WHERE hash=? AND kind LIKE ?', [d.artifact_hash, 'contract-build:%']);
       if (!att) throw new PolicyError('attested artifact for this decision not found', 'not_found');
       const manifest = parse(await getBlob(db, att.immutable_ref), {});
       return out({ protocol: net.protocol, network: d.chain_id, chainId: net.chainId ?? null, artifactHash: d.artifact_hash, registry: payload.registry, abi: manifest.abi ?? null, bytecode: manifest.bytecode ?? null, wasmSha256: manifest.sha256, expectedDeployedBytecodeSha256: manifest.deployedBytecodeSha256 ?? null });
+    }
+    if (p === '/api/vault' && m === 'GET') return out(await vaultReport(db, { keystore, signingSupported, fetchImpl }));
+    if (p === '/api/vault/ledger' && m === 'GET') return out(await listLedger(db, { limit: intParam(url.searchParams.get('limit'), 50, 1, 200) }));
+    if (p === '/api/vault/plan' && m === 'GET') {
+      const id = url.searchParams.get('decisionId') ?? '';
+      if (!/^dec_\w+$/.test(id)) throw new PolicyError('decisionId (dec_...) required', 'input');
+      return out(await buildPlan(db, id, { fetchImpl }));
+    }
+    if (p === '/api/vault/verify' && m === 'GET') { // per-field server verdict: latest chain read of the vault vs a grant_mandate decision
+      const id = url.searchParams.get('decisionId') ?? '';
+      if (!/^dec_\w+$/.test(id)) throw new PolicyError('decisionId (dec_...) required', 'input');
+      return out(await verifyGrant(db, id, { fetchImpl }));
+    }
+    if (p === '/api/vault/loop/pause' && m === 'POST') { needOperator(req); await pauseLoop(db, 'operator'); return out({ loop: await getLoop(db) }); }
+    if (p === '/api/vault/loop/resume' && m === 'POST') { needOperator(req); await resumeLoop(db, 'operator'); return out({ loop: await getLoop(db) }); }
+    if (p === '/api/vault/attach' && m === 'POST') {
+      needOperator(req);
+      const b = await body(req, { type: 'object', required: ['chainId', 'address'], properties: { chainId: { type: 'string', maxLength: 32 }, address: { type: 'string', maxLength: 96 } } });
+      const r = await attachVault(db, { chainId: b.chainId, address: b.address, fetchImpl, keystore });
+      return out({ vaultId: r.vault.id, created: r.created, activation: r.activation }, r.created ? 201 : 200);
+    }
+    if (p === '/api/vault/mandates/propose' && m === 'POST') {
+      needOperator(req);
+      const b = await body(req, {
+        type: 'object', required: ['chainId', 'vault', 'mandate', 'templates', 'fund'],
+        properties: { chainId: { type: 'string', maxLength: 32 }, mandate: { type: 'object' }, templates: { type: 'array', minItems: 1, maxItems: 8, items: { type: 'object', required: ['artifactHash'] } }, fund: { type: 'object', required: ['amount'] }, loop: { type: 'object' } },
+      });
+      const d = await proposeGrant(db, b, { keystore, fetchImpl });
+      return out({ ...d, decision: d }, d.created ? 201 : 200);
     }
     if (p === '/api/deployments' && m === 'GET') {
       const rows = await db.all('SELECT * FROM deployments ORDER BY time DESC LIMIT 50');
@@ -223,9 +262,9 @@ export function createApp(deps) {
       return out({
         paused: await isPaused(db), auditChain: await verifyAuditChain(db),
         rolePolicy: ROLE_POLICY, hostAllowlist: Object.fromEntries(Object.entries(ALLOWED_HOSTS).map(([k, v]) => [k, [...v]])),
-        decisionLimits: DECISION_LIMITS, budget: config.budget, auth: { operatorConfigured: Boolean(operatorToken) },
+        decisionLimits: DECISION_LIMITS, vaultLimits: vaultLimits(), budget: config.budget, auth: { operatorConfigured: Boolean(operatorToken) },
         audit: audits.map((a) => ({ ...a, detail: parse(a.detail, {}) })),
-        keyScopes: [{ key: 'OPERATOR_TOKEN', scope: 'all mutations', holder: 'human operator' }, { key: 'CRON_SECRET', scope: '/api/cron/tick only', holder: 'scheduler' }, { key: 'LLM provider key', scope: 'server-side completion calls only', holder: 'server secret' }, { key: 'wallet keys', scope: 'NONE: never held by this system', holder: 'human, in their own wallet' }],
+        keyScopes: [{ key: 'OPERATOR_TOKEN', scope: 'all mutations', holder: 'human operator' }, { key: 'CRON_SECRET', scope: '/api/cron/tick only', holder: 'scheduler' }, { key: 'LLM provider key', scope: 'server-side completion calls only', holder: 'server secret' }, { key: 'human wallet keys', scope: 'NONE: never held by this system', holder: 'human, in their own wallet' }, { key: 'AGENT_EVM_PRIVATE_KEY / AGENT_NEAR_PRIVATE_KEY / AGENT_KEYS_PATH file', scope: 'the AGENT testnet key only: the signer can sign nothing but vault draw/deploy to the configured vault, under a hard per-tx fee ceiling; the vault enforces the budget on-chain; Node runtime only, never on the Worker', holder: 'this server (disabled unless AUTONOMY_ENABLED=1)' }],
         runbook: 'docs/INCIDENT-RUNBOOK.md',
       });
     }
@@ -260,9 +299,16 @@ export function createApp(deps) {
       ?? (proxied ? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() : null)
       ?? req.headers.get('x-peer-ip') ?? 'local';
     try {
-      if (!url.pathname.startsWith('/api/')) return out({ error: 'not found' }, 404);
+      const wellKnown = url.pathname === WELL_KNOWN_PATH;
+      if (!wellKnown && !url.pathname.startsWith('/api/')) return out({ error: 'not found' }, 404);
       const write = req.method !== 'GET' && req.method !== 'HEAD';
       if (limited(ip, write ? 'write' : 'read')) return out({ error: 'rate limited' }, 429, { 'retry-after': '30' });
+      if (wellKnown) { // ERC-8004 registration file (DRAFT standard), only when AGENT_PUBLIC_URL is set. Nothing is registered or sent by this server.
+        const reg = (req.method === 'GET' || req.method === 'HEAD') ? agentRegistrationFile({ publicUrl: agentPublicUrl, keystore }) : null;
+        if (!reg) return out({ error: 'not found' }, 404);
+        const res = out(reg.file, 200, { 'x-erc8004-status': 'Draft', 'cache-control': 'public, max-age=60' });
+        return req.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
+      }
       const res = await route(req, url, ip);
       return req.method === 'HEAD' ? new Response(null, { status: res.status, headers: res.headers }) : res;
     } catch (e) {

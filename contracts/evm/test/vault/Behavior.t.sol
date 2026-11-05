@@ -514,6 +514,30 @@ contract VaultBehaviorTest is VaultBase {
         vault.deploy(id, salt, T1_INIT);
     }
 
+    /// @dev A template that deploys empty runtime code leaves an account with a nonce but no code: the second deploy at
+    ///      the same salt must be AddressTaken in BOTH the preview and the real call (not DeployFailed).
+    function test_deploy_emptyRuntimeTemplate_secondDeployIsAddressTaken_inPreviewAndCall() public {
+        _setDefaultMandate();
+        bytes32 id = _allow(EMPTY_RUNTIME_INIT);
+        bytes32 salt = bytes32(uint256(9));
+        assertEq(vault.previewDeploy(id, salt), bytes4(0));
+        address target = _deployAs(agent, EMPTY_RUNTIME_INIT, salt);
+        assertEq(target.code.length, 0, "fixture really deploys no code");
+        assertEq(vault.usage().deploys, 1);
+
+        assertEq(vault.previewDeploy(id, salt), IAgentVault.AddressTaken.selector, "preview");
+        bytes32 before = _fingerprint();
+        vm.prank(agent);
+        vm.expectRevert(IAgentVault.AddressTaken.selector);
+        vault.deploy(id, salt, EMPTY_RUNTIME_INIT);
+        assertEq(_fingerprint(), before);
+
+        // A different salt still works.
+        assertEq(vault.previewDeploy(id, bytes32(uint256(10))), bytes4(0));
+        _deployAs(agent, EMPTY_RUNTIME_INIT, bytes32(uint256(10)));
+        assertEq(vault.usage().deploys, 2);
+    }
+
     function test_deploy_failingConstructor_revertsWholeTx_countersUntouched() public {
         _setDefaultMandate();
         bytes32 id = _allow(REVERTING_INIT);

@@ -3,26 +3,36 @@ import { createServer } from 'node:http';
 import { gzipSync } from 'node:zlib';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
-import { config, operatorToken, ROOT } from './config.js';
+import { config, operatorToken, ROOT, autonomyEnabled } from './config.js';
 import { openDb, audit } from './db.js';
 import { createApp } from './app.js';
 import { registerSources, ingestAll } from './ingest.js';
 import { refreshOpportunities } from './scoring.js';
 import { pipelineTick } from './orchestrator/coordinator.js';
+import { loadKeystore } from './agent/keystore.js';
+import { autonomyTick } from './autonomy.js';
+import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.ico': 'image/x-icon', '.txt': 'text/plain' };
 const WEB_DIRS = [resolve(ROOT, 'web/dist'), resolve(ROOT, 'web/public')];
 
-export async function startServer({ dbPath = config.dbPath, port = config.port, host = config.host, scheduler = true } = {}) {
+/** Load the agent keystore WITHOUT creating keys (`npm run agent:init` does that). A bad/unsafe key file is reported (redacted) and means "no signing". */
+function tryLoadKeystore() {
+  try { const ks = loadKeystore({ create: false }); const v = ks.publicView(); return v.evm || v.near ? ks : null; } catch (e) { console.error('[agent] keystore not loaded:', String(e.message).replace(/\s+/g, ' ').slice(0, 200)); return null; }
+}
+
+export async function startServer({ dbPath = config.dbPath, port = config.port, host = config.host, scheduler = true, keystore, fetchImpl, autonomy = true, signerOpts } = {}) {
   const db = await openDb(config.databaseUrl ? { url: config.databaseUrl, authToken: config.databaseAuthToken } : { path: dbPath });
   await registerSources(db);
   const token = operatorToken();
-  const app = createApp({ db, operatorToken: token, schedulerMode: scheduler ? 'in-process' : 'disabled', schedulerNote: scheduler ? 'setInterval inside the server process; independent of any browser tab' : '' });
+  const ks = keystore === undefined ? tryLoadKeystore() : keystore;
+  const signingSupported = Boolean(ks);
+  const app = createApp({ db, operatorToken: token, keystore: ks, signingSupported, fetchImpl, schedulerMode: scheduler ? 'in-process' : 'disabled', schedulerNote: scheduler ? 'setInterval inside the server process; independent of any browser tab' : '' });
 
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
-      if (url.pathname.startsWith('/api/')) {
+      if (url.pathname.startsWith('/api/') || url.pathname === WELL_KNOWN_PATH) {
         const chunks = []; let size = 0;
         for await (const c of req) { size += c.length; if (size > 70_000) { res.writeHead(413).end(); return; } chunks.push(c); }
         const headers = { ...req.headers, 'x-peer-ip': req.socket.remoteAddress ?? 'local' }; // overwrites anything the client sent under this name
@@ -42,10 +52,19 @@ export async function startServer({ dbPath = config.dbPath, port = config.port, 
     if (ticking) return; ticking = true;
     try { const r = await pipelineTick(db, { trigger, ingest: ingestAll }); console.log(`[tick:${trigger}]`, r.ingest.map((i) => `${i.sourceId}=${i.status}${i.inserted !== undefined ? `(+${i.inserted})` : ''}`).join(' '), '| opps', r.opportunities, '| auto', r.auto.started ? `run ${r.auto.runId} ${r.auto.state}` : r.auto.reason); }
     catch (e) { console.error('[tick] failed', e.message); } finally { ticking = false; }
+    await runAutonomy(trigger);
   };
+  // Autonomy loop (OFF unless AUTONOMY_ENABLED=1): after every pipeline tick, and on its own faster cadence so a pending decision does not wait 15 minutes.
+  const runAutonomy = async (trigger) => {
+    if (!autonomy || !autonomyEnabled()) return;
+    try { const r = await autonomyTick(db, { keystore: ks, signingSupported, fetchImpl, signerOpts }); if (r.ran || r.skipped) console.log(`[autonomy:${trigger}]`, r.skipped ?? JSON.stringify(r.vaults ?? [])); }
+    catch (e) { console.error('[autonomy] failed', ks ? ks.redactText(e.message) : 'error'); }
+  };
+  let autonomyTimer = null;
+  if (scheduler && autonomy && autonomyEnabled()) { autonomyTimer = setInterval(() => runAutonomy('interval'), config.vault.autonomyIntervalMs); autonomyTimer.unref?.(); }
   if (scheduler) { setTimeout(() => tick('startup'), 500); timer = setInterval(() => tick('scheduler'), config.ingestIntervalMs); timer.unref?.(); }
   await audit(db, 'server', 'server.started', { port, scheduler });
-  return { server, db, token, tick, close: async () => { clearInterval(timer); server.close(); await db.close(); } };
+  return { server, db, token, tick, app, runAutonomy, close: async () => { clearInterval(timer); clearInterval(autonomyTimer); server.close(); await db.close(); } };
 }
 
 async function serveStatic(pathname, res, accept = '') {

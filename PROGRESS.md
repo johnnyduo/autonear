@@ -70,6 +70,25 @@ Status vocabulary: **tested** = automated test or scripted run passes now · **w
 | AI-assisted code reviews with every finding resolved or accepted | tested | `docs/audit/` (17 findings; regression tests) | Human audit before any non-test use |
 | Public repo, demo video, X post, official form | **blocked** | human-owned publication steps | |
 
+## Gate G: autonomous agent wallet ("Mandate Vault")
+
+An agent that holds its OWN testnet key and may only (1) draw gas and (2) deploy owner-allowlisted contract templates, inside a human-granted, revocable budget.
+Design, rules and shared conformance suite: [docs/agent-vault-spec.md](docs/agent-vault-spec.md). Testnet only; mainnet stays blocked in code. **No public-testnet transaction exists for any of this.**
+
+| Requirement | Status | Proof | Next |
+| --- | --- | --- | --- |
+| One state machine, two native contracts, one shared conformance file | tested | `contracts/vault-conformance.json` (13 scenarios) runs in Foundry, Rust and the JS model (`npm run contract:evm:vault:test`, `npm run contract:near-vault:test`, `node --test tests/vault-model.test.js`) | Run on testnet after the human deploys |
+| EVM `AgentVault.sol` | tested | 97 vault tests (fuzz, invariants, reentrancy, events), branch coverage 100% / line 96.4% (`forge coverage --ir-minimum`); `npm run contract:evm:vault:e2e`: 97 asserts on **local anvil** | Slither not installed; no independent audit |
+| NEAR `autonear-vault` | tested | 43 unit + conformance tests; **real nearcore sandbox** run (`contracts/near-vault/integration`, 4 tests): registry deployed through the vault, keyless sub-account, callback reversal on a failed deploy batch and on a failed draw | Not run on NEAR testnet; `near` CLI commands in the plan never executed |
+| Agent keys + signers (zero-dependency secp256k1/ed25519, keystore 0600, call limits) | tested | `tests/agent-crypto.test.js` (42): cross-checked with viem, nearcore-generated NEAR vectors, local anvil | secp256k1 is not constant-time (testnet keys only) |
+| NEAR signer accepted by a real node | tested (sandbox) | `npm run e2e:near-sandbox`: 69 asserts on a local nearcore sandbox, our own signer for `draw`/`deploy` | Not testnet |
+| Autonomy loop | tested (local anvil) | `tests/autonomy.test.js` + `tests/vault-service.test.js`: agent draws gas, deploys the registry through the vault, backend verifies and records; refusals ledgered for over budget, revoked, paused, wrong template/owner, kill switch, tampered state, expired, exhausted | Off by default (`AUTONOMY_ENABLED`); never on Workers/Vercel; NEAR path only against stubs + sandbox adapter tests |
+| Grant flow | tested (API) / working (UI on fixtures) | `grant_mandate` decision, exact phrase, server activates only when on-chain state equals the approved payload field by field | UI live path never run against a real backend |
+| ERC-8004 identity (optional) | tested (offline) | `tests/identity.test.js` (24, viem cross-checked); registry addresses taken from the official repo README, not confirmed on-chain by us | ERC is **Draft**; no registration tx is ever sent by this code |
+| Vault console (`#/vault`) | working | Lighthouse a11y 100, axe 0 violations on fixtures; fixture mode is explicit and cannot send | LCP varied 0.8-3.2 s between runs on the fixture page |
+| AI-assisted review of the vault | tested | Codex review 3: 4 findings (1 High, 2 Medium, 1 Low), all fixed with regression tests: docs/audit/README.md | Re-run after any change |
+| Independent audit | **none** | AI-assisted review only: see docs/audit/ | Human audit before any non-test use |
+
 ## Engines (honest)
 
 Pythia, MiroFish, Kronos: adapters report `not_installed` with a reason. None is invoked. No simulation output is used anywhere. Craft Anything was not used.
