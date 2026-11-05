@@ -1,0 +1,7 @@
+{
+  "_note": "Set repoUrl to the PUBLIC repo before the final render. While null the end card says 'repo link in the post'.",
+  "repoUrl": "https://github.com/johnnyduo/autonear",
+  "hashtags": "#NEARHackathon",
+  "mention": "@NEARProtocol",
+  "track": "AI Security & Defense \u00b7 Autonomous Business \u00b7 AI Swarms"
+}

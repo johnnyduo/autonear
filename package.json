@@ -1,0 +1,33 @@
+{
+  "name": "autonear",
+  "version": "0.1.0",
+  "description": "AutoNEAR protocol: evidence-to-product operating system for NEAR",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "ingest": "node src/cli.js ingest",
+    "run:pipeline": "node src/cli.js pipeline",
+    "bench": "node src/cli.js bench",
+    "test": "node --test tests/",
+    "check": "node scripts/check-syntax.mjs",
+    "verify": "npm run check && npm test && npm run contract:evm:test && npm run contract:near:test && npm --prefix web run build",
+    "attest": "node scripts/attest.mjs",
+    "web:install": "npm --prefix web ci",
+    "web:build": "npm --prefix web run build",
+    "d1:migrate:local": "npx wrangler d1 migrations apply autonear --local",
+    "cf:dev": "npx wrangler dev --local --test-scheduled",
+    "cf:deploy": "npm run web:build && npx wrangler deploy",
+    "contract:near:build": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" bash scripts/near-build.sh",
+    "contract:near:test": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" sh -c \"cd contracts/near-registry && cargo test --locked\"",
+    "contract:evm:build": "node scripts/evm-build.mjs",
+    "contract:evm:test": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" sh -c \"cd contracts/evm && forge test\"",
+    "contract:evm:e2e": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" bash contracts/evm/script/e2e-anvil.sh",
+    "e2e:local": "node scripts/e2e-local.mjs",
+    "contract:test": "npm run contract:near:test && npm run contract:evm:test"
+  }
+}

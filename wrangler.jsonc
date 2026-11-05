@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "autonear",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-20",
+  // process.env + node:crypto are used by shared code.
+  "compatibility_flags": ["nodejs_compat"],
+  // src/db.js dynamically imports node:sqlite (local dev) and @libsql/client (Vercel/Turso). Neither exists on Workers and the
+  // Worker always opens D1, so bundle a stub instead of failing the build.
+  "alias": { "@libsql/client": "./scripts/worker-stubs/unavailable.js", "node:sqlite": "./scripts/worker-stubs/unavailable.js" },
+  // "/__scheduled" is listed only so `wrangler dev --test-scheduled` can be triggered with curl; in production it falls through to the SPA.
+  "assets": { "directory": "./web/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/__scheduled"] },
+  // One cron, every 15 minutes (1 of the 5 Cron Triggers allowed per account on Free). Ingestion + scoring + recovery + auto-proposal run here with every tab closed.
+  // Workers Free allows only 10 ms CPU and 50 D1 queries per invocation: a full tick needs Workers Paid, or set INGEST_SOURCES_PER_TICK / INGEST_MAX_ITEMS (see docs/DEPLOY-CLOUDFLARE.md).
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "d1_databases": [
+    // Replace database_id after `npx wrangler d1 create autonear` (the id is not a secret). Local dev works with the placeholder.
+    { "binding": "DB", "database_name": "autonear", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+  ],
+  "observability": { "enabled": true }
+  // Secrets (never in this file): npx wrangler secret put OPERATOR_TOKEN | CRON_SECRET | ANTHROPIC_API_KEY | AI_GATEWAY_API_KEY | GITHUB_TOKEN
+}

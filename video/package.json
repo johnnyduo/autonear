@@ -1,0 +1,31 @@
+{
+  "name": "autonear-video",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Remotion hackathon demo video for AutoNEAR (separate from the app's dependencies)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "capture": "node --no-warnings scripts/capture.mjs",
+    "tts": "node scripts/tts.mjs",
+    "tts:scratch": "node scripts/tts.mjs --scratch",
+    "audio": "node scripts/audio.mjs",
+    "verify": "node scripts/verify.mjs && tsc --noEmit",
+    "stills": "node scripts/stills.mjs",
+    "render": "npm run verify && remotion render src/index.ts Main out/autonear-demo.mp4 --codec h264 --crf 16",
+    "build": "npm run capture && npm run tts && npm run audio && npm run render"
+  },
+  "dependencies": {
+    "@remotion/captions": "4.0.541",
+    "@remotion/cli": "4.0.541",
+    "@remotion/google-fonts": "4.0.541",
+    "@remotion/media": "4.0.541",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.541"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}

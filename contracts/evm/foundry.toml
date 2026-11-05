@@ -1,0 +1,78 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+
+# Pinned toolchain. The backend verifies a deployment by comparing eth_getCode
+# with dist/ProposalRegistry.json's deployedBytecode, so every setting that
+# changes bytecode is pinned and metadata is stripped.
+solc_version = "0.8.28"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
+deny = "never"
+
+bytecode_hash = "none"
+cbor_metadata = false
+
+remappings = [
+  "forge-std/=lib/forge-std/src/",
+]
+
+fs_permissions = [
+  # Golden vectors: written by script/EmitVectors.s.sol, re-checked by a unit test.
+  { access = "read-write", path = "./test-vectors.json" },
+  # Read-only: the no-external-calls test greps the contract source.
+  { access = "read", path = "./src" },
+  # Read-only: the runtime-code test compares against the build artifact.
+  { access = "read", path = "./out" },
+]
+
+[profile.default.fuzz]
+runs = 1_000
+max_test_rejects = 200_000
+seed = "0x1"
+
+[profile.default.invariant]
+runs = 512
+depth = 64
+fail_on_revert = false
+call_override = false
+shrink_run_limit = 5_000
+
+# Deep profile for pre-audit / nightly runs.
+[profile.deep.fuzz]
+runs = 50_000
+max_test_rejects = 1_000_000
+
+[profile.deep.invariant]
+runs = 4_096
+depth = 256
+shrink_run_limit = 50_000
+
+# Fast profile for tight local loops.
+[profile.lite.fuzz]
+runs = 64
+
+[profile.lite.invariant]
+runs = 16
+depth = 16
+
+[fmt]
+line_length = 110
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+number_underscore = "thousands"
+sort_imports = true
+
+[lint]
+# Expiry IS wall-clock by specification (30-day TTL, expiry in unix seconds); the
+# validator-skew the lint warns about (seconds) is irrelevant at that granularity.
+exclude_lints = ["block-timestamp"]

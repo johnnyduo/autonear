@@ -1,0 +1,18 @@
+node_modules/
+data/*.db
+data/*.db-*
+data/operator.token
+data/artifacts/
+.env
+contracts/**/target/
+*.log
+.DS_Store
+.wrangler/
+.dev.vars
+.dev.vars.*
+
+# agent signing keys: NEVER commit
+data/agent*
+data/*.key
+*.key
+.agent-keys/

@@ -1,0 +1,349 @@
+{
+  "mode": "scratch",
+  "model": "macos-say",
+  "voice": "Daniel",
+  "generatedAt": "2026-11-05T10:48:24.287Z",
+  "scenes": [
+    {
+      "id": "hook",
+      "hash": "2b0e4bd91cb7b987",
+      "file": "audio/hook.mp3",
+      "durationSec": 3.578095,
+      "spoken": "Would you let an AI agent touch your treasury? Neither would we.",
+      "display": "Would you let an AI agent touch your treasury? Neither would we.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 3.361973
+        },
+        "pauses": [
+          {
+            "start": 2.266,
+            "end": 2.488
+          }
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "hash": "2c6ceb8aea573d97",
+      "file": "audio/problem.mp3",
+      "durationSec": 9.148662,
+      "spoken": "Public posts show what builders need. They can also hide poisoned instructions. So our rule is simple: agents propose. Humans approve.",
+      "display": "Public posts show what builders need. They can also hide poisoned instructions. So our rule is simple: agents propose. Humans approve.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 8.931066
+        },
+        "pauses": [
+          {
+            "start": 2.111,
+            "end": 2.351
+          },
+          {
+            "start": 4.851,
+            "end": 5.102
+          },
+          {
+            "start": 6.433,
+            "end": 6.643
+          },
+          {
+            "start": 7.752,
+            "end": 8.026
+          }
+        ]
+      }
+    },
+    {
+      "id": "solution",
+      "hash": "fa3c3d58e6723ef5",
+      "file": "audio/solution.mp3",
+      "durationSec": 11.749297,
+      "spoken": "This is AutoNEAR. It collects evidence, scores every opportunity in the open, and prepares one allowed action: a testnet deployment with a spend cap of zero. A human must approve it.",
+      "display": "This is AutoNEAR. It collects evidence, scores every opportunity in the open, and prepares one allowed action: a testnet deployment with a spend cap of zero. A human must approve it.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 11.540499
+        },
+        "pauses": [
+          {
+            "start": 1.151,
+            "end": 1.386
+          },
+          {
+            "start": 2.702,
+            "end": 2.926
+          },
+          {
+            "start": 5.082,
+            "end": 5.287
+          },
+          {
+            "start": 7.054,
+            "end": 7.258
+          },
+          {
+            "start": 9.889,
+            "end": 10.112
+          }
+        ]
+      }
+    },
+    {
+      "id": "evidence",
+      "hash": "9a96532106b19373",
+      "file": "audio/evidence.mp3",
+      "durationSec": 16.477098,
+      "spoken": "Live snapshot: three hundred and six public records. Treasury tooling scores point seven zero, from ninety-four posts by fifty-eight authors. But only two demand sources. So AutoNEAR flags it: low confidence. It tells you when not to trust it.",
+      "display": "Live snapshot: 306 public records. Treasury tooling scores 0.70, from 94 posts by 58 authors. But only 2 demand sources. So AutoNEAR flags it: low confidence. It tells you when not to trust it.",
+      "tag": "LIVE SNAPSHOT",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 16.266395
+        },
+        "pauses": [
+          {
+            "start": 0.999,
+            "end": 1.231
+          },
+          {
+            "start": 3.487,
+            "end": 3.738
+          },
+          {
+            "start": 6.235,
+            "end": 6.453
+          },
+          {
+            "start": 9.129,
+            "end": 9.369
+          },
+          {
+            "start": 11.255,
+            "end": 11.503
+          },
+          {
+            "start": 13.03,
+            "end": 13.233
+          },
+          {
+            "start": 14.273,
+            "end": 14.509
+          }
+        ]
+      }
+    },
+    {
+      "id": "pipeline",
+      "hash": "b091e4e1c5948d2d",
+      "file": "audio/pipeline.mp3",
+      "durationSec": 11.552789,
+      "spoken": "Seven roles turn evidence into a brief. Code limits their tools and the run budget. Citations must point to evidence they were given. Suspected injection text is withheld from model prompts.",
+      "display": "7 roles turn evidence into a brief. Code limits their tools and the run budget. Citations must point to evidence they were given. Suspected injection text is withheld from model prompts.",
+      "tag": "RECORDED RUN · FIXTURE INPUTS",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 11.337415
+        },
+        "pauses": [
+          {
+            "start": 2.394,
+            "end": 2.704
+          },
+          {
+            "start": 4.801,
+            "end": 5.04
+          },
+          {
+            "start": 7.607,
+            "end": 7.85
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate",
+      "hash": "2bf784a28fe479d8",
+      "file": "audio/gate.mp3",
+      "durationSec": 12.541723,
+      "spoken": "Now the human gate. Wrong nonce: rejected. Changed payload: rejected. No named signer: rejected. Kill switch on: rejected. Only the exact confirmation phrase gets through.",
+      "display": "Now the human gate. Wrong nonce: rejected. Changed payload: rejected. No named signer: rejected. Kill switch on: rejected. Only the exact confirmation phrase gets through.",
+      "tag": "RECORDED RUN · FIXTURE INPUTS",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 12.334603
+        },
+        "pauses": [
+          {
+            "start": 1.127,
+            "end": 1.356
+          },
+          {
+            "start": 2.21,
+            "end": 2.423
+          },
+          {
+            "start": 3.067,
+            "end": 3.297
+          },
+          {
+            "start": 4.312,
+            "end": 4.518
+          },
+          {
+            "start": 5.161,
+            "end": 5.394
+          },
+          {
+            "start": 6.349,
+            "end": 6.548
+          },
+          {
+            "start": 7.194,
+            "end": 7.495
+          },
+          {
+            "start": 8.411,
+            "end": 8.624
+          },
+          {
+            "start": 9.265,
+            "end": 9.493
+          }
+        ]
+      }
+    },
+    {
+      "id": "verify",
+      "hash": "a4d7343ff79b9ca8",
+      "file": "audio/verify.mp3",
+      "durationSec": 14.353152,
+      "spoken": "Approval is not execution. You sign in your own wallet. AutoNEAR records a deployment only after the chain checks out: signer, account, and code hash. Wrong hash? Refused. Mocked RPC in this recording.",
+      "display": "Approval is not execution. You sign in your own wallet. AutoNEAR records a deployment only after the chain checks out: signer, account, and code hash. Wrong hash? Refused. Mocked RPC in this recording.",
+      "tag": "RECORDED RUN · MOCKED RPC",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 14.146485
+        },
+        "pauses": [
+          {
+            "start": 1.741,
+            "end": 1.975
+          },
+          {
+            "start": 3.418,
+            "end": 3.646
+          },
+          {
+            "start": 7.211,
+            "end": 7.431
+          },
+          {
+            "start": 7.93,
+            "end": 8.135
+          },
+          {
+            "start": 8.737,
+            "end": 8.938
+          },
+          {
+            "start": 9.948,
+            "end": 10.192
+          },
+          {
+            "start": 10.993,
+            "end": 11.229
+          },
+          {
+            "start": 11.948,
+            "end": 12.176
+          }
+        ]
+      }
+    },
+    {
+      "id": "proof",
+      "hash": "709f1bd7060d49c1",
+      "file": "audio/proof.mp3",
+      "durationSec": 12.263356,
+      "spoken": "Underneath: registries in Rust for NEAR and Solidity for EVM. eighty-four and one hundred and forty-four passing tests, with fuzzing and invariants. They record approvals. They don't move funds.",
+      "display": "Underneath: registries in Rust for NEAR and Solidity for EVM. 84 and 144 passing tests, with fuzzing and invariants. They record approvals. They don't move funds.",
+      "tag": "VERIFIED 2026-11-05",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 12.048141
+        },
+        "pauses": [
+          {
+            "start": 0.65,
+            "end": 0.887
+          },
+          {
+            "start": 7.098,
+            "end": 7.317
+          },
+          {
+            "start": 8.931,
+            "end": 9.177
+          },
+          {
+            "start": 10.492,
+            "end": 10.732
+          }
+        ]
+      }
+    },
+    {
+      "id": "close",
+      "hash": "cd19322dd6cec5cd",
+      "file": "audio/close.mp3",
+      "durationSec": 9.036281,
+      "spoken": "AutoNEAR. Evidence in. Human approves. Chain verifies. Clone it, run the tests, and tell us which approval rule you would add.",
+      "display": "AutoNEAR. Evidence in. Human approves. Chain verifies. Clone it, run the tests, and tell us which approval rule you would add.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 8.820045
+        },
+        "pauses": [
+          {
+            "start": 0.767,
+            "end": 0.99
+          },
+          {
+            "start": 1.77,
+            "end": 2.039
+          },
+          {
+            "start": 3.004,
+            "end": 3.238
+          },
+          {
+            "start": 4.426,
+            "end": 4.731
+          },
+          {
+            "start": 5.241,
+            "end": 5.452
+          },
+          {
+            "start": 6.461,
+            "end": 6.673
+          }
+        ]
+      }
+    }
+  ]
+}

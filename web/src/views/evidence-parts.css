@@ -1,0 +1,21 @@
+/* Shared evidence atoms + provenance drawer */
+.ep-src { display: inline-flex; align-items: center; gap: 8px; font: 500 11.5px/1 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--chalk-2); white-space: nowrap; }
+.ep-src i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.ep-rel { display: inline-grid; grid-template-columns: 56px auto; align-items: center; gap: 8px; }
+.ep-rel b { font-weight: 500; font-size: 12px; color: var(--chalk-2); }
+.ep-fresh { font: 500 12px var(--f-mono); color: var(--chalk-2); white-space: nowrap; }
+.ep-fresh.old { color: var(--chalk-3); }
+.ep-title { font: 400 clamp(24px, 3vw, 32px)/1.1 var(--f-display); letter-spacing: -.01em; overflow-wrap: anywhere; }
+.ep-link { display: inline-flex; gap: 6px; align-items: flex-start; overflow-wrap: anywhere; color: var(--mineral-hi); }
+.ep-link svg { flex: none; margin-top: 3px; }
+.ep-hash { overflow-wrap: anywhere; word-break: break-all; display: block; }
+.ep-reasons, .ep-rev, .ep-links { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.ep-reasons li { padding: 8px 12px; border-left: 2px solid var(--signal); background: var(--ink-0); color: var(--chalk-2); font-size: 13.5px; }
+.ep-rev li { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.ep-links li { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ep-excerpt { margin: 0; padding: 12px 16px; background: var(--ink-0); border: 1px solid var(--line); border-radius: var(--r); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--chalk-2); font-size: 13.5px; max-height: 260px; overflow: auto; }
+.ep-drawer h4 { margin: 0; }
+.ep-drawer .btn { min-height: 44px; }
+.ep-drawer .btn.sm { min-height: 44px; }
+@media (min-width: 761px) { .ep-drawer .btn.sm { min-height: 36px; } }
+.drawer:has(.ep-drawer) > .row .btn { min-width: 44px; min-height: 44px; }
