@@ -1,4 +1,5 @@
-// Vercel Function entry (Node.js runtime, Web-standard Request -> Response). Same app as the Node server and the Cloudflare Worker.
+// Vercel Function entry (Node.js runtime, Web-standard Request -> Response). vercel.json rewrites every /api/* here:
+// a '[...path]' file only matches ONE path segment on Vercel (nested routes such as /api/cron/tick would 404). Same app as the Node server and the Cloudflare Worker.
 // Storage: libSQL / Turso (DATABASE_URL + DATABASE_AUTH_TOKEN, or the TURSO_* names the Vercel Marketplace integration injects).
 // The autonomy loop (agent signing keys) NEVER runs here: signingSupported is false and no keystore is imported.
 import { waitUntil } from '@vercel/functions';

@@ -66,7 +66,7 @@ Scoring formula (published at `/api/scoring`): `score = Σ weight × component` 
 
 ## Deploy
 
-Primary target is Cloudflare Workers + D1: [docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md). **Caveat:** the Workers *Free* plan (10 ms CPU, 50 D1 queries per invocation) cannot complete a full ingestion tick; use Workers Paid, or run `npm start` on any small host. The read API and UI fit the free tier. Vercel + Turso is supported through `vercel.json` and `api/[...path].js` (build verified with Vercel's builder; live status in PROGRESS.md): [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). Contract deployment is always done by a human; see the Approval room and `scripts/near-deploy.sh` / `contracts/evm/script/Deploy.s.sol`.
+Primary target is Cloudflare Workers + D1: [docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md). **Caveat:** the Workers *Free* plan (10 ms CPU, 50 D1 queries per invocation) cannot complete a full ingestion tick; use Workers Paid, or run `npm start` on any small host. The read API and UI fit the free tier. Vercel + Turso is supported through `vercel.json` and `api/index.js` (build verified with Vercel's builder; live status in PROGRESS.md): [docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md). Contract deployment is always done by a human; see the Approval room and `scripts/near-deploy.sh` / `contracts/evm/script/Deploy.s.sol`.
 
 ## Security
 
