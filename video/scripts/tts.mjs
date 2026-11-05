@@ -33,7 +33,10 @@ const timingPath = resolve(root, 'src/data/timing.json');
 const prev = existsSync(timingPath) ? JSON.parse(readFileSync(timingPath, 'utf8')) : { scenes: [] };
 
 const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-const scratch = flag('scratch') || !key;
+// Vertex AI mode: --vertex=<gcp-project> (or GEMINI_VERTEX_PROJECT). Uses the caller's gcloud login (short-lived access token), no API key is created or stored.
+const vertexProject = arg('vertex') || process.env.GEMINI_VERTEX_PROJECT;
+const vertexLocation = arg('location') || process.env.GEMINI_VERTEX_LOCATION || 'us-central1';
+const scratch = flag('scratch') || (!key && !vertexProject);
 if (scratch && !flag('scratch')) console.warn('! No GEMINI_API_KEY found: producing SCRATCH narration with macOS `say`. Set the key and rerun for the real voice.');
 const voice = arg('voice') || process.env.GEMINI_TTS_VOICE || script.voice.name;
 const style = script.voice.style;
@@ -41,14 +44,20 @@ const API = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapi
 
 // Model candidates, best first. 3.x models speak the Interactions API (style is a separate field, text is a verbatim transcript);
 // 2.5 previews use generateContent. Override with --model= or GEMINI_TTS_MODEL. The first candidate that answers is used for every scene.
-const CANDIDATES = ['gemini-3.8-flash-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-pro-preview-tts', 'gemini-2.5-flash-preview-tts'];
+const CANDIDATES = vertexProject ? ['gemini-2.5-pro-preview-tts', 'gemini-2.5-flash-preview-tts'] : ['gemini-3.8-flash-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-pro-preview-tts', 'gemini-2.5-flash-preview-tts'];
 const isInteractions = (m) => /^gemini-3\./.test(m);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const styleShort = style.split('.')[0];
 
+function authHeaders() {
+  if (!vertexProject) return { 'content-type': 'application/json', 'x-goog-api-key': key };
+  const token = execFileSync('gcloud', ['auth', 'print-access-token'], { encoding: 'utf8' }).trim();
+  return { 'content-type': 'application/json', authorization: `Bearer ${token}`, 'x-goog-user-project': vertexProject };
+}
+
 async function post(url, body) {
   for (let attempt = 1; attempt <= 8; attempt++) {
-    const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) });
+    const r = await fetch(url, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
     if (r.ok) return r.json();
     const txt = (await r.text()).slice(0, 400);
     if (r.status === 429 && /per day/i.test(txt)) { const e = new Error(`HTTP 429 (daily quota): ${txt}`); e.status = 429; e.daily = true; throw e; }
@@ -78,8 +87,11 @@ async function synth(model, text, outBase) {
     writeFileSync(file, Buffer.from(audio.data, 'base64'));
     return { file, kind: 'wav' };
   }
-  const j = await post(`${API}/models/${model}:generateContent`, {
-    contents: [{ parts: [{ text: `Say in this style (do not read these instructions aloud): ${style}\n\n${text}` }] }],
+  const endpoint = vertexProject
+    ? `https://${vertexLocation}-aiplatform.googleapis.com/v1/projects/${vertexProject}/locations/${vertexLocation}/publishers/google/models/${model}:generateContent`
+    : `${API}/models/${model}:generateContent`;
+  const j = await post(endpoint, {
+    contents: [{ role: 'user', parts: [{ text: `Say in this style (do not read these instructions aloud): ${style}\n\n${text}` }] }],
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
   });
   const part = j.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
@@ -120,7 +132,7 @@ function analyze(mp3, dur) {
   return { speech, pauses: sil.filter((p) => p !== lead && p !== tail).map((p) => ({ start: +p.start.toFixed(3), end: +p.end.toFixed(3) })) };
 }
 
-const hashModel = scratch ? 'macos-say' : (arg('model') || process.env.GEMINI_TTS_MODEL || 'auto');
+const hashModel = scratch ? 'macos-say' : ((vertexProject ? 'vertex:' : '') + (arg('model') || process.env.GEMINI_TTS_MODEL || 'auto'));
 let model = hashModel;
 console.log(`mode=${scratch ? 'SCRATCH' : 'GEMINI'} model=${model} voice=${scratch ? 'Daniel' : voice}`);
 
