@@ -1,7 +1,10 @@
 out/
 cache/
 broadcast/
-dist/
+dist/*
+# tracked on purpose: the backend (Vercel/Workers bundles) imports these; CI fails if they are stale
+!dist/AgentVault.json
+!dist/AgentVault.abi.json
 lcov.info
 .env
 .env.*
