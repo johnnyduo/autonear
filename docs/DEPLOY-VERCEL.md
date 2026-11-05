@@ -8,7 +8,7 @@ what has actually been observed). Cloudflare Workers + D1 ([DEPLOY-CLOUDFLARE.md
 * `vercel.json`: `framework: null`, `installCommand` (root deps + `web/` deps), `buildCommand` (`vite build` inside `web/`),
   `outputDirectory: web/dist`, a daily cron on `/api/cron/tick`, security headers (same CSP as the Node server), `maxDuration: 60`
   for the function, and the NEAR wasm files included in the bundle.
-* `api/[...path].js`: Vercel Function (Node.js runtime) exposing the same Web-standard handler (`createApp`) as the Node server and the
+* `api/index.js`: Vercel Function (Node.js runtime) exposing the same Web-standard handler (`createApp`) as the Node server and the
   Cloudflare Worker. Storage is libSQL/Turso via `DATABASE_URL` + `DATABASE_AUTH_TOKEN` (or the `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` names that
   the Vercel Marketplace integration injects). Without a database URL the API answers `503 database not configured` with a hint.
 * Dependencies for this path: `@libsql/client`, `@vercel/functions` (regular `dependencies`; the Node server and the Worker do not use them).
