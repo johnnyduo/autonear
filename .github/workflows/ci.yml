@@ -90,4 +90,4 @@ jobs:
       - run: forge fmt --check
       - run: forge test
       - name: tracked AgentVault artifacts must not be stale
-        run: node scripts/evm-vault-build.mjs && git diff --exit-code -- contracts/evm/dist
+        run: node scripts/evm-build.mjs && node scripts/evm-vault-build.mjs && git diff --exit-code -- contracts/evm/dist

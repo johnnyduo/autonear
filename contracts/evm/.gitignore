@@ -5,6 +5,7 @@ dist/*
 # tracked on purpose: the backend (Vercel/Workers bundles) imports these; CI fails if they are stale
 !dist/AgentVault.json
 !dist/AgentVault.abi.json
+!dist/ProposalRegistry.json
 lcov.info
 .env
 .env.*

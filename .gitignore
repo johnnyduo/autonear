@@ -88,6 +88,7 @@ contracts/evm/broadcast/
 contracts/evm/dist/*
 !contracts/evm/dist/AgentVault.json
 !contracts/evm/dist/AgentVault.abi.json
+!contracts/evm/dist/ProposalRegistry.json
 # Reproducible NEAR wasm builds ARE tracked (hashes are documented and tests read them);
 # everything else generated beside them is not.
 contracts/near-registry/dist/*
