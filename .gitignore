@@ -168,3 +168,9 @@ Desktop.ini
 .codex/
 CLAUDE.local.md
 *.local.md
+
+# Lockfiles ARE tracked (reproducible builds, `cargo --locked`, forge). A global *.lock rule on a dev machine must not hide them.
+!*.lock
+!Cargo.lock
+!**/Cargo.lock
+!foundry.lock

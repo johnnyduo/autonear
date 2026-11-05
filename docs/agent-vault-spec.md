@@ -72,6 +72,10 @@ Agent ops, checked in this order: `NoMandate` (no mandate exists, for any caller
 Views: `config()`, `mandate()`, `usage()`, `template(id)`, `templates(from,limit)`, `available()`, `period_state(now)`, `preview_draw(amount)` and `preview_deploy(template, name_or_salt)` returning the error code the call would hit (empty = ok), so the backend and UI never guess. Previews assume the caller is the bound agent and the current time; they never mutate.
 Events: every mutation (EVM indexed events; NEAR NEP-297 `{"standard":"autonear_vault","version":"1.0.0",...}`).
 
+NEAR sub-account `name`: 1..=32 chars of `a-z 0-9 - _`, separators only between alphanumerics, no dots; else `BadName`.
+Template `label` > 64 bytes, or NEAR `init_args` > 1 KiB => `BadTemplate`. The conformance state key for funds sent out is `received: {role: n}` (a role that never received reads 0).
+Check order inside `deploy`: TemplateNotAllowed, CodeMismatch, DeployLimit, PeriodCap, TotalCap, InsufficientBalance, AddressTaken, BadName.
+
 ## Error codes (identical across all three implementations)
 `Unauthorized Paused NoMandate MandateInactive BadMandate BadAmount PerDrawCap PeriodCap TotalCap InsufficientBalance DeployLimit TemplateNotAllowed CodeMismatch AddressTaken BadName BadTemplate BadOwner`
 EVM: custom errors with exactly these names. NEAR: panic message starting `E_<Code>` (e.g. `E_PerDrawCap: ...`). JS model: `VaultError.code`.
@@ -86,6 +90,7 @@ EVM: custom errors with exactly these names. NEAR: panic message starting `E_<Co
 `contracts/vault-conformance.json`: ordered scenarios. Each implementation ships a harness that executes every step and asserts
 `expect` (`"ok"` or `{"err":"Code"}`) and optional `state` (a subset of: `available`, `total_spent`, `period_spent`, `deploys`, `epoch`, `paused`, `revoked`, `agent_received`).
 Abstract names: roles `owner|agent|other|newOwner`; templates `t1..tN` are mapped by the harness to real artifacts (EVM: tiny initcode fixtures; NEAR: tiny wasm fixtures; deposit comes from the scenario); `salt`/`name` strings are mapped to bytes32 / valid account names.
+NEAR harness: abstract balance units are scaled (1 unit = 1e21 yocto) and the mocked account balance is `abstract + storage_cost + 1 NEAR reserve`, so `available` equals the abstract number. Scenarios tagged `"only":"near"|"evm"` run on that chain only.
 Time `t` is absolute seconds, set before each step (EVM `vm.warp`; NEAR test context; model: argument).
 A scenario passing on one chain but not another is a bug in the chain implementation, never an excuse to edit the scenario (change the spec first, then all three).
 
@@ -96,3 +101,39 @@ executed by the agent only under a verified, active mandate (see PROGRESS.md for
 `GET /api/vault` (per chain: address, on-chain mandate, usage, available, templates, ledger, loop state, last error), `GET /api/vault/ledger`,
 `POST /api/vault/loop/{pause,resume}`, `POST /api/vault/mandates/propose` (creates a pending `grant_mandate` decision),
 `POST /api/vault/attach` (records vault address after verifying code + config on-chain), `GET /.well-known/agent-registration.json`.
+
+---
+
+# Phase 2: backend service, autonomy loop, API, UI (binding interface for the agents building it)
+
+## Chain adapter interface (`src/vault/evm.js`, `src/vault/near.js`; same shape, selected by `findNetwork(chainId).protocol`)
+```js
+export const adapter = {
+  chain: 'evm' | 'near',
+  unit: { symbol: 'ETH'|'NEAR', base: 'wei'|'yoctoNEAR', decimals: 18|24 },
+  // read-only, via src/chains/common.js jsonRpc, fetchImpl injectable
+  async readState({ net, vault, now }),   // -> { config:{owner,pendingOwner,paused,networkId,epoch}, mandate|null, usage:{totalSpent,periodSpent,deploys,periodIndex}, available, templates:[{id,label,deposit}], agentBalance, blockTime }
+  async verifyVaultCode({ net, vault, attested }), // -> { ok, checks:[{name,ok,detail}] }  runtime code / code hash == attested AgentVault build
+  expectedTemplate({ manifest, payload, vault }),   // -> { templateId, code(Uint8Array), label, deposit, initMaterial } computed LOCALLY from the attested registry artifact + approved decision payload
+  buildCall(kind /* 'draw'|'deploy' */, { vault, amount, template, code, nameOrSalt }), // -> callSpec for src/agent signer { method, target, args }
+  async verifyDeploy({ net, txHash, vault, agent, decision, manifest, expected }), // -> { ok, account, checks }  receipt-level proof the VAULT deployed exactly the attested code at the right place with the approved owner/proposer
+  explorerTx(net, txHash), explorerAddress(net, addr),
+};
+```
+## Schema v3 (new tables only; `SCHEMA_V3` in src/db.js + generated `migrations/0003_vault.sql`; never alter existing tables)
+`vaults(id, chain_id, address, owner, agent, attested_ref, status, mandate_decision_id, created_at, last_state TEXT, last_read_at)`;
+`vault_ledger(id INTEGER PK, vault_id, time, kind, decision_id, tx_hash, amount, status, detail, prev_hash UNIQUE, hash)` (hash-chained like `audit`);
+`mandate_runs(decision_id PK, vault_id, epoch, tx_hash, status, created_at)` (one agent execution per decision).
+## Decisions
+New action `grant_mandate` (testnet only, human approval flow identical to `deploy_testnet`: nonce, payloadHash, typed phrase, bound signer = the human owner). Payload:
+`{ kind:'grant_mandate', vault:{chainId,address,owner}, agent:{address|account}, mandate:{expiresAt,perDrawCap,periodSecs,periodCap,totalCap,maxDeploys}, templates:[{artifactHash,templateId,label,deposit,initMaterial}], fund:{amount}, loop:{maxPerDay} }`.
+`DECISION_LIMITS` gets a per-action spend ceiling (grant_mandate: total cap <= env `VAULT_MAX_TOTAL_CAP`, hard default 0.5 ETH-testnet / 20 NEAR, never above a compiled-in maximum) — checked in code, not by prompt.
+Approval of a `grant_mandate` is NOT activation: the human then signs the on-chain `setMandate/allowTemplate/deposit` (or NEAR CLI equivalents); the server activates the loop for that vault ONLY after `readState` equals the approved payload field by field (`verifyMandate`).
+## Autonomy loop (`src/autonomy.js`; Node runtime only, called from the scheduler tick and `npm run agent:loop`)
+Per tick, for each active vault: (1) kill switch / loop paused / mainnet => stop. (2) `readState` + `verifyVaultCode`; the JS `VaultModel` is rebuilt from chain state and its `preview_*` must equal the chain's `preview_*`, else anomaly => loop `blocked` (operator must resume). (3) Select pending `deploy_testnet` decisions for this chain whose attested artifact maps to an on-chain allowlisted template (templateId recomputed locally via `expectedTemplate`; mismatch => leave the decision for a human, never auto-approve), not expired, `bound_signer` unset, under `loop.maxPerDay`, one deploy in flight at most. (4) `approveUnderMandate(db, id, {vault})`: re-runs every `approveDecision` check except the human-only ones, sets approver `mandate:<vaultId>:<epoch>`, bound_signer = vault address, audits it, inserts `mandate_runs`. (5) If the agent balance < 3x estimated fee: `draw` the minimum needed (model + chain preview ok) and wait for the receipt. (6) `deploy` via the signer with `limits`; wait for receipt/finality. (7) `recordDeployment` through the vault path: `adapter.verifyDeploy`, then the same atomic claim as today. (8) Every step appends to `vault_ledger`. Any failed check, RPC error, or mismatch refuses, ledgers `refused`, and (for integrity mismatches) sets loop `blocked`.
+The loop never: changes config, requests a larger budget, touches mainnet, runs when paused, runs on the Worker runtime (`signingSupported:false`), or logs key material.
+## HTTP API (reads public; mutations need operator token; amounts are decimal strings in base units)
+- `GET /api/vault` -> `{ enabled, signingSupported, loop:{state:'running'|'paused'|'blocked'|'idle', lastTickAt, lastError, usedToday, maxPerDay}, agent:{evm:{address}|null, near:{account,publicKey}|null}, vaults:[{ id, chainId, network, address, owner, paused, codeOk, mandate:{agent,expiresAt,perDrawCap,periodSecs,periodCap,totalCap,maxDeploys,revoked,epoch}|null, usage:{totalSpent,periodSpent,deploys,periodResetsAt}, budget:{maxDraw,remainingPeriod,remainingTotal,remainingDeploys,blocked}, available, agentBalance, unit:{symbol,base,decimals}, templates:[{id,label,deposit,artifactHash|null,matches}], readAt, readError|null, mandateDecisionId|null }], health:[{name,ok,detail}] }`
+- `GET /api/vault/ledger?limit=` -> `{ items:[{id,time,vaultId,kind:'draw'|'deploy'|'refused'|'anomaly'|'activate'|'loop',decisionId,txHash,explorerUrl,amount,status:'confirmed'|'failed'|'refused',detail,hash,prevHash}], chainOk }`
+- `POST /api/vault/loop/pause|resume`; `POST /api/vault/mandates/propose` (creates the pending `grant_mandate` decision, returns it); `POST /api/vault/attach` ({chainId,address}: verifies code + config on-chain, stores the vault); `GET /api/vault/plan?decisionId=` -> `{ steps:[{who:'human'|'agent'|'server', title, note, tx?:{to,data,value,chainId}, cli?:string}] }` (exact calldata/CLI for the human to sign; EVM calldata built with the ABI from contracts/evm/dist/AgentVault.json); `GET /.well-known/agent-registration.json` (ERC-8004 registration file from src/identity, only when `AGENT_PUBLIC_URL` is set).
+- `GET /api/status` gains `vault:{loop, vaults:n, activeMandates:n}`.

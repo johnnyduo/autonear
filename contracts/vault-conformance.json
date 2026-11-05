@@ -1,0 +1,1906 @@
+{
+ "version": 1,
+ "note": "Shared by EVM tests, NEAR tests and src/vault-model.js. See docs/agent-vault-spec.md. Do not edit to make an implementation pass.",
+ "roles": [
+  "owner",
+  "agent",
+  "other",
+  "newOwner"
+ ],
+ "errors": [
+  "Unauthorized",
+  "Paused",
+  "NoMandate",
+  "MandateInactive",
+  "BadMandate",
+  "BadAmount",
+  "PerDrawCap",
+  "PeriodCap",
+  "TotalCap",
+  "InsufficientBalance",
+  "DeployLimit",
+  "TemplateNotAllowed",
+  "CodeMismatch",
+  "AddressTaken",
+  "BadName",
+  "BadTemplate",
+  "BadOwner"
+ ],
+ "scenarios": [
+  {
+   "name": "draw_budget_rolling_periods",
+   "description": "per-draw, per-period and total caps; period rolls over at start+k*period_secs",
+   "setup": {
+    "balance": 1000,
+    "templates": [
+     "t1",
+     "t2"
+    ]
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 1,
+      "available": 1000
+     }
+    },
+    {
+     "t": 1001,
+     "as": "agent",
+     "op": "preview_draw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 900,
+      "total_spent": 100,
+      "period_spent": 100,
+      "received": {
+       "agent": 100
+      }
+     }
+    },
+    {
+     "t": 1002,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 800,
+      "total_spent": 200,
+      "period_spent": 200
+     }
+    },
+    {
+     "t": 1003,
+     "as": "agent",
+     "op": "preview_draw",
+     "args": {
+      "amount": 51
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1003,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 51
+     },
+     "expect": {
+      "err": "PeriodCap"
+     },
+     "state": {
+      "total_spent": 200
+     }
+    },
+    {
+     "t": 1004,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 50
+     },
+     "expect": "ok",
+     "state": {
+      "available": 750,
+      "total_spent": 250,
+      "period_spent": 250
+     }
+    },
+    {
+     "t": 1005,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1600,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 650,
+      "total_spent": 350,
+      "period_spent": 100
+     }
+    },
+    {
+     "t": 1601,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 100
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 1602,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 50
+     },
+     "expect": "ok",
+     "state": {
+      "available": 600,
+      "total_spent": 400,
+      "period_spent": 150,
+      "received": {
+       "agent": 400
+      }
+     }
+    },
+    {
+     "t": 1603,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    }
+   ]
+  },
+  {
+   "name": "period_boundaries_exact",
+   "description": "period index = floor((now-start)/period_secs); boundary second belongs to the new period",
+   "setup": {
+    "balance": 5000,
+    "templates": []
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 9000,
+      "per_draw_cap": 250,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 1000,
+      "max_deploys": 0
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1599,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 250
+     },
+     "expect": "ok",
+     "state": {
+      "period_spent": 250,
+      "total_spent": 250
+     }
+    },
+    {
+     "t": 1599,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1600,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 250
+     },
+     "expect": "ok",
+     "state": {
+      "period_spent": 250,
+      "total_spent": 500
+     }
+    },
+    {
+     "t": 2200,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 250
+     },
+     "expect": "ok",
+     "state": {
+      "period_spent": 250,
+      "total_spent": 750
+     }
+    },
+    {
+     "t": 2800,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 250
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 1000,
+      "available": 4000
+     }
+    },
+    {
+     "t": 3400,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    }
+   ]
+  },
+  {
+   "name": "draw_input_and_caller_checks",
+   "description": "zero amount, over per-draw cap, wrong callers, insufficient balance",
+   "setup": {
+    "balance": 50,
+    "templates": []
+   },
+   "steps": [
+    {
+     "t": 10,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 10,
+     "as": "other",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 10,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 1000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 11,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 11,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 101
+     },
+     "expect": {
+      "err": "PerDrawCap"
+     }
+    },
+    {
+     "t": 11,
+     "as": "owner",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 11,
+     "as": "other",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 11,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 60
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     },
+     "state": {
+      "available": 50,
+      "total_spent": 0
+     }
+    },
+    {
+     "t": 12,
+     "as": "other",
+     "op": "deposit",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 150
+     }
+    },
+    {
+     "t": 13,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 60
+     },
+     "expect": "ok",
+     "state": {
+      "available": 90,
+      "received": {
+       "agent": 60
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "expiry_revoke_replace",
+   "description": "expiry is exclusive; revoke is idempotent; set_mandate replaces, resets usage and bumps epoch",
+   "setup": {
+    "balance": 1000,
+    "templates": []
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 2000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 1000,
+      "total_cap": 1000,
+      "max_deploys": 0
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 1
+     }
+    },
+    {
+     "t": 1999,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 10
+     }
+    },
+    {
+     "t": 2000,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 10
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 2000,
+     "as": "agent",
+     "op": "preview_draw",
+     "args": {
+      "amount": 10
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 2001,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 3000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 1000,
+      "total_cap": 1000,
+      "max_deploys": 0
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2,
+      "total_spent": 0
+     }
+    },
+    {
+     "t": 2002,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 20
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 20
+     }
+    },
+    {
+     "t": 2003,
+     "as": "owner",
+     "op": "revoke",
+     "args": {},
+     "expect": "ok",
+     "state": {
+      "revoked": true
+     }
+    },
+    {
+     "t": 2004,
+     "as": "owner",
+     "op": "revoke",
+     "args": {},
+     "expect": "ok",
+     "state": {
+      "revoked": true
+     }
+    },
+    {
+     "t": 2004,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 2005,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 4000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 1000,
+      "total_cap": 1000,
+      "max_deploys": 0
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 3,
+      "revoked": false,
+      "total_spent": 0
+     }
+    },
+    {
+     "t": 2006,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 5
+     }
+    },
+    {
+     "t": 2007,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "other",
+      "expires_at": 4000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 1000,
+      "total_cap": 1000,
+      "max_deploys": 0
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 4
+     }
+    },
+    {
+     "t": 2008,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 5
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 2008,
+     "as": "other",
+     "op": "draw",
+     "args": {
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 5,
+      "received": {
+       "agent": 35,
+       "other": 5
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "revoke_without_mandate_and_auth",
+   "description": "revoke needs a mandate; every owner op rejects non-owners",
+   "setup": {
+    "balance": 100,
+    "templates": [
+     "t1"
+    ]
+   },
+   "steps": [
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "revoke",
+     "args": {},
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 1,
+     "as": "other",
+     "op": "revoke",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1,
+     "as": "agent",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 100,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1,
+     "as": "other",
+     "op": "pause",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1,
+     "as": "other",
+     "op": "unpause",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1,
+     "as": "other",
+     "op": "allow_template",
+     "args": {
+      "template": "t1",
+      "label": "x",
+      "deposit": 0
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1,
+     "as": "other",
+     "op": "disallow_template",
+     "args": {
+      "template": "t1"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1,
+     "as": "other",
+     "op": "withdraw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1,
+     "as": "other",
+     "op": "transfer_ownership",
+     "args": {
+      "to": "newOwner"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    }
+   ]
+  },
+  {
+   "name": "set_mandate_validation",
+   "description": "every bound of set_mandate, including exact edges",
+   "setup": {
+    "balance": 100,
+    "templates": []
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 1000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 2593001,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 0,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 251,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 401,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 59,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 2592001,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 1001
+     },
+     "expect": {
+      "err": "BadMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 2593000,
+      "per_draw_cap": 100,
+      "period_secs": 60,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 0
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 1
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 1001,
+      "per_draw_cap": 250,
+      "period_secs": 2592000,
+      "period_cap": 250,
+      "total_cap": 250,
+      "max_deploys": 1000
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2
+     }
+    }
+   ]
+  },
+  {
+   "name": "pause_blocks_agent_only",
+   "description": "pause stops the agent, never the owner; unauthorized callers learn nothing about pause state",
+   "setup": {
+    "balance": 500,
+    "templates": [
+     "t1"
+    ]
+   },
+   "steps": [
+    {
+     "t": 100,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 1000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 300,
+      "total_cap": 300,
+      "max_deploys": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 101,
+     "as": "other",
+     "op": "pause",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 101,
+     "as": "owner",
+     "op": "pause",
+     "args": {},
+     "expect": "ok",
+     "state": {
+      "paused": true
+     }
+    },
+    {
+     "t": 102,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 10
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 102,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "x"
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 102,
+     "as": "other",
+     "op": "draw",
+     "args": {
+      "amount": 10
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 103,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 1000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 300,
+      "total_cap": 300,
+      "max_deploys": 1
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2,
+      "paused": true
+     }
+    },
+    {
+     "t": 104,
+     "as": "owner",
+     "op": "unpause",
+     "args": {},
+     "expect": "ok",
+     "state": {
+      "paused": false
+     }
+    },
+    {
+     "t": 105,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 400
+     }
+    },
+    {
+     "t": 106,
+     "as": "owner",
+     "op": "pause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 107,
+     "as": "owner",
+     "op": "withdraw",
+     "args": {
+      "amount": 50
+     },
+     "expect": "ok",
+     "state": {
+      "available": 350,
+      "received": {
+       "owner": 50
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "withdraw_owner_only_always_available",
+   "description": "owner can pull funds in any state; funds only ever go to the owner",
+   "setup": {
+    "balance": 300,
+    "templates": []
+   },
+   "steps": [
+    {
+     "t": 10,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 20,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 11,
+     "as": "owner",
+     "op": "withdraw",
+     "args": {
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 11,
+     "as": "owner",
+     "op": "withdraw",
+     "args": {
+      "amount": 301
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     }
+    },
+    {
+     "t": 11,
+     "as": "agent",
+     "op": "withdraw",
+     "args": {
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 12,
+     "as": "owner",
+     "op": "withdraw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 200,
+      "received": {
+       "owner": 100
+      }
+     }
+    },
+    {
+     "t": 30,
+     "as": "owner",
+     "op": "withdraw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 100,
+      "received": {
+       "owner": 200
+      }
+     }
+    },
+    {
+     "t": 31,
+     "as": "owner",
+     "op": "revoke",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 32,
+     "as": "owner",
+     "op": "withdraw",
+     "args": {
+      "amount": 100
+     },
+     "expect": "ok",
+     "state": {
+      "available": 0,
+      "received": {
+       "owner": 300
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "template_gate_and_deploy_limits",
+   "description": "only owner-allowlisted exact code; limit; address reuse; disallow",
+   "setup": {
+    "balance": 1000,
+    "templates": [
+     "t1",
+     "t2"
+    ]
+   },
+   "steps": [
+    {
+     "t": 100,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 9000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 101,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "a"
+     },
+     "expect": {
+      "err": "TemplateNotAllowed"
+     }
+    },
+    {
+     "t": 101,
+     "as": "owner",
+     "op": "allow_template",
+     "args": {
+      "template": "t1",
+      "label": "registry-v1",
+      "deposit": 0
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 102,
+     "as": "agent",
+     "op": "preview_deploy",
+     "args": {
+      "template": "t1",
+      "name": "a"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 102,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "a"
+     },
+     "expect": "ok",
+     "state": {
+      "deploys": 1,
+      "total_spent": 0
+     }
+    },
+    {
+     "t": 103,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "a"
+     },
+     "expect": {
+      "err": "AddressTaken"
+     },
+     "state": {
+      "deploys": 1
+     }
+    },
+    {
+     "t": 104,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "b",
+      "code": "t2"
+     },
+     "expect": {
+      "err": "CodeMismatch"
+     },
+     "state": {
+      "deploys": 1
+     }
+    },
+    {
+     "t": 105,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t2",
+      "name": "b"
+     },
+     "expect": {
+      "err": "TemplateNotAllowed"
+     }
+    },
+    {
+     "t": 106,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "b"
+     },
+     "expect": "ok",
+     "state": {
+      "deploys": 2
+     }
+    },
+    {
+     "t": 107,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "c"
+     },
+     "expect": {
+      "err": "DeployLimit"
+     },
+     "state": {
+      "deploys": 2
+     }
+    },
+    {
+     "t": 108,
+     "as": "agent",
+     "op": "preview_deploy",
+     "args": {
+      "template": "t1",
+      "name": "c"
+     },
+     "expect": {
+      "err": "DeployLimit"
+     }
+    },
+    {
+     "t": 109,
+     "as": "owner",
+     "op": "disallow_template",
+     "args": {
+      "template": "t1"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 110,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "d"
+     },
+     "expect": {
+      "err": "TemplateNotAllowed"
+     }
+    },
+    {
+     "t": 111,
+     "as": "owner",
+     "op": "disallow_template",
+     "args": {
+      "template": "t1"
+     },
+     "expect": {
+      "err": "TemplateNotAllowed"
+     }
+    },
+    {
+     "t": 112,
+     "as": "other",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "e"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 113,
+     "as": "owner",
+     "op": "revoke",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 114,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "f"
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 115,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 9000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 0
+     },
+     "expect": "ok",
+     "state": {
+      "deploys": 0,
+      "epoch": 2
+     }
+    },
+    {
+     "t": 116,
+     "as": "owner",
+     "op": "allow_template",
+     "args": {
+      "template": "t1",
+      "label": "registry-v1",
+      "deposit": 0
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 117,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "g"
+     },
+     "expect": {
+      "err": "DeployLimit"
+     }
+    }
+   ]
+  },
+  {
+   "name": "evm_template_deposit_must_be_zero",
+   "description": "EVM deployments forward no value",
+   "only": "evm",
+   "setup": {
+    "balance": 10,
+    "templates": [
+     "t1"
+    ]
+   },
+   "steps": [
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "allow_template",
+     "args": {
+      "template": "t1",
+      "label": "x",
+      "deposit": 5
+     },
+     "expect": {
+      "err": "BadTemplate"
+     }
+    },
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "allow_template",
+     "args": {
+      "template": "t1",
+      "label": "x",
+      "deposit": 0
+     },
+     "expect": "ok"
+    }
+   ]
+  },
+  {
+   "name": "ownership_two_step",
+   "description": "pending owner has no powers until acceptance; old owner loses them on acceptance",
+   "setup": {
+    "balance": 100,
+    "templates": []
+   },
+   "steps": [
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "transfer_ownership",
+     "args": {
+      "to": ""
+     },
+     "expect": {
+      "err": "BadOwner"
+     }
+    },
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "transfer_ownership",
+     "args": {
+      "to": "owner"
+     },
+     "expect": {
+      "err": "BadOwner"
+     }
+    },
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "transfer_ownership",
+     "args": {
+      "to": "newOwner"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2,
+     "as": "newOwner",
+     "op": "pause",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 2,
+     "as": "other",
+     "op": "accept_ownership",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 2,
+     "as": "owner",
+     "op": "accept_ownership",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 3,
+     "as": "newOwner",
+     "op": "accept_ownership",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 4,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 100,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 4,
+     "as": "newOwner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 100,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5,
+     "as": "newOwner",
+     "op": "withdraw",
+     "args": {
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "received": {
+       "newOwner": 10,
+       "owner": 0
+      }
+     }
+    },
+    {
+     "t": 6,
+     "as": "newOwner",
+     "op": "accept_ownership",
+     "args": {},
+     "expect": {
+      "err": "Unauthorized"
+     }
+    }
+   ]
+  },
+  {
+   "name": "near_deposit_budget",
+   "description": "NEAR: a deploy spends its template deposit from the same budget; per_draw_cap does not apply to deposits",
+   "only": "near",
+   "setup": {
+    "balance": 1000,
+    "templates": [
+     "t1",
+     "t2"
+    ]
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 9000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 150,
+      "total_cap": 400,
+      "max_deploys": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_template",
+     "args": {
+      "template": "t1",
+      "label": "small",
+      "deposit": 60
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_template",
+     "args": {
+      "template": "t2",
+      "label": "big",
+      "deposit": 120
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "a"
+     },
+     "expect": "ok",
+     "state": {
+      "deploys": 1,
+      "total_spent": 60,
+      "period_spent": 60,
+      "available": 940
+     }
+    },
+    {
+     "t": 1003,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "b"
+     },
+     "expect": "ok",
+     "state": {
+      "deploys": 2,
+      "total_spent": 120,
+      "period_spent": 120
+     }
+    },
+    {
+     "t": 1004,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "c"
+     },
+     "expect": {
+      "err": "PeriodCap"
+     },
+     "state": {
+      "deploys": 2
+     }
+    },
+    {
+     "t": 1005,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 30
+     },
+     "expect": "ok",
+     "state": {
+      "period_spent": 150,
+      "total_spent": 150
+     }
+    },
+    {
+     "t": 1600,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t2",
+      "name": "big1"
+     },
+     "expect": "ok",
+     "state": {
+      "deploys": 3,
+      "total_spent": 270,
+      "period_spent": 120
+     }
+    },
+    {
+     "t": 1601,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "c"
+     },
+     "expect": {
+      "err": "PeriodCap"
+     },
+     "state": {
+      "deploys": 3
+     }
+    },
+    {
+     "t": 2200,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t2",
+      "name": "big2"
+     },
+     "expect": "ok",
+     "state": {
+      "deploys": 4,
+      "total_spent": 390,
+      "period_spent": 120
+     }
+    },
+    {
+     "t": 2800,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "z"
+     },
+     "expect": {
+      "err": "TotalCap"
+     },
+     "state": {
+      "deploys": 4
+     }
+    }
+   ]
+  },
+  {
+   "name": "near_bad_names_and_balance",
+   "description": "NEAR: sub-account name validation; deposit must be affordable",
+   "only": "near",
+   "setup": {
+    "balance": 100,
+    "templates": [
+     "t1"
+    ]
+   },
+   "steps": [
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 9000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 400,
+      "total_cap": 400,
+      "max_deploys": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1,
+     "as": "owner",
+     "op": "allow_template",
+     "args": {
+      "template": "t1",
+      "label": "x",
+      "deposit": 60
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "A!"
+     },
+     "expect": {
+      "err": "BadName"
+     }
+    },
+    {
+     "t": 2,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "a.b"
+     },
+     "expect": {
+      "err": "BadName"
+     }
+    },
+    {
+     "t": 2,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": ""
+     },
+     "expect": {
+      "err": "BadName"
+     }
+    },
+    {
+     "t": 3,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "ok-1"
+     },
+     "expect": "ok",
+     "state": {
+      "available": 40
+     }
+    },
+    {
+     "t": 4,
+     "as": "agent",
+     "op": "deploy",
+     "args": {
+      "template": "t1",
+      "name": "ok-2"
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     },
+     "state": {
+      "deploys": 1
+     }
+    }
+   ]
+  }
+ ]
+}
