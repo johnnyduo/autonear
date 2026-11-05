@@ -31,7 +31,7 @@ Never add wallet or agent private keys to Vercel: the autonomy loop (agent signi
 * **Hobby cron runs once per day** and expressions that run more often fail the deployment. For a 15-minute cadence use an external
   scheduler (GitHub Actions `schedule`, any uptime pinger) calling `GET /api/cron/tick` with `Authorization: Bearer $CRON_SECRET`, or Vercel Pro.
 * `defer()` uses `waitUntil` from `@vercel/functions`, so a background run continues after the 202 response within `maxDuration`.
-* A full ingestion tick must finish inside `maxDuration` (300 s here). Not yet measured on Vercel.
+* A full ingestion tick must finish inside `maxDuration` (300 s here). **Measured:** 64 s with the function in `hnd1`; >300 s (504) with it in `iad1` because the Turso database is far from Washington (~200 ms per query, ~1,300 queries per pass). `vercel.json` pins `functions["api/**/*.js"].regions` to `hnd1`: **change it to the region of your own Turso database** (the host name of `DATABASE_URL` shows it) and re-measure with `GET /api/cron/tick?wait=1`.
 
 ## After deploying
 Open `/api/status` (JSON), then the site root. Follow [INCIDENT-RUNBOOK.md](INCIDENT-RUNBOOK.md) for the kill switch and rotation; use
