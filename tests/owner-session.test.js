@@ -155,3 +155,25 @@ test('owner session reaches receipt/deploy-data only for requests bound to its o
   assert.equal((await call(app, '/api/decisions/dec_other/receipt', { method: 'POST', headers: h, body: JSON.stringify({ txHash: '0x1' }) })).status, 400);
   assert.notEqual((await get('dec_other', { authorization: 'Bearer op-token' })).status, 400, 'operator is not scoped');
 });
+
+test('co-owners (OWNER_ADDRESSES) can sign in and use owner routes alongside the primary owner; strangers still cannot', async () => {
+  const co = privateKeyToAccount(generatePrivateKey());
+  const app = await mk({ extraOwners: [co.address.toLowerCase()] });
+  const a = await signIn(app, co);
+  assert.equal(a.body.isOwner, true); assert.ok(a.body.token);
+  const me = await call(app, '/api/auth/me', { headers: { authorization: `Bearer ${a.body.token}` } });
+  assert.equal(me.body.isOwner, true); assert.equal(me.body.address, co.address.toLowerCase());
+  const put = await call(app, '/api/autonomy/mode', { method: 'PUT', headers: { authorization: `Bearer ${a.body.token}` }, body: JSON.stringify({ mode: 'manual' }) });
+  assert.equal(put.status, 200, JSON.stringify(put.body));
+  const prim = await signIn(app, owner); assert.equal(prim.body.isOwner, true);
+  const stranger = await signIn(app, other); assert.equal(stranger.body.isOwner, false); assert.equal(stranger.body.token, null);
+});
+
+test('removing a co-owner kills its existing session on the next request (ownership is re-resolved every time)', async () => {
+  const co = privateKeyToAccount(generatePrivateKey()); const list = [co.address.toLowerCase()];
+  const app = await mk({ extraOwners: list });
+  const a = await signIn(app, co); assert.ok(a.body.token);
+  list.length = 0;
+  const me = await call(app, '/api/auth/me', { headers: { authorization: `Bearer ${a.body.token}` } });
+  assert.equal(me.body.isOwner, false);
+});

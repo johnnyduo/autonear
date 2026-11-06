@@ -20,6 +20,8 @@ const LEGACY = {
   radar: lazy(() => import('../views/Radar.jsx')), opportunity: lazy(() => import('../views/Opportunity.jsx')), run: lazy(() => import('../views/RunTheater.jsx')),
   studio: lazy(() => import('../views/Studio.jsx')), approval: lazy(() => import('../views/Approval.jsx')), security: lazy(() => import('../views/Security.jsx')),
   engines: lazy(() => import('../views/Engines.jsx')),
+  // The evidence constellation: the technical overview (with the embedded panel) and the full-screen app.
+  dashboard: lazy(() => import('../views/Overview.jsx')), constellation: lazy(() => import('../views/ConstellationFull.jsx')),
 };
 const LegacyVault = lazy(() => import('../views/vault/Vault.jsx'));
 const PAGES = { home: Home, approvals: Approvals, watch: Watch, vault: VaultPage };
@@ -41,7 +43,8 @@ export default function Shell() {
   const commands = useMemo(() => [
     ...APP_ROUTES.map((r) => ({ label: `Go to ${ROUTES[r]}`, hint: '', run: () => goto(r === 'home' ? '' : r, opts) })),
     { label: 'Open Activity', hint: '', run: () => goto(route.name === 'home' ? '' : route.name, { ...opts, activity: true }) },
-    ...['radar', 'run', 'studio', 'security', 'engines'].map((r) => ({ label: `Technical: ${r}`, hint: 'details', run: () => goto(r, opts) })),
+    { label: 'Open the evidence constellation (full screen)', hint: 'constellation', run: () => goto('constellation', opts) },
+    ...['dashboard', 'radar', 'run', 'studio', 'security', 'engines'].map((r) => ({ label: `Technical: ${r}`, hint: 'details', run: () => goto(r, opts) })),
     { label: 'Operator access (token)', hint: 'ops', run: () => setTokDlg(true) },
   ], [route.name, route.demo]); // eslint-disable-line react-hooks/exhaustive-deps
 

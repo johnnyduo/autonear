@@ -46,6 +46,7 @@ export const autonomyMaxPerDay = (e = process.env) => {
 export const config = {
   port: num('PORT', 8787),
   ownerAddress: env('OWNER_ADDRESS'),
+  extraOwners: env('OWNER_ADDRESSES').split(/[\s,;]+/).map((a) => a.trim().toLowerCase()).filter((a) => /^0x[0-9a-f]{40}$/.test(a)), // co-owners: additional wallets that may sign in as owner (never a replacement for the primary owner)
   publicHosts: env('PUBLIC_HOSTS').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean), // sign-in challenge domains allowed (host[:port]); empty = trust the request host
   host: env('HOST', '127.0.0.1'),
   dbPath: resolve(ROOT, env('DB_PATH', 'data/autonear.db')),

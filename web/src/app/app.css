@@ -86,3 +86,5 @@
 @media (prefers-reduced-motion: reduce) { .sw i, .hold-fill { transition: none; } }
 
 .wt-field form { display: flex; gap: 8px; } .wt-field form .input { flex: 1; min-width: 0; }
+
+.hm-const { position: absolute; right: 0; top: 4px; z-index: 2; }

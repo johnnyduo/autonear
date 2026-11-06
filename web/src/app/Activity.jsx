@@ -34,7 +34,7 @@ export default function Activity({ data, opts, base }) {
         <ul className="srcs compact">{sources.map((s) => <li key={s.id}><b>{s.name}</b><span>{word(s)}</span><small>{s.lastSuccess ? fmt.ago(s.lastSuccess) : 'never'}</small></li>)}</ul>
         <h3>Technical screens</h3>
         <p className="faint">For people who want the full detail.</p>
-        <div className="row">{[['radar', 'Evidence'], ['run', 'Checks'], ['studio', 'Studio'], ['security', 'Security'], ['engines', 'Engines'], ['approval', 'Approval (classic)']].map(([k, l]) => <a key={k} className="btn sm" href={href(k, opts)}>{l}</a>)}</div>
+        <div className="row">{[['constellation', 'Evidence constellation'], ['dashboard', 'Technical overview'], ['radar', 'Evidence'], ['run', 'Checks'], ['studio', 'Studio'], ['security', 'Security'], ['engines', 'Engines'], ['approval', 'Approval (classic)']].map(([k, l]) => <a key={k} className="btn sm" href={href(k, opts)}>{l}</a>)}</div>
       </section>
     </Dialog>
   );

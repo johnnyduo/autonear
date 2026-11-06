@@ -38,6 +38,7 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
         <h1>{l1} <span>{l2}</span></h1>
       </section>
       <div className="hm-stage"><LeashScene model={model} reducedMotion={calm} className="hm-scene" />
+        <a className="btn sm hm-const" href={href('constellation', opts)}>Explore the evidence constellation</a>
         <ul className="hm-legend" aria-hidden="true" style={{ '--tone': paused ? 'var(--risk)' : demo ? 'var(--mineral-hi)' : 'var(--signal)' }}><li><i className="d1" />Sources it reads</li><li><i className="d2" />Your limits, used so far</li><li><i className="d3" />Agent fuel</li></ul>
       </div>
       <section className="hm-cards">

@@ -78,7 +78,10 @@ export function createApp(deps) {
   const needOperator = (req) => { if (!isOperator(req)) throw new PolicyError(operatorToken ? 'operator token required' : 'mutations disabled: OPERATOR_TOKEN is not configured', 'auth'); };
   // Owner sessions (wallet-signed). Valid only for the few routes that call needOwner; ownership is re-resolved on every request.
   const sessionSecret = deriveSecret(operatorToken);
-  const ownerOf = async () => (deps.resolveOwner ? String((await deps.resolveOwner()) ?? '').toLowerCase() || null : resolveOwner(db, deps.ownerAddress ?? config.ownerAddress));
+  const extraOwners = deps.extraOwners ?? config.extraOwners ?? [];
+  const primaryOwner = async () => (deps.resolveOwner ? String((await deps.resolveOwner()) ?? '').toLowerCase() || null : resolveOwner(db, deps.ownerAddress ?? config.ownerAddress));
+  /** All current owners (primary + co-owners), re-resolved on every call. */
+  const ownersOf = async () => { const p = await primaryOwner(); return [...new Set([...(p ? [p] : []), ...extraOwners.map((a) => String(a).toLowerCase())])]; };
   const sessionTtl = deps.sessionTtlMs ?? SESSION_TTL_MS;
   const publicHosts = deps.publicHosts ?? config.publicHosts;
   // The sign-in message is bound to a domain. Behind a proxy the Host header is client-influenced, so a configured allowlist (PUBLIC_HOSTS) decides which domains can be signed for.
@@ -88,8 +91,7 @@ export function createApp(deps) {
   const sessionOf = async (req) => {
     const s = readSession(bearer(req), { secret: sessionSecret });
     if (!s) return null;
-    const o = await ownerOf();
-    return o && o === s.address ? s : null;
+    return (await ownersOf()).includes(s.address) ? s : null;
   };
   /** Operator token OR a valid owner session. Returns { actor, address|null }. */
   const needOwner = async (req) => {
@@ -166,16 +168,15 @@ export function createApp(deps) {
       if (!sessionSecret) throw new PolicyError('sign-in is disabled: OPERATOR_TOKEN is not configured', 'auth');
       const b = await body(req, { type: 'object', required: ['address', 'message', 'signature'], properties: { address: { type: 'string', maxLength: 64 }, message: { type: 'string', maxLength: 1000 }, signature: { type: 'string', maxLength: 400 } } });
       let c; try { c = await checkSignedChallenge({ ...b, host: signInHost(url) }); } catch (e) { throw new PolicyError(e.message, 'auth'); }
-      const owner = await ownerOf();
-      if (!owner || owner !== c.signer) return out({ isOwner: false, address: c.signer, token: null, exp: null }); // read-only wallet: no token, no nonce row
+      if (!(await ownersOf()).includes(c.signer)) return out({ isOwner: false, address: c.signer, token: null, exp: null }); // read-only wallet: no token, no nonce row
       if (!(await consumeNonce(db, c.nonce, c.exp))) throw new PolicyError('this sign-in challenge was already used', 'auth');
       const t = now(); const exp = t + sessionTtl;
       await audit(db, `owner:${c.signer}`, 'owner.signed_in', {});
       return out({ isOwner: true, address: c.signer, token: issueSession({ address: c.signer, secret: sessionSecret, t, ttlMs: sessionTtl }), exp });
     }
     if (p === '/api/auth/me' && m === 'GET') {
-      const s = await sessionOf(req); const o = await ownerOf();
-      return out({ isOwner: Boolean(s), address: s?.address ?? null, ownerConfigured: Boolean(o), operator: isOperator(req) });
+      const s = await sessionOf(req); const o = await ownersOf();
+      return out({ isOwner: Boolean(s), address: s?.address ?? null, ownerConfigured: o.length > 0, operator: isOperator(req) });
     }
     if (p === '/api/ready' && m === 'GET') {
       const checks = {};
