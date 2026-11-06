@@ -25,8 +25,8 @@
   ];
   const NAMES = AGENTS.map((a) => a.name);
   const INTRO = 0; // no orbiting intro: the cursors start working at once
-  const TASK_MS = 17800; // all tasks finish inside this window (plus the idle end = about 20 s)
-  const IDLE = 2000; // cursors follow the pointer after the build
+  const TASK_MS = 8200; // all tasks finish inside this window (plus the idle end = about 10 s)
+  const IDLE = 900; // cursors follow the pointer after the build
   const FADE = 400;
   const WATCHDOG = 40000; // the page is never left blank longer than this
   const NOTES = [523.25, 587.33, 659.25, 783.99, 880];
