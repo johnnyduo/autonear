@@ -24,6 +24,7 @@ const STANDARDS = [
   ['NEP-141 · 145', 'payout tokens', 'The vault reads fungible-token metadata and storage registration before a payout is allowed.'],
   ['NEP-297', 'contract events', 'Every state change in the contracts emits one standard event, so the audit trail can be read from the chain.'],
   ['EIP-1559 · 155 · 55', 'agent EVM signer', 'The agent signs its own EVM transactions (type 2 and legacy) and checks address checksums, with its own key code. No wallet library.'],
+  ['Mandate Vault', 'ERC-7710 style limits, native on NEAR', 'Our own contract: the agent gets a budget, a per-draw cap and an expiry that the chain enforces. The same idea as ERC-7710 delegations and ERC-4337 session keys, built for NEAR. It does not implement either standard.'],
   ['ERC-8004', 'agent identity', 'An adapter that can publish the agent registration file. Off unless the operator sets a public URL.'],
 ];
 
