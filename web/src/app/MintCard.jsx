@@ -2,23 +2,27 @@
 // Shown only for a token whose own metadata says it is a mock (the contract itself is testnet-only), and usable only with the owner's wallet.
 import { useEffect, useState } from 'react';
 import { Icon } from '../ui.jsx';
+import { exactDecimal } from '../views/vault/format.js';
 import { isMockToken, mintCheck, MINT_PRESETS } from './vaultView.js';
 import { mintTestToken } from './ownerTx.js';
 
 export default function MintCard({ v, tk, owner, canWrite, demo, toast, onDone }) {
-  const [mock, setMock] = useState(demo ? true : null); // null = still asking the token who it is
+  const [meta, setMeta] = useState(null); // the token's own ft_metadata: it, not a grant, says what the token is called and how many decimals it has
+  const mock = demo ? true : meta === null ? null : isMockToken(meta);
   const [amt, setAmt] = useState('100'); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   useEffect(() => {
     if (demo) return undefined; let on = true;
-    import('../wallet/nearEth.js').then((n) => n.viewNear({ contract: tk.token, method: 'ft_metadata' })).then((m) => on && setMock(isMockToken(m))).catch(() => on && setMock(false));
+    import('../wallet/nearEth.js').then((n) => n.viewNear({ contract: tk.token, method: 'ft_metadata' })).then((m) => on && setMeta(m ?? {})).catch(() => on && setMeta({}));
     return () => { on = false; };
   }, [tk.token, demo]);
-  if (!mock || !Number.isInteger(tk.decimals)) return null;
-  const chk = mintCheck(amt, tk.decimals); const sym = tk.symbol ?? 'tokens'; const id = `mint-${tk.token}`;
+  const decimals = Number.isInteger(meta?.decimals) ? meta.decimals : tk.decimals; const sym = (typeof meta?.symbol === 'string' && meta.symbol) || tk.symbol || 'tokens';
+  if (!mock || !Number.isInteger(decimals) || decimals < 0 || decimals > 24) return null;
+  const chk = mintCheck(amt, decimals); const id = `mint-${tk.token}`;
+  const held = tk.balanceBig === null || tk.balanceBig === undefined ? null : exactDecimal(tk.balanceBig, decimals);
   const mint = async () => {
     if (chk.base === null || !canWrite || busy) return; setBusy(true); setErr('');
     try {
-      await mintTestToken({ account: owner.address, token: tk.token, to: v.address, base: chk.base, decimals: tk.decimals });
+      await mintTestToken({ account: owner.address, token: tk.token, to: v.address, base: chk.base, decimals });
       toast(`Added ${amt.trim()} ${sym} to the vault. The balance can take a few seconds to show.`); onDone?.();
     } catch (e) { setErr(/rejected|denied/i.test(e?.message ?? '') ? 'You closed the wallet. Nothing was sent.' : (e?.message ?? 'That did not work.')); }
     finally { setBusy(false); }
@@ -27,6 +31,7 @@ export default function MintCard({ v, tk, owner, canWrite, demo, toast, onDone }
   return (
     <div className="vp-mint">
       <div className="vp-mint-h"><Icon name="bolt" size={16} /><b>Add test {sym}</b></div>
+      {held !== null && <p className="vp-held">In the vault now: <b>{held} {sym}</b></p>}
       <p>This is a free test token that anyone can mint. It goes straight into the vault, and the agent can then pay from it inside the limits above{caps}.</p>
       {!tk.usable && <p className="vp-err">This token is not approved for payments yet, so the agent could not use what you add.</p>}
       <label className="vp-label" htmlFor={id}>Amount ({sym})</label>
