@@ -88,7 +88,7 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
   );
 }
 
-export default function ConstellationHero({ status, sources, activeRun, opps, calm, onReady, onStats }) {
+export default function ConstellationHero({ status, sources, activeRun, opps, calm, full = false, onReady, onStats }) {
   const stage = useRef(null); const glCv = useRef(null); const ovCv = useRef(null); const tip = useRef(null);
   const sceneRef = useRef(null); const scenes = useRef({ disc: null, graph: null }); const latest = useRef({}); const rt = useRef({ hover: null, pinned: null, focus: null, pointer: null, engaged: false, touch: false, tier: undefined, fps: 0 });
   const [rk, setRk] = useState('gl');
@@ -310,6 +310,9 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
           <button type="button" aria-pressed={view === 'graph'} onClick={() => setView('graph')}>3D graph</button>
           <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>View as list</button>
         </div>
+        <a className="co-ib sq co-fs" href={full ? '#/' : '#/constellation'} aria-label={full ? 'Exit full screen' : 'Open full screen'} title={full ? 'Exit full screen (Esc)' : 'Full screen'}>
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{full ? <path d="M6 2v4H2M10 2v4h4M6 14v-4H2M10 14v-4h4" /> : <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />}</svg>
+        </a>
         {view !== 'list' && (
           <>
             <button type="button" className="co-ib" aria-pressed={replay.active} onClick={replay.active ? () => { sceneRef.current?.stopReplay(); setReplay((r) => ({ ...r, active: false, playing: false })); } : startReplay}><Icon name="loop" size={15} />{replay.active ? 'Exit replay' : 'Replay ingestion'}</button>

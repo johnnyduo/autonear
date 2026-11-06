@@ -1,0 +1,33 @@
+// Activity drawer: everything that happened, in plain words, with the technical truth one click away. Source health and the technical screens live here, not in the menu.
+import { fmt } from '../api.js';
+import { Dialog } from '../ui.jsx';
+import { historyLine, T } from './copy.js';
+import { goto, href } from './nav.js';
+
+const word = (s) => (s.status === 'ok' ? (s.stale ? 'slow' : 'working') : s.status === 'disabled_by_owner' ? 'off' : s.status === 'not_configured' ? 'needs a key' : 'paused, retrying');
+
+export default function Activity({ data, opts, base }) {
+  const sources = data.status.data?.sources ?? [];
+  const items = [...data.ledger].sort((a, b) => b.time - a.time).slice(0, 30);
+  const close = () => goto(base, opts);
+  return (
+    <Dialog title={T.activity} onClose={close} drawer>
+      <section className="act">
+        <h3>What happened</h3>
+        {items.length ? <ol className="tl">{items.map((e) => (
+          <li key={e.id}>
+            <div><b>{historyLine(e)}</b><time>{fmt.ago(toMs(e.time))}</time></div>
+            <details className="tech"><summary>Technical details</summary>
+              <dl><dt>Kind</dt><dd>{e.kind} · {e.status}</dd><dt>Note</dt><dd>{e.detail}</dd>{e.txHash && <><dt>Transaction</dt><dd className="mono-v">{e.explorerUrl ? <a href={e.explorerUrl} target="_blank" rel="noreferrer noopener">{e.txHash}</a> : e.txHash}</dd></>}{e.hash && <><dt>Record</dt><dd className="mono-v">{e.hash}</dd></>}</dl>
+            </details>
+          </li>))}</ol> : <p className="faint">Nothing has happened yet.</p>}
+        <h3>Where it reads</h3>
+        <ul className="srcs compact">{sources.map((s) => <li key={s.id}><b>{s.name}</b><span>{word(s)}</span><small>{s.lastSuccess ? fmt.ago(s.lastSuccess) : 'never'}</small></li>)}</ul>
+        <h3>Technical screens</h3>
+        <p className="faint">For people who want the full detail.</p>
+        <div className="row">{[['radar', 'Evidence'], ['run', 'Checks'], ['studio', 'Studio'], ['security', 'Security'], ['engines', 'Engines'], ['approval', 'Approval (classic)']].map(([k, l]) => <a key={k} className="btn sm" href={href(k, opts)}>{l}</a>)}</div>
+      </section>
+    </Dialog>
+  );
+}
+const toMs = (t) => { const n = Number(t); return n && n < 1e11 ? n * 1000 : n; };

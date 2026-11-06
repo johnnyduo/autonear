@@ -23,3 +23,19 @@
   .co-title { right: 12px; left: 12px; } .co-title .eyebrow, .co-title-s { display: none; } .co-title h2 { font-size: 26px; margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .co-poster i { animation: none; } }
+
+/* Full-screen app (#/constellation): the stage covers the whole viewport; the shell, rail and page padding sit underneath. */
+html.co-noscroll, html.co-noscroll body { overflow: hidden; }
+.co-fullpage { position: fixed; inset: 0; z-index: 200; margin: 0; border: 0; border-radius: 0; display: flex; flex-direction: column; background: var(--ink-0); }
+.co-fullpage .co-stagewrap { flex: 1 1 auto; height: auto; min-height: 0; }
+.co-full-foot { flex: none; position: relative; display: flex; align-items: center; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--ink-0) 92%, transparent); }
+.co-full-foot .co-cap-main { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-full-more { flex: none; }
+.co-full-more summary { list-style: none; cursor: pointer; font: 500 11px var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--chalk-2); padding: 6px 10px; border: 1px solid var(--line-hi); border-radius: 99px; }
+.co-full-more summary::-webkit-details-marker { display: none; }
+.co-full-more-in { position: absolute; left: 14px; right: 14px; bottom: calc(100% + 8px); max-height: 46vh; overflow: auto; padding: 14px 16px; display: grid; gap: 8px; border: 1px solid var(--line-hi); border-radius: 10px; background: color-mix(in srgb, var(--ink-1) 94%, transparent); backdrop-filter: blur(14px); z-index: 7; }
+.co-exit { flex: none; min-height: 30px; text-decoration: none; }
+.co-exit kbd { margin-left: 6px; padding: 1px 5px; border: 1px solid var(--line-hi); border-radius: 4px; font: 500 10px var(--f-mono); color: var(--chalk-3); }
+.co-fs { text-decoration: none; }
+@media (max-width: 760px) { .co-full-foot { flex-wrap: wrap; } .co-full-foot .co-cap-main { white-space: normal; order: 3; flex-basis: 100%; } }
+@media (max-width: 1100px) { .co-fullpage .co-title .eyebrow { display: none; } }

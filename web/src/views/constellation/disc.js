@@ -10,6 +10,8 @@ import { buildFx, fxBudget } from './fx-disc.js';
 import { buildFlow, flowBudget } from './fx-flow.js';
 
 export const R0 = 300; export const G = 9;
+/** Source orbit s as a tilted ellipse in disc radii: flat enough that nine of them still fit a 16:10 stage. */
+export const orbitShape = (s) => { const a = 1.5 + 0.085 * s; return { a, b: a * (0.58 + 0.01 * s), phi: [-0.2, 0.15, -0.1, 0.22][s % 4] }; };
 const WARM = [1, 0.8, 0.46]; const LIME = [0.776, 0.957, 0.196]; const RISK = [1, 0.416, 0.239];
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const ease = (t) => 1 - (1 - t) ** 3;
@@ -50,7 +52,7 @@ export class DiscScene {
   setModel(model) {
     const first = !this.model; const oldApp = this.app; const oldIds = this.model?.nodes.map((n) => n.id);
     this.model = model; const nodes = model.nodes; const N = nodes.length;
-    this.layout();
+    this.fit = null; this.layout();
     const prev = new Map(); if (oldIds && oldApp) oldIds.forEach((id, i) => prev.set(id, oldApp[i]));
     this.app = new Float32Array(N); this.vis = new Float32Array(N).fill(1); this.visT = new Float32Array(N).fill(1); this.born = new Float32Array(N).fill(-1); this.mask = new Uint8Array(N).fill(1);
     const births = [];
@@ -129,7 +131,7 @@ export class DiscScene {
   fxExtra() { return fxBudget(this.q.fx) + flowBudget(this.q.fx); }
   setQuality(q) { this.q = { ...this.q, ...q }; if (this.model) { const need = this.pix.n + 4096 + this.q.dust + this.fxExtra(); if (this.P.length < need * PSTRIDE) { this.maxP = need; this.P = new Float32Array(need * PSTRIDE); } } }
   settle() {}
-  resize(W, H) { this.W = W; this.H = H; }
+  resize(W, H) { this.W = W; this.H = H; this.fit = null; }
   onResize() { this.sized = true; }
   drawOverlay(ctx, o) { drawDiscOverlay(ctx, this, o); }
   sortReplay() {
@@ -148,9 +150,22 @@ export class DiscScene {
 
   /* ------------------------------------------------------------ camera: zoom + pan (+ mouse parallax for the starfield) */
   fitDist() { return 1; }
-  get scale0() { return Math.min(this.W * (this.W < 640 ? 0.355 : 0.3), this.H * 0.29) / R0; }
-  get ccx() { return this.W / 2 + (this.W > 900 ? this.W * 0.015 : 0); }
-  get ccy() { return this.H / 2 + (this.W < 640 ? -this.H * 0.02 : this.H * 0.025); }
+  /**
+   * Layout fit. The whole system (disc + every source orbit + the agent-role ring) must stay inside the stage: the extents of the tilted ellipses are measured in disc radii, then the
+   * disc radius is the largest that fits the free area (top = tools row, bottom = chips). On a narrow stage the disc keeps a minimum size and the orbits compress instead (not below 0.8).
+   */
+  get fitInfo() {
+    if (this.fit) return this.fit; const W = this.W; const H = this.H; const S = Math.max(1, this.model?.sources.length ?? 4);
+    let ew = 2.3; let eh = 1.2; // agent-role ring: a = 2.3 R, b = a / 2, tilt 0.12
+    for (let s = 0; s < S; s++) { const { a, b, phi } = orbitShape(s); const cp = Math.cos(phi); const sp = Math.sin(phi); ew = Math.max(ew, Math.hypot(a * cp, b * sp)); eh = Math.max(eh, Math.hypot(a * sp, b * cp)); }
+    const narrow = W < 640; const padX = narrow ? 8 : 26; const top = narrow ? 112 : 66; const bottom = narrow ? 150 : 96; const availH = Math.max(120, H - top - bottom);
+    const rFit = Math.min((W / 2 - padX) / ew, availH / 2 / eh); const rMin = Math.min(W * (narrow ? 0.27 : 0.34), availH / 2 / 1.45);
+    let R; let ks = 1; if (rFit >= rMin) R = rFit; else { R = rMin; ks = Math.max(narrow ? 0.7 : 0.8, rFit / rMin); }
+    this.fit = { scale0: R / R0, ks, ccx: W / 2, ccy: top + availH / 2, ew, eh }; return this.fit;
+  }
+  get scale0() { return this.fitInfo.scale0; }
+  get ccx() { return this.fitInfo.ccx; }
+  get ccy() { return this.fitInfo.ccy; }
   clampPan() { const c = this.cam; const lim = R0 * this.scale0 * (c.tzoom * 0.9 + 0.2); c.tpx = clamp(c.tpx, -lim, lim); c.tpy = clamp(c.tpy, -lim, lim); }
   drag(dx, dy) { const c = this.cam; c.tpx += dx; c.tpy += dy; this.clampPan(); this.idleSince = this.t; }
   zoom(f, ax, ay) {
@@ -190,13 +205,13 @@ export class DiscScene {
   }
 
   sat(s, now) { // satellite position: tilted ellipse, angle = UTC time of day of the last real ingest
-    const info = this.srcInfo[s] ?? {}; const R = R0 * this.scale0 * this.cam.zoom; const ks = this.orbitK();
-    const a = (1.5 + 0.14 * s) * R * ks; const b = a * (0.8 + 0.03 * s); const phi = [-0.22, 0.17, -0.1, 0.27][s % 4];
+    const info = this.srcInfo[s] ?? {}; const R = R0 * this.scale0 * this.cam.zoom; const ks = this.orbitK(); const sh = orbitShape(s);
+    const a = sh.a * R * ks; const b = sh.b * R * ks; const phi = sh.phi;
     const tod = info.last ? ((info.last % 86400000) / 86400000) * Math.PI * 2 - Math.PI / 2 : -Math.PI / 2;
     const ex = a * Math.cos(tod); const ey = b * Math.sin(tod); const cp = Math.cos(phi); const sp = Math.sin(phi);
     return { x: this.ccx + this.cam.px + ex * cp - ey * sp, y: this.ccy + this.cam.py + ex * sp + ey * cp, a, b, phi, tod };
   }
-  orbitK() { const R = R0 * this.scale0; return Math.min(1, (this.W / 2 - 26) / (2.05 * R), (this.H / 2 - 62) / (1.62 * R)); }
+  orbitK() { return this.fitInfo.ks; }
   roleAt(r, now) { const R = R0 * this.scale0 * this.cam.zoom; const ks = this.orbitK(); const th = (r / ROLES.length) * Math.PI * 2 + (this.calm || !this.auto ? 0.4 : now * 0.05); const a = 2.3 * R * ks; const b = a * 0.5; const phi = 0.12; const ex = a * Math.cos(th); const ey = b * Math.sin(th); return { x: this.ccx + this.cam.px + ex * Math.cos(phi) - ey * Math.sin(phi), y: this.ccy + this.cam.py + ex * Math.sin(phi) + ey * Math.cos(phi), th }; }
 
   build(now, dt) {

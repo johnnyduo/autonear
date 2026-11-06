@@ -1,0 +1,419 @@
+{
+  "network": "near-testnet",
+  "chainId": "testnet",
+  "startedAt": "2026-11-06T03:00:21.205Z",
+  "signers": {
+    "owner": "autonear-owner-1106.testnet (DEMO owner key held on the agent's machine; automated, not a human signature)",
+    "agent": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34 (agent keystore key, call-limited signer)"
+  },
+  "accounts": {
+    "owner": "autonear-owner-1106.testnet",
+    "agentNamedFunder": "autonear-agent-1106.testnet",
+    "agent": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+    "vault": "vault-v1.autonear-owner-1106.testnet",
+    "registry": "reg1.vault-v1.autonear-owner-1106.testnet"
+  },
+  "txs": [
+    {
+      "label": "agent funding (named account -> agent implicit account)",
+      "signer": "autonear-agent-1106.testnet",
+      "hash": "8FJ5ZaYdk1ckA2w3LJp1tC4HXiUUNrxjYzoWu6HcDqNb",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/8FJ5ZaYdk1ckA2w3LJp1tC4HXiUUNrxjYzoWu6HcDqNb"
+    },
+    {
+      "label": "create vault sub-account + fund",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "Bg3aZjYv2cTaaTLkFxPpyLsPqWJCdjyz4LYUWNANf6ag",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/Bg3aZjYv2cTaaTLkFxPpyLsPqWJCdjyz4LYUWNANf6ag"
+    },
+    {
+      "label": "deploy vault wasm + new(owner, network_id)",
+      "signer": "vault-v1.autonear-owner-1106.testnet",
+      "hash": "migRdhRRshEcvRtCMvmCJoFcKmFgcNAiV6fC6Ux4VFS",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/migRdhRRshEcvRtCMvmCJoFcKmFgcNAiV6fC6Ux4VFS"
+    },
+    {
+      "label": "DeleteKey: lock the vault account (no access keys remain)",
+      "signer": "vault-v1.autonear-owner-1106.testnet",
+      "hash": "5Qm8LwPnC7cu6haVrBSxBWVeQ43cR6dchu3sY1HDUMNn",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/5Qm8LwPnC7cu6haVrBSxBWVeQ43cR6dchu3sY1HDUMNn"
+    },
+    {
+      "label": "owner allow_template (registry id, fixed init args, deposit)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "GqaoD5WupeeYVERYj2miU9rCjAcbaA9cp2WjuXaUmhFQ",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/GqaoD5WupeeYVERYj2miU9rCjAcbaA9cp2WjuXaUmhFQ"
+    },
+    {
+      "label": "owner set_mandate (agent, 2 h, per-draw 1, period 6, total 6, max 1 deploy)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "88F1X85fCgo7fAtJhTDVLPmzUzMQ5UJkKSm8rPD21qJ8",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/88F1X85fCgo7fAtJhTDVLPmzUzMQ5UJkKSm8rPD21qJ8"
+    },
+    {
+      "label": "owner funds the vault (plain transfer)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "6iKM7oMwrHMxZMtRSvCdkHWhuEuYZPcNSLmLEFKr14Yx",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/6iKM7oMwrHMxZMtRSvCdkHWhuEuYZPcNSLmLEFKr14Yx"
+    },
+    {
+      "label": "agent draw 0.5 NEAR",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "FE9BL5SAkosF5T8d55PJnJQpKvFak9wHzpH1CsZNcJow",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/FE9BL5SAkosF5T8d55PJnJQpKvFak9wHzpH1CsZNcJow"
+    },
+    {
+      "label": "agent deploy reg1 (attested registry) through the vault",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "dza3uxmex1dgQL5gfbR4Qj9vsJPmztgaQLn1u1B9JX1",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/dza3uxmex1dgQL5gfbR4Qj9vsJPmztgaQLn1u1B9JX1"
+    },
+    {
+      "label": "NEGATIVE agent draw 2 NEAR (over per-draw cap)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "22uZ1m2zWs558XNHAaS1VjpwniWoDnUKnCiaAo1NbjGn",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/22uZ1m2zWs558XNHAaS1VjpwniWoDnUKnCiaAo1NbjGn"
+    },
+    {
+      "label": "NEGATIVE agent second deploy (max_deploys = 1)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "GEguMwExvWqi8RgeEJgjsNMMJ6KLhZMXf1mLjn7hEj88",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/GEguMwExvWqi8RgeEJgjsNMMJ6KLhZMXf1mLjn7hEj88"
+    },
+    {
+      "label": "NEGATIVE agent deploys a wasm that is not allowlisted",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "4Hhw7ZfwM3NjTRGMKfPgqHG9AZLCswESVXq3mpjopnfn",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/4Hhw7ZfwM3NjTRGMKfPgqHG9AZLCswESVXq3mpjopnfn"
+    },
+    {
+      "label": "owner revoke",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "DXhGPY16gSuEYqEwenjti4dw2aP3ogU3qFXDdW3pdtNo",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/DXhGPY16gSuEYqEwenjti4dw2aP3ogU3qFXDdW3pdtNo"
+    },
+    {
+      "label": "NEGATIVE agent draw after revoke",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "JpjuQ7y4Pmt9M8vSgcTdb68jzyxfacLFrFtTYNojCck",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/JpjuQ7y4Pmt9M8vSgcTdb68jzyxfacLFrFtTYNojCck"
+    }
+  ],
+  "checks": [
+    {
+      "name": "implicit agent account created by a plain Transfer",
+      "ok": true,
+      "detail": "8FJ5ZaYdk1ckA2w3LJp1tC4HXiUUNrxjYzoWu6HcDqNb"
+    },
+    {
+      "name": "agent implicit account id = 64-hex of its ed25519 key",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault wasm deployed and initialised",
+      "ok": true,
+      "detail": "migRdhRRshEcvRtCMvmCJoFcKmFgcNAiV6fC6Ux4VFS"
+    },
+    {
+      "name": "on-chain code hash == base58(sha256(contracts/near-vault/dist/autonear_vault.wasm))",
+      "ok": true,
+      "detail": "sha256 a052d400c3bc1a13..."
+    },
+    {
+      "name": "vault account has no access keys (code can no longer be replaced)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "verifyVaultCode still ok after locking",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "readState matches what the owner set",
+      "ok": true,
+      "detail": "available 4.0263 NEAR"
+    },
+    {
+      "name": "checkTemplate: on-chain init_args / deposit == the approved material",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "implicit agent account already exists",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "agent implicit account id = 64-hex of its ed25519 key",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "resume: vault on chain still has the attested code hash and no keys",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "readState matches what the owner set",
+      "ok": true,
+      "detail": "available 4.0263 NEAR"
+    },
+    {
+      "name": "checkTemplate: on-chain init_args / deposit == the approved material",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault.available() now covers one draw + one deploy",
+      "ok": true,
+      "detail": "4.6000 NEAR"
+    },
+    {
+      "name": "implicit agent account already exists",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "agent implicit account id = 64-hex of its ed25519 key",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "resume: vault on chain still has the attested code hash and no keys",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "readState matches what the owner set",
+      "ok": true,
+      "detail": "available 4.6000 NEAR"
+    },
+    {
+      "name": "checkTemplate: on-chain init_args / deposit == the approved material",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "agent draw accepted by the vault",
+      "ok": true,
+      "detail": "FE9BL5SAkosF5T8d55PJnJQpKvFak9wHzpH1CsZNcJow"
+    },
+    {
+      "name": "agent balance rose by the draw minus its own gas",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "deploy tx: all receipts succeeded",
+      "ok": true,
+      "detail": "dza3uxmex1dgQL5gfbR4Qj9vsJPmztgaQLn1u1B9JX1 EXECUTED"
+    },
+    {
+      "name": "adapter.verifyDeploy ok (31 independent checks incl. code hash, init args, signer, receipts)",
+      "ok": true,
+      "detail": "reg1.vault-v1.autonear-owner-1106.testnet"
+    },
+    {
+      "name": "deployed registry holds its storage deposit",
+      "ok": true,
+      "detail": "3.8000 NEAR, 211126 bytes"
+    },
+    {
+      "name": "over per-draw cap: chain says E_PerDrawCap",
+      "ok": true,
+      "detail": " contract panicked: E_PerDrawCap: per-draw cap exceeded\"}}}}"
+    },
+    {
+      "name": "second deploy beyond the mandate: refused by the chain",
+      "ok": false,
+      "detail": "or\":\"Smart contract panicked: E_DeployLimit: deploy limit reached\"}}}}"
+    },
+    {
+      "name": "non-allowlisted code: E_TemplateNotAllowed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "after revoke: E_MandateInactive",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "finishedAt": "2026-11-06T03:08:19.479Z",
+  "result": {
+    "pass": 13,
+    "fail": 2,
+    "failed": [
+      "second deploy beyond the mandate: refused by the chain",
+      "script error: near-admin: tx 8igUTTZxfQAyeHCyP7uzuB3C737jXoeJLEuE7JXYbv98 to vault-v1.autonear-owner-1106.testnet failed: {\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract pani"
+    ]
+  },
+  "scope": "NEAR public testnet. Owner-side transactions are signed by a DEMO owner key held on the same machine as the agent key (automation, not a human). Not an independent audit; no mainnet.",
+  "resumedAt": "2026-11-06T03:04:56.763Z",
+  "verifyDeploy": [
+    {
+      "name": "expected sub-account name is known (explicit or from the approved contractAccount)",
+      "ok": true
+    },
+    {
+      "name": "deployed account is the approved contractAccount",
+      "ok": true
+    },
+    {
+      "name": "expected template id == attested manifest sha256",
+      "ok": true
+    },
+    {
+      "name": "tx hash returned by the node == requested",
+      "ok": true
+    },
+    {
+      "name": "tx finalized",
+      "ok": true
+    },
+    {
+      "name": "signer == the agent",
+      "ok": true
+    },
+    {
+      "name": "receiver == the vault",
+      "ok": true
+    },
+    {
+      "name": "exactly one action: FunctionCall `deploy` with 0 attached deposit",
+      "ok": true
+    },
+    {
+      "name": "deploy args are exactly { template, name, code }",
+      "ok": true
+    },
+    {
+      "name": "deploy template == expected template id",
+      "ok": true
+    },
+    {
+      "name": "deploy name == expected name",
+      "ok": true
+    },
+    {
+      "name": "deploy code sha256 == attested wasm sha256",
+      "ok": true
+    },
+    {
+      "name": "top-level tx status is SuccessValue",
+      "ok": true
+    },
+    {
+      "name": "no failed receipt anywhere in the receipt tree",
+      "ok": true
+    },
+    {
+      "name": "batch receipt vault -> {name}.{vault} present",
+      "ok": true
+    },
+    {
+      "name": "batch is exactly CreateAccount, Transfer, DeployContract, FunctionCall (no AddKey / Stake / DeleteAccount)",
+      "ok": true
+    },
+    {
+      "name": "batch DeployContract code (hash) == attested wasm sha256",
+      "ok": true
+    },
+    {
+      "name": "batch Transfer deposit == expected template deposit",
+      "ok": true
+    },
+    {
+      "name": "batch calls `new` with exactly the owner-fixed init material",
+      "ok": true
+    },
+    {
+      "name": "batch receipt executed successfully",
+      "ok": true
+    },
+    {
+      "name": "on_deployed callback receipt present",
+      "ok": true
+    },
+    {
+      "name": "on_deployed callback executed successfully",
+      "ok": true
+    },
+    {
+      "name": "vault emitted `deployed` for this agent / template / name / target / deposit",
+      "ok": true
+    },
+    {
+      "name": "callback emitted `deploy_confirmed` for this template / name / target",
+      "ok": true
+    },
+    {
+      "name": "no `deploy_failed` event (callback did not reverse the charge)",
+      "ok": true
+    },
+    {
+      "name": "sub-account code hash == attested wasm sha256",
+      "ok": true
+    },
+    {
+      "name": "sub-account has NO access keys (immutable)",
+      "ok": true
+    },
+    {
+      "name": "registry owner == approved owner",
+      "ok": true
+    },
+    {
+      "name": "registry proposer == approved proposer",
+      "ok": true
+    },
+    {
+      "name": "registry network_id == approved network",
+      "ok": true
+    },
+    {
+      "name": "registry not paused at deploy",
+      "ok": true
+    }
+  ],
+  "followUp": [
+    {
+      "note": "Two checks of the resumed run were marked FAIL by the script itself, not by the chain: (1) its expected-error regex did not list E_DeployLimit, which is the contract's correct refusal of a second deploy (tx GEguMwExvWqi8RgeEJgjsNMMJ6KLhZMXf1mLjn7hEj88 failed with E_DeployLimit); (2) the script asked the owner to withdraw 1 NEAR when the vault held less (E_InsufficientBal). Both script lines were fixed afterwards; the original FAIL entries above are kept unchanged."
+    },
+    {
+      "label": "owner withdraw 0.1 NEAR while the mandate is revoked (follow-up run)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "9yWx7xFg9wfE3EDPSo3W1WrMqtoyzDfKehxnTE9GYdP1",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/9yWx7xFg9wfE3EDPSo3W1WrMqtoyzDfKehxnTE9GYdP1",
+      "ownerBalanceIncreased": true
+    }
+  ],
+  "final": {
+    "usage": {
+      "totalSpent": "4300000000000000000000000",
+      "periodSpent": "4300000000000000000000000",
+      "deploys": 1,
+      "periodIndex": 0
+    },
+    "available": "199510000000000000000000",
+    "mandateRevoked": true,
+    "mandateActive": false
+  }
+}
