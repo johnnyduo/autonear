@@ -537,7 +537,7 @@ const parseNep141 = (outcome) => (outcome?.outcome?.logs ?? []).filter((l) => l.
  *   - the vault's own `paid` event names that agent / token / payee / amount, and there is NO `pay_failed` event
  *   - the vault -> token receipt is a single `ft_transfer(receiver_id = to, amount)` with 1 yocto and executed successfully on the token
  *   - the `on_paid` callback ran and succeeded for the same token / payee / amount
- *   - if the token emitted NEP-141 events, an `ft_transfer` vault -> payee for that amount is among them
+ *   - the token MUST have emitted an NEP-141 `ft_transfer` event vault -> payee for that amount (no event = not a payment)
  * `memo`: when non-empty it must equal the memo that was sent. -> { ok, checks, observedAt, paid }
  */
 async function verifyPay({ net, txHash, vault, agent, token, to, amount, memo, fetchImpl, role } = {}) {
@@ -588,9 +588,9 @@ async function verifyPay({ net, txHash, vault, agent, token, to, amount, memo, f
       checks.push(check('ft_transfer amount == approved amount', String(fa?.amount) === want.toString(), `${fa?.amount} vs ${want}`));
       const fo = outcomeById.get(ftr.receipt_id);
       checks.push(check('token executed ft_transfer successfully', Boolean(fo) && fo.outcome?.executor_id === token && fo.outcome?.status?.SuccessValue !== undefined, fo ? JSON.stringify(fo.outcome.status).slice(0, 120) : 'no outcome'));
+      // MANDATORY: NEP-141 requires the token to emit this event. A token that succeeds without it (faulty or malicious) cannot be shown to have moved funds, so it is not a payment.
       const ev = parseNep141(fo);
-      if (ev.length) checks.push(check('token event ft_transfer vault -> payee for the approved amount', ev.some((e) => e.event === 'ft_transfer' && (e.data ?? []).some((d) => d.old_owner_id === vault && d.new_owner_id === to && String(d.amount) === want.toString())), ev.map((e) => e.event).join(',')));
-      else checks.push({ name: 'INFO: the token emitted no NEP-141 event (balance change not cross-checked)', ok: true, detail: '', info: true });
+      checks.push(check('token event ft_transfer vault -> payee for the approved amount', ev.some((e) => e.event === 'ft_transfer' && (e.data ?? []).some((d) => d.old_owner_id === vault && d.new_owner_id === to && String(d.amount) === want.toString())), ev.length ? ev.map((e) => e.event).join(',') : 'the token emitted no NEP-141 event'));
     }
     const cb = receipts.find((r) => r.receiver_id === vault && r.predecessor_id === vault && callsOf(r).some((f) => f.method_name === 'on_paid'));
     checks.push(check('on_paid callback receipt present', Boolean(cb), ''));

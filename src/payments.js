@@ -134,6 +134,11 @@ export async function recordPayment(db, decisionId, { txHash, fetchImpl } = {}) 
   const run = await db.get('SELECT * FROM mandate_runs WHERE decision_id=?', [decisionId]);
   const vault = run ? await db.get('SELECT * FROM vaults WHERE id=?', [run.vault_id]) : null;
   if (!run || !vault || String(vault.address).toLowerCase() !== String(d.bound_signer).toLowerCase() || String(vault.address).toLowerCase() !== String(payload.vault ?? '').toLowerCase()) throw new PolicyError('no mandate run / vault matches this payment', 'state');
+  // Bind the hash to THIS decision's run. A run that saved its hash can only be recorded with that exact hash (otherwise another decision's unrecorded tx, identical in
+  // token / payee / amount, could close this one without paying). A run without a saved hash (lost-hash recovery by an operator) accepts a hash only if no other run
+  // carries it; it is stored on the run, atomically, after the verification below.
+  if (run.tx_hash && run.tx_hash !== txHash) throw new PolicyError('this decision\'s payment was sent as a different transaction than the one supplied: hash mismatch', 'state');
+  if (!run.tx_hash && await db.get('SELECT decision_id FROM mandate_runs WHERE tx_hash=? AND decision_id<>?', [txHash, decisionId])) throw new PolicyError('this transaction hash belongs to another mandate run', 'state');
   const { adapter, reason } = await adapterFor(net.protocol);
   if (!adapter) throw new PolicyError(reason, 'unavailable');
   if (typeof adapter.verifyPay !== 'function') throw new PolicyError('vault adapter incomplete: missing verifyPay', 'unavailable');
@@ -148,6 +153,10 @@ export async function recordPayment(db, decisionId, { txHash, fetchImpl } = {}) 
   if (!v.ok) {
     await audit(db, 'verifier', 'payment.rejected', { id: decisionId, txHash, failed: (v.checks ?? []).filter((c) => !c.ok).map((c) => ({ name: c.name, detail: c.detail })) });
     return { recorded: false, verification: v, payFailed: (v.checks ?? []).some((c) => !c.ok && /pay_failed/.test(c.name)) };
+  }
+  if (!run.tx_hash) { // bind the verified hash to the run: one conditional UPDATE, so two decisions can never both take one hash
+    const bound = await db.run('UPDATE mandate_runs SET tx_hash=? WHERE decision_id=? AND tx_hash IS NULL AND NOT EXISTS (SELECT 1 FROM mandate_runs m WHERE m.tx_hash=?)', [txHash, decisionId, txHash]);
+    if (!bound.changes && (await db.get('SELECT tx_hash FROM mandate_runs WHERE decision_id=?', [decisionId]))?.tx_hash !== txHash) throw new PolicyError('this transaction hash belongs to another mandate run', 'state');
   }
   // Atomic claim: only one concurrent request can move approved -> executing.
   const claim = await db.run("UPDATE decisions SET status='executing' WHERE id=? AND status='approved'", [decisionId]);

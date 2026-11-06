@@ -85,7 +85,9 @@ describe('adapter.verifyPay (fake receipts)', () => {
     // token events: when the token emits NEP-141 events one must be vault -> payee for the amount
     t = payTx(); t.receipts_outcome.find((o) => o.id === 'R_FT').outcome.logs = [`EVENT_JSON:${JSON.stringify({ standard: 'nep141', version: '1.0.0', event: 'ft_transfer', data: [{ old_owner_id: VAULT, new_owner_id: BOB, amount: String(25n * M) }] })}`];
     assert.ok(failedNames(await verifyPay(t)).some((n) => /token event ft_transfer/.test(n)));
-    t = payTx(); t.receipts_outcome.find((o) => o.id === 'R_FT').outcome.logs = []; const ok = await verifyPay(t); assert.equal(ok.ok, true); assert.ok(ok.checks.some((c) => c.info));
+    // ...and the event is MANDATORY: a token that reports success but emits no NEP-141 event is not a payment
+    t = payTx(); t.receipts_outcome.find((o) => o.id === 'R_FT').outcome.logs = []; const none = await verifyPay(t); assert.equal(none.ok, false); assert.equal(none.paid, null);
+    assert.deepEqual(failedNames(none), ['token event ft_transfer vault -> payee for the approved amount']); assert.ok(none.checks.every((c) => !c.info));
   });
   test('unknown tx, unreachable node, bad hash, mainnet, bad inputs: a failed verification, never a throw and never a pass', async () => {
     const w = makeChain(); w.txs = {};
@@ -605,6 +607,52 @@ describe('recordPayment', { skip: skipNoBuilds }, () => {
     assert.equal((await world.db.get('SELECT COUNT(*) n FROM payments')).n, 1); assert.equal((await world.db.get('SELECT status FROM decisions WHERE id=?', [d2.id])).status, 'approved');
     tx(world, payTx({ hash: TX2 }), TX2);
     assert.equal((await recordPayment(world.db, d2.id, { txHash: TX2, fetchImpl: world.fetchImpl })).recorded, true);
+  });
+  test('the hash is bound to THIS decision\'s run: a second identical decision cannot be closed with the first one\'s (unrecorded) hash', async () => {
+    const world = await makeWorld(); const never = world.fetchImpl;
+    const d1 = await approvedPayment(world, { token: USDC, payee: ALICE, amount: String(25n * M), memo: 'invoice 42', reference: 'one' });
+    await world.db.run('UPDATE mandate_runs SET tx_hash=?, status=? WHERE decision_id=?', [TX, 'submitted', d1.id]); // run 1 sent TX and saved it, nobody recorded it yet
+    tx(world); // TX really is a good payment of 25 USDC to ALICE
+    await world.db.run("UPDATE decisions SET status='executed' WHERE id=?", [d1.id]); // free the in-flight slot without touching run 1's hash
+    await world.db.run("UPDATE mandate_runs SET status='failed' WHERE decision_id=?", [d1.id]);
+    const d2 = await approvedPayment(world, { token: USDC, payee: ALICE, amount: String(25n * M), memo: 'invoice 42', reference: 'two' });
+    await assert.rejects(recordPayment(world.db, d2.id, { txHash: TX, fetchImpl: never }), (e) => e.code === 'state' && /another mandate run/.test(e.message));
+    assert.equal((await world.db.get('SELECT COUNT(*) n FROM payments')).n, 0); assert.equal((await world.db.get('SELECT status FROM decisions WHERE id=?', [d2.id])).status, 'approved');
+    assert.equal((await world.db.get('SELECT tx_hash FROM mandate_runs WHERE decision_id=?', [d2.id])).tx_hash, null);
+    // a run that saved its own hash accepts only that hash
+    await world.db.run('UPDATE mandate_runs SET tx_hash=? WHERE decision_id=?', [TX2, d2.id]);
+    await assert.rejects(recordPayment(world.db, d2.id, { txHash: TX, fetchImpl: never }), (e) => e.code === 'state' && /hash mismatch/.test(e.message));
+    tx(world, payTx({ hash: TX2 }), TX2);
+    assert.equal((await recordPayment(world.db, d2.id, { txHash: TX2, fetchImpl: world.fetchImpl })).recorded, true);
+  });
+  test('a run with a saved hash records with exactly that hash; lost-hash recovery binds the verified hash to the run once', async () => {
+    const a = await setup(); tx(a.world, payTx(), TX);
+    await a.world.db.run('UPDATE mandate_runs SET tx_hash=? WHERE decision_id=?', [TX, a.d.id]);
+    assert.equal((await recordPayment(a.world.db, a.d.id, { txHash: TX, fetchImpl: a.world.fetchImpl })).recorded, true);
+    const b = await setup(); tx(b.world);
+    assert.equal((await b.world.db.get('SELECT tx_hash FROM mandate_runs WHERE decision_id=?', [b.d.id])).tx_hash, null);
+    // an unverifiable hash binds nothing
+    let r = await recordPayment(b.world.db, b.d.id, { txHash: TX2, fetchImpl: b.world.fetchImpl }); assert.equal(r.recorded, false);
+    assert.equal((await b.world.db.get('SELECT tx_hash FROM mandate_runs WHERE decision_id=?', [b.d.id])).tx_hash, null);
+    r = await recordPayment(b.world.db, b.d.id, { txHash: TX, fetchImpl: b.world.fetchImpl }); assert.equal(r.recorded, true);
+    const run = await b.world.db.get('SELECT * FROM mandate_runs WHERE decision_id=?', [b.d.id]); assert.deepEqual([run.tx_hash, run.status], [TX, 'confirmed']);
+  });
+  test('lost-hash recovery: a hash that another run already carries is refused, even if that run belongs to a different vault decision still unrecorded', async () => {
+    const { world, d } = await setup(); tx(world);
+    await world.db.run("INSERT INTO mandate_runs(decision_id,vault_id,epoch,tx_hash,status,created_at) VALUES('dec_other','vlt_other',1,?,'failed',?)", [TX, Date.now()]);
+    await assert.rejects(recordPayment(world.db, d.id, { txHash: TX, fetchImpl: world.fetchImpl }), (e) => e.code === 'state' && /another mandate run/.test(e.message));
+    assert.equal((await world.db.get('SELECT COUNT(*) n FROM payments')).n, 0);
+  });
+  test('the bind itself is race-safe: if another run takes the hash between the check and the bind, nothing is recorded', async () => {
+    const { world, d } = await setup(); tx(world);
+    const realRun = world.db.run.bind(world.db);
+    world.db.run = async (sql, params) => { // simulate the other run winning the hash right before our conditional UPDATE
+      if (/UPDATE mandate_runs SET tx_hash=\? WHERE decision_id=\? AND tx_hash IS NULL/.test(sql)) await realRun("INSERT INTO mandate_runs(decision_id,vault_id,epoch,tx_hash,status,created_at) VALUES('dec_racer','vlt_x',1,?,'submitted',?)", [TX, Date.now()]);
+      return realRun(sql, params);
+    };
+    await assert.rejects(recordPayment(world.db, d.id, { txHash: TX, fetchImpl: world.fetchImpl }), (e) => e.code === 'state');
+    world.db.run = realRun;
+    assert.equal((await world.db.get('SELECT COUNT(*) n FROM payments')).n, 0); assert.equal((await world.db.get('SELECT status FROM decisions WHERE id=?', [d.id])).status, 'approved');
   });
   test('race: concurrent recordings of one decision write exactly one row', async () => {
     const { world, d } = await setup(); tx(world);
