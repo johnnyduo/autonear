@@ -123,6 +123,7 @@ export const MANDATE = { perDrawCap: (ETH / 20n).toString(), periodSecs: 3600, p
 export async function makeWorld(anvil, opts = {}) {
   const { db, artifactHash } = opts.db ? { db: opts.db, artifactHash: opts.artifactHash } : await seededDb(); // opts.db/keys/artifactHash: a SECOND vault in the same database
   const vault = await deployVault(anvil);
+  if (opts.mode !== 'manual') await db.run("INSERT INTO kv(k,v) VALUES('autonomy.mode','auto') ON CONFLICT(k) DO UPDATE SET v='auto'"); // the loop's default is MANUAL; the cycle tests exercise AUTO unless a test asks otherwise
   const keys = opts.keys ?? tempKeystore();
   const agent = keys.ks.publicView().evm.address;
   if ((opts.seed ?? SEED) > 0n) await sendAs(anvil, 'other', { to: agent, value: opts.seed ?? SEED });

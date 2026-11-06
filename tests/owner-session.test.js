@@ -122,3 +122,14 @@ test('without OPERATOR_TOKEN sessions are disabled', async () => {
   const ch = await call(app, '/api/auth/challenge', { method: 'POST', body: JSON.stringify({ address: owner.address }) });
   assert.equal(ch.status, 401);
 });
+
+test('autonomy mode: public read, owner/operator write, junk rejected', async () => {
+  const app = await mk();
+  assert.equal((await call(app, '/api/autonomy')).body.mode, 'manual');
+  assert.equal((await call(app, '/api/autonomy/mode', { method: 'PUT', body: JSON.stringify({ mode: 'auto' }) })).status, 401);
+  const { body } = await signIn(app, owner);
+  const h = { authorization: `Bearer ${body.token}` };
+  assert.equal((await call(app, '/api/autonomy/mode', { method: 'PUT', headers: h, body: JSON.stringify({ mode: 'auto' }) })).body.mode, 'auto');
+  assert.equal((await call(app, '/api/autonomy/mode', { method: 'PUT', headers: h, body: JSON.stringify({ mode: 'yolo' }) })).status, 400);
+  assert.equal((await call(app, '/api/status')).body.autonomy.mode, 'auto');
+});

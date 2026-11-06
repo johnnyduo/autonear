@@ -12,6 +12,9 @@ import { monitorDeployments } from '../src/monitor.js';
 import { vaultId, getVault, getLoop, pauseLoop, blockLoop, verifyLedgerChain, registerAdapter, unregisterAdapter } from '../src/vault/index.js';
 import { adapter as evm, encodeVaultCall, predictCreate2, saltForDecision } from '../src/vault/evm.js';
 import { verifyAuditChain } from '../src/db.js';
+import { getMode, setMode } from '../src/autonomy-mode.js';
+import { selector } from '../src/agent/evm-signer.js';
+import { topUpConfig } from '../src/autonomy.js';
 import {
   haveAnvil, startAnvil, makeWorld, sendAs, seededDb, pendingDecision, tempKeystore, apiClient, offline, ADDR, ETH, REG_ART, REG_OWNER, REG_PROPOSER, MANDATE, KEY,
 } from './vault-helpers.js';
@@ -29,6 +32,7 @@ describe('rule (a): the loop does nothing unless every gate is open (no RPC is t
   async function gateWorld(over = {}) {
     const { db } = await seededDb();
     const keys = tempKeystore();
+    await db.run("INSERT INTO kv(k,v) VALUES('autonomy.mode',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v", [over.mode ?? 'auto']);
     const chainId = over.chainId ?? 'evm:31337';
     const id = vaultId(chainId, VAULT_ADDR);
     await db.run('INSERT INTO vaults(id,chain_id,address,owner,agent,attested_ref,status,mandate_decision_id,created_at) VALUES(?,?,?,?,?,?,?,?,?)',
@@ -326,6 +330,112 @@ describe('autonomous cycle on a LOCAL anvil (31337)', { skip: !haveAnvil && 'anv
       assert.ok(!JSON.stringify(blobs).includes(w.keys.path), 'key file path never published');
       assert.equal((await verifyAuditChain(w.db)).ok, true);
       assert.equal((await verifyLedgerChain(w.db)).ok, true);
+    });
+  });
+
+  // ---------------------------------------------------------------- mode + rule (j): gas top-up
+  describe('manual/auto mode and rule (j) gas top-up', () => {
+    const balanceOf = async (addr) => BigInt(await anvil.raw('eth_getBalance', [addr, 'latest']));
+    const topups = async (w) => (await ledgerOf(w)).filter((x) => x.kind === 'draw' && /^top-up/.test(x.detail));
+    const lowGas = async (w) => { await anvil.raw('anvil_setBalance', [w.agent, '0x38d7ea4c68000']); return w; }; // 0.001 ETH: below the 0.003 low-water mark (the shared anvil reuses one agent key, so set it explicitly)
+    const LOW = 3_000_000_000_000_000n; const TARGET = 10_000_000_000_000_000n;
+
+    test('default mode is manual; setMode audits the change and rejects junk', async () => {
+      const { db } = await seededDb();
+      assert.equal(await getMode(db), 'manual');
+      await setMode(db, 'auto', 'owner:0xabc'); assert.equal(await getMode(db), 'auto');
+      assert.equal((await db.get("SELECT COUNT(*) n FROM audit WHERE action='autonomy.mode'")).n, 1);
+      await assert.rejects(setMode(db, 'yolo'), (e) => e.code === 'input');
+      assert.equal(await getMode(db), 'auto');
+    });
+    test('top-up band: env overrides are bounded and target stays above low-water', () => {
+      assert.deepEqual(topUpConfig({}, 'evm'), { low: LOW, target: TARGET });
+      assert.equal(topUpConfig({ AUTONOMY_TOPUP_LOW: '100', AUTONOMY_TOPUP_TARGET: '50' }, 'evm').target, 300n);
+      assert.deepEqual(topUpConfig({ AUTONOMY_TOPUP_LOW: 'junk' }, 'evm'), { low: LOW, target: TARGET });
+    });
+    test('manual mode never executes a pending deploy and never tops up', async () => {
+      const w = await makeWorld(anvil, { mode: 'manual' }); const d = await w.newDecision();
+      const bal = await balanceOf(w.agent);
+      const r = await w.tick();
+      assert.equal(r.vaults[0].manual, true);
+      await noDeploy(w, [d.id]);
+      assert.equal(await balanceOf(w.agent), bal, 'no transaction was sent');
+      assert.equal((await ledgerOf(w)).filter((x) => x.kind === 'draw').length, 0);
+      w.cleanup();
+    });
+    test('auto mode tops up when the balance is below low-water, once, up to the target', async () => {
+      const w = await lowGas(await makeWorld(anvil));
+      const r = await w.tick();
+      assert.equal(r.vaults[0].idle, true); assert.ok(r.vaults[0].toppedUp, JSON.stringify(r));
+      const t = await topups(w); assert.equal(t.length, 1); assert.equal(t[0].status, 'confirmed'); assert.ok(t[0].txHash);
+      const bal = await balanceOf(w.agent);
+      assert.ok(bal >= LOW && bal <= TARGET, `balance ${bal} inside the band`);
+      const r2 = await w.tick(); assert.equal(r2.vaults[0].toppedUp, undefined, 'balance is above low-water: nothing more to do');
+      assert.equal((await topups(w)).length, 1);
+      w.cleanup();
+    });
+    test('top-up is capped by the per-draw cap and the remaining budget', async () => {
+      const w = await lowGas(await makeWorld(anvil, { mandate: { perDrawCap: '2000000000000000', periodCap: '2500000000000000', totalCap: '2500000000000000' } }));
+      await w.tick();
+      const t = await topups(w); assert.equal(t.length, 1);
+      assert.ok(BigInt(t[0].amount) <= 2_000_000_000_000_000n, `drew ${t[0].amount} <= per-draw cap`);
+      const v = (await w.api('/api/vault')).json.vaults[0];
+      assert.ok(BigInt(v.budget.remainingTotal) >= 0n);
+      w.cleanup();
+    });
+    test('no top-up while the vault is paused, the loop is paused, or the kill switch is engaged', async () => {
+      const w = await lowGas(await makeWorld(anvil));
+      await ownerTx(w, 'pause', []);
+      await w.tick(); assert.equal((await topups(w)).length, 0, 'vault paused');
+      await ownerTx(w, 'unpause', []);
+      await pauseLoop(w.db, 'test'); await w.tick(); assert.equal((await topups(w)).length, 0, 'loop paused');
+      await w.api('/api/vault/loop/resume', { method: 'POST' });
+      await setPaused(w.db, true, 'test'); await w.tick(); assert.equal((await topups(w)).length, 0, 'kill switch');
+      await setPaused(w.db, false, 'test');
+      const r = await w.tick(); assert.ok(r.vaults[0].toppedUp, 'everything open again: the top-up happens');
+      w.cleanup();
+    });
+    test('no second top-up while the first claim is fresh; a crash after the claim never repeats the draw; a stale claim allows a retry', async () => {
+      const w = await lowGas(await makeWorld(anvil));
+      await w.db.run('INSERT INTO kv(k,v) VALUES(?,?)', [`topup:${w.vaultId}`, JSON.stringify({ status: 'claimed', at: Date.now() })]); // process died right after claiming
+      await w.tick(); assert.equal((await topups(w)).length, 0, 'fresh claim: wait');
+      await w.db.run('UPDATE kv SET v=? WHERE k=?', [JSON.stringify({ status: 'claimed', at: Date.now() - 31 * 60_000 }), `topup:${w.vaultId}`]);
+      await w.tick(); assert.equal((await topups(w)).length, 1, 'stale claim: one retry');
+      await anvil.raw('anvil_setBalance', [w.agent, '0x1000000000000']); // low again straight away
+      await w.tick(); assert.equal((await topups(w)).length, 1, 'the retry holds a fresh claim again: no second draw');
+      w.cleanup();
+    });
+    test('mode flipped to manual between the claim and the send aborts before signing', async () => {
+      let armed = false; let sawEstimate = false; let flipped = false; let w;
+      const f = async (u, init) => {
+        const b = init?.body ? JSON.parse(init.body) : null;
+        if (armed && b?.method === 'eth_estimateGas') sawEstimate = true;
+        if (armed && sawEstimate && !flipped && b?.method === 'eth_call') { flipped = true; await setMode(w.db, 'manual', 'test'); }
+        return anvil.baseFetch(u, init);
+      };
+      w = await lowGas(await makeWorld(anvil, { fetchImpl: f }));
+      armed = true;
+      const bal = await balanceOf(w.agent);
+      await w.tick();
+      assert.equal(flipped, true, 'the hook fired between estimate and claim');
+      assert.equal((await topups(w)).length, 0); assert.equal(await balanceOf(w.agent), bal, 'nothing was signed or sent');
+      w.cleanup();
+    });
+    test('top-up parity mismatch (chain says Paused, model says ok) blocks the loop and signs nothing', async () => {
+      let tamper = false;
+      const sel = Buffer.from(selector('previewDraw(uint256)')).toString('hex');
+      const f = async (u, init) => {
+        const b = init?.body ? JSON.parse(init.body) : null;
+        if (tamper && b?.method === 'eth_call' && String(b.params?.[0]?.data).startsWith('0x' + sel)) return new Response(JSON.stringify({ jsonrpc: '2.0', id: b.id ?? 1, result: '0x9e87fac8' + '00'.repeat(28) }), { status: 200 });
+        return anvil.baseFetch(u, init);
+      };
+      const w = await lowGas(await makeWorld(anvil, { fetchImpl: f }));
+      tamper = true;
+      const r = await w.tick();
+      assert.equal(r.vaults[0].blocked, true, JSON.stringify(r));
+      assert.equal((await getLoop(w.db)).state, 'blocked');
+      assert.equal((await topups(w)).length, 0);
+      w.cleanup();
     });
   });
 

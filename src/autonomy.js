@@ -13,11 +13,16 @@
 //  (e) one agent execution per decision (mandate_runs PK), one deploy in flight per vault (partial unique index), per-day limit.
 //  (g) draws only what is needed for 3x the estimated fee of the deploy (never more), single draw, inside the per-draw cap.
 //  (h) every step appends to the hash-chained vault_ledger; a failure releases the decision to the humans, never leaving it `executing`.
+//  (j) gas top-up (AUTO mode only): when the agent balance is under a low-water mark, ONE bounded draw to the agent's own address, inside the mandate
+//      (never above the per-draw cap or the remaining budget), parity-checked like every draw, under a durable per-vault claim (kv topup:<vault>) so a crash,
+//      a pending receipt or a restart can never repeat it, and capped per 24h. MANUAL mode (the default): the loop only reconciles in-flight work and acts on nothing.
 //  (i) errors are redacted by the keystore before they reach the ledger/audit/logs; key material never reaches this module.
 import { now, parse, getBlob } from './db.js';
 import { autonomyEnabled, autonomyMaxPerDay } from './config.js';
 import { findNetwork } from './protocols.js';
 import { PolicyError } from './policy.js';
+import { getMode, TOPUP_DEFAULTS, topUpConfig } from './autonomy-mode.js';
+import { describeBudget } from './vault-model.js';
 import { approveUnderMandate, recordDeployment, releaseToHuman } from './decisions.js';
 import {
   adapterFor, adapterProblems, VAULT_REQUIRED_LOOP, readVault, modelFromState, verifyMandate, verifyLedgerChain, appendLedger, appendLedgerOnce,
@@ -27,6 +32,9 @@ import {
 /** Compiled-in ceiling on the worst-case fee of ONE agent transaction (base units). The signer enforces the per-call limit under it. */
 export const HARD_MAX_FEE_PER_TX = Object.freeze({ evm: 50_000_000_000_000_000n, near: 1_000_000_000_000_000_000_000_000n });
 export const FEE_HEADROOM = 3n;
+export { TOPUP_DEFAULTS, topUpConfig };
+const TOPUP_STALE_MS = 30 * 60_000;
+const TOPUP_MAX_PER_DAY = 6;
 const CLAIM_STALE_MS = 5 * 60_000; const SUBMIT_STALE_MS = 30 * 60_000; const EXEC_STALE_MS = 2 * 60_000;
 const low = (s) => String(s ?? '').toLowerCase();
 const killSwitch = async (db) => (await db.get("SELECT v FROM kv WHERE k='kill_switch'"))?.v === '1';
@@ -114,9 +122,9 @@ async function processVault(ctx, vault) {
 
   await reconcile(ctx, vault, adapter, net);
   if ((await getLoop(db)).state === 'blocked') return { blocked: true };
+  if ((await getMode(db)) !== 'auto') return { manual: true }; // MANUAL (default): in-flight work was reconciled above; nothing new starts, decisions wait for the owner
 
   const candidates = await db.all("SELECT * FROM decisions WHERE action='deploy_testnet' AND chain_id=? AND status='pending' AND expiry>? AND bound_signer IS NULL AND approver IS NULL AND id NOT IN (SELECT decision_id FROM mandate_runs) ORDER BY created_at", [vault.chain_id, now()]);
-  if (!candidates.length) return { idle: true };
   if (await db.get("SELECT 1 x FROM mandate_runs WHERE vault_id=? AND status IN ('claimed','submitted')", [vault.id])) return { busy: true };
 
   // vault-level gates need chain state
@@ -146,6 +154,9 @@ async function processVault(ctx, vault) {
   const grantTemplates = new Map((grant.templates ?? []).map((t) => [low(t.templateId), t]));
 
   const out = { done: [], left: [] };
+  const tu = await topUp(ctx, { vault, adapter, net, agent }).catch(async (e) => { ctx.errors.push(ctx.redact(e)); await appendLedgerOnce(db, vault.id, 'topup-error', { kind: 'refused', status: 'refused', detail: `gas top-up failed: ${ctx.redact(e)}` }, { redact: ctx.redact }).catch(() => {}); return { refused: 'top-up failed' }; });
+  if (tu?.blocked) return { blocked: true, refused: tu.refused };
+  if (!candidates.length) return tu?.toppedUp ? { idle: true, toppedUp: tu.amount } : { idle: true };
   for (const cand of candidates) {
     if ((await getLoop(db)).state !== 'running') break;
     if (await killSwitch(db)) { out.refused = 'kill switch engaged'; break; }
@@ -261,6 +272,7 @@ async function runDecision(ctx, { vault, adapter, net, agent, cand, grantTemplat
     const stillOk = async (what) => {
       if (await killSwitch(db)) throw new Error(`kill switch engaged before ${what}`);
       const l = await getLoop(db); if (l.state !== 'running') throw new Error(`loop is ${l.state} before ${what}`);
+      if ((await getMode(db)) !== 'auto') throw new Error(`mode switched to manual before ${what}`);
       const d = await db.get('SELECT status, approver FROM decisions WHERE id=?', [cand.id]);
       if (d?.status !== 'approved' || !String(d.approver).startsWith('mandate:')) throw new Error(`decision is ${d?.status} before ${what}`);
     };
@@ -323,6 +335,46 @@ async function finalize(ctx, { vault, cand, txHash, net }) {
   await blockLoop(db, `deploy ${cand.id} landed but did not verify (${failed.slice(0, 160)})`, { vaultId: vault.id, decisionId: cand.id, txHash, redact: ctx.redact });
   void net;
   return { blocked: true, refused: 'verification failed' };
+}
+
+// ---------------------------------------------------------------------------------------------------------------- rule (j): gas top-up (auto mode only)
+async function topUp(ctx, { vault, adapter, net, agent }) {
+  const { db } = ctx;
+  const cfg = topUpConfig(ctx.env, net.protocol);
+  if (!cfg) return null;
+  const key = `topup:${vault.id}`;
+  const state = await freshState(ctx, vault);
+  if (state.agentBalance >= cfg.low) { await db.run('DELETE FROM kv WHERE k=?', [key]); return null; } // topped up (or never needed): the claim is moot
+  const model = modelFromState(state, net.protocol);
+  const budget = describeBudget(model, state.blockTime);
+  if (!budget.active) return null; // revoked / expired / paused / exhausted: the other gates already ledger it
+  const used = await db.get("SELECT COUNT(*) n FROM vault_ledger WHERE vault_id=? AND kind='draw' AND status='confirmed' AND detail LIKE 'top-up%' AND time>?", [vault.id, now() - 86_400_000]);
+  if (Number(used?.n ?? 0) >= TOPUP_MAX_PER_DAY) return null;
+  const hardMax = HARD_MAX_FEE_PER_TX[net.protocol];
+  const probe = adapter.buildCall('draw', { vault: vault.address, amount: 1n });
+  const drawFee = (await adapter.estimateFee({ net, vault: vault.address, agent, call: probe, fetchImpl: ctx.fetchImpl })).worstCaseFee;
+  if (drawFee > hardMax) { await appendLedgerOnce(db, vault.id, 'topup-fee-ceiling', { kind: 'refused', status: 'refused', detail: `top-up skipped: worst-case draw fee ${drawFee} exceeds the compiled-in ceiling ${hardMax}` }, { redact: ctx.redact }); return null; }
+  if (state.agentBalance < drawFee) { await appendLedgerOnce(db, vault.id, 'topup-seed', { kind: 'refused', status: 'refused', detail: `top-up impossible: agent balance ${state.agentBalance} cannot pay the gas of its own draw (${drawFee}); send it a small seed balance` }, { redact: ctx.redact }); return null; }
+  const want = cfg.target - state.agentBalance;
+  const amount = want < budget.maxDraw ? want : budget.maxDraw;
+  if (amount <= drawFee) return null; // would cost more than it brings
+  const dp = await parity(ctx, { vault, adapter, net, state, kind: 'draw', args: { chain: { amount }, model: { amount } }, decisionId: null });
+  if (dp.blocked) return { blocked: true, refused: 'preview mismatch' };
+  if (!dp.ok) return { refused: dp.refused };
+  if (dp.code) { await appendLedgerOnce(db, vault.id, `topup-refused:${dp.code}`, { kind: 'refused', status: 'refused', detail: `top-up refused by vault rules: ${dp.code}` }, { redact: ctx.redact }); return null; }
+
+  // durable claim: atomic insert-or-replace-if-stale; a second concurrent/crashed attempt inside the stale window changes 0 rows
+  const claim = await db.run("INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v WHERE CAST(json_extract(kv.v,'$.at') AS INTEGER) < ?", [key, JSON.stringify({ status: 'claimed', at: now() }), now() - TOPUP_STALE_MS]);
+  if (!claim.changes) return null;
+  const signer = ctx.ks.signer(net.protocol, adapter.signerOptions({ net, fetchImpl: ctx.fetchImpl, extra: ctx.deps.signerOpts ?? {} }));
+  const fee = (drawFee * 3n) / 2n + 1n;
+  if ((await killSwitch(db)) || (await getLoop(db)).state !== 'running') return null;
+  if ((await getMode(db)) !== 'auto') return null; // flipped to manual between the claim and the send: abort before signing
+  await db.run('UPDATE kv SET v=? WHERE k=?', [JSON.stringify({ status: 'submitted', at: now() }), key]);
+  const res = await signer.signAndSend(adapter.buildCall('draw', { vault: vault.address, amount }), { maxFeePerTx: fee > hardMax ? hardMax : fee, allowedTargets: [vault.address] });
+  await db.run('UPDATE kv SET v=? WHERE k=?', [JSON.stringify({ status: 'submitted', at: now(), txHash: res.txHash ?? null }), key]);
+  await appendLedger(db, vault.id, { kind: 'draw', status: res.ok ? 'confirmed' : res.status === 'pending' ? 'confirmed' : 'failed', txHash: res.txHash, amount, detail: res.ok ? `top-up: drew ${amount} so the agent can pay for its own transactions (low-water ${cfg.low}, target ${cfg.target})` : res.status === 'pending' ? 'top-up draw submitted; receipt not seen before the timeout, the next tick re-reads the balance' : `top-up draw transaction ${res.status}` }, { redact: ctx.redact });
+  return res.ok ? { toppedUp: true, amount: String(amount) } : { refused: `top-up ${res.status}` };
 }
 
 // ---------------------------------------------------------------------------------------------------------------- reconcile (crash / timeout recovery)

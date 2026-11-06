@@ -15,6 +15,7 @@ import { PROTOCOLS, findNetwork } from './protocols.js';
 import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from './policy.js';
 import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant } from './vault/index.js';
+import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
 import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 import { buildChallenge, checkSignedChallenge, consumeNonce, deriveSecret, issueSession, readSession, resolveOwner, SESSION_TTL_MS } from './owner-session.js';
 
@@ -57,6 +58,8 @@ const ALLOW = [
   [/^\/api\/vault\/(loop\/(pause|resume)|mandates\/propose|attach)$/, 'POST'],
   [/^\/api\/auth\/(challenge|session)$/, 'POST'],
   [/^\/api\/auth\/me$/, 'GET, HEAD'],
+  [/^\/api\/autonomy$/, 'GET, HEAD'],
+  [/^\/api\/autonomy\/mode$/, 'PUT'],
 ];
 const safeEq = (a, b) => { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
 const bearer = (req) => (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
@@ -120,6 +123,7 @@ export function createApp(deps) {
       budget: { perRunUsd: config.budget.usd, perRunTokens: config.budget.tokens },
       engines: engineRegistry().map(({ id, status: st, enabled }) => ({ id, status: st, enabled })),
       vault: await vaultStatusSummary(db),
+      autonomy: { mode: await getMode(db) },
       version: '0.1.0',
     };
   }
@@ -129,6 +133,16 @@ export function createApp(deps) {
     let g;
 
     if (p === '/api/health' && m === 'GET') return out({ ok: true, time: now() });
+    if (p === '/api/autonomy' && m === 'GET') {
+      const evm = topUpConfig(process.env, 'evm'); const near = topUpConfig(process.env, 'near');
+      const str = (c) => ({ low: String(c.low), target: String(c.target) });
+      return out({ mode: await getMode(db), topUp: { evm: str(evm), near: str(near) }, signingSupported });
+    }
+    if (p === '/api/autonomy/mode' && m === 'PUT') {
+      const who = await needOwner(req);
+      const b = await body(req, { type: 'object', required: ['mode'], properties: { mode: { type: 'string', maxLength: 10 } } });
+      return out({ mode: await setMode(db, b.mode, who.actor) });
+    }
     if (p === '/api/auth/challenge' && m === 'POST') {
       if (!sessionSecret) throw new PolicyError('sign-in is disabled: OPERATOR_TOKEN is not configured', 'auth');
       const b = await body(req, { type: 'object', required: ['address'], properties: { address: { type: 'string', maxLength: 64 } } });
