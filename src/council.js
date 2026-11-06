@@ -104,7 +104,7 @@ export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } 
     for (const e of await db.all('SELECT agent_role, status FROM run_events WHERE run_id=? ORDER BY id', [run.id])) roles[e.agent_role] = e.status;
     artifacts = (await db.all('SELECT kind FROM artifacts WHERE run_id=?', [run.id])).map((a) => a.kind);
   }
-  const decision = run ? await db.get("SELECT id, status, approver, decided_at, expiry FROM decisions WHERE run_id=? AND action='deploy_testnet' ORDER BY created_at DESC LIMIT 1", [run.id]) : null;
+  const decision = run ? await db.get("SELECT id, artifact_hash, status, approver, decided_at, expiry FROM decisions WHERE run_id=? AND action='deploy_testnet' ORDER BY created_at DESC LIMIT 1", [run.id]) : null;
   const deployment = decision ? await db.get('SELECT id, network, account, status, verification, explorer_url, time FROM deployments WHERE decision_id=? ORDER BY time DESC LIMIT 1', [decision.id]) : null;
   const monitor = deployment ? parse((await db.get('SELECT v FROM kv WHERE k=?', [`monitor:${deployment.id}`]))?.v, null) : null;
   // the checked build can be recorded against the decision's artifact hash (not only against this run), so look at both
