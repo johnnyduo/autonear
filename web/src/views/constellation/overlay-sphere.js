@@ -117,7 +117,9 @@ function councilOverlay(ctx, sc, { W, H, narrow, calm, fs, items, hot, isHot, ev
   ctx.save(); ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
   const q100 = (x) => Math.round(x * 100); const rules = cs.data?.council?.rules ?? { goAt: 0.62, watchAt: 0.48 }; const STW = { back: 'backs it', abstain: 'unsure', object: 'objects' };
   if (main) {
-    // the verdict, the score and the final judgement live in the scoring box (ScoreBox.jsx), not on the canvas
+    // the verdict, the score and the final judgement live in the scoring box (ScoreBox.jsx); the canvas only carries the title
+    { const y0 = Math.max(narrow ? 100 : 62, (cs.topSafe ?? 0) + 22); ctx.font = SERIF(narrow ? 24 : 34); ctx.fillStyle = 'rgba(236,233,223,0.96)'; ctx.fillText('The Council Star', v.cx, y0 + 14);
+      ctx.font = MONO(fs - 0.5, 500); ctx.fillStyle = '#7ee9ff'; ctx.fillText('SEVEN SEATS VOTE ON EVERY PRODUCT', v.cx, y0 + (narrow ? 40 : 46)); res.push({ x: v.cx - 230, y: y0 - 10, w: 460, h: 70 }); }
     if (!e) { ctx.font = MONO(fs); ctx.fillStyle = COL.chalk2; ctx.fillText('The council has nothing to vote on yet.', W / 2, 90); }
     cs.seats.forEach((s) => { if (s.z < -40 || !s.vote) return; const c = s.lit ? SCSS[s.vote.stance] : COL.chalk3; items.push({ key: `seat${s.i}`, x: s.x, y: s.y, r: 12, a: s.lit ? 1 : 0.55, pr: isHot('seat', s.i) ? 0 : 3, lines: [[s.name.toUpperCase(), fs, COL.chalk, 600], [s.lit ? `${q100(s.vote.support)} · ${STW[s.vote.stance]}` : 'waiting…', fs - 1, c, 500]] }); });
     cs.cry.forEach((c) => { items.push({ key: `prod${c.i}`, x: c.x, y: c.y, r: c.r, a: c.z > 0 ? 1 : 0.5, pr: isHot('prod', c.i) ? 0 : c.win ? 1 : 4, lines: [[cut(c.o.title, 26), fs, c.win ? COL.chalk : COL.chalk2, 600], [c.win ? `${c.o.verdict.toUpperCase()} · WAITING TO BE BUILT` : `${c.o.verdict.toUpperCase()} · ${q100(c.o.support)}/100`, fs - 1, VCSS[c.o.verdict], 500]] }); });

@@ -33,23 +33,21 @@ export default function ScoreBox({ data, sceneRef, wide }) {
         </div>
         <p className="co-sc-legend"><span>under {q(rules.watchAt)}: not now</span><span>{q(rules.watchAt)}+: watch</span><span>{q(rules.goAt)}+: build</span></p>
 
-        <h4 className="co-sc-h">How the seven seats voted</h4>
+        <h4 className="co-sc-h">The seven seats <small>score · weight</small></h4>
         <ul className="co-sc-seats">
-          {e.votes.map((v, i) => { const on = fired(i); const [word, col] = STANCE[v.stance]; return (
-            <li key={v.role} className={on ? 'on' : ''} title={`${ASKS[i]} ${v.reason}`}>
-              <span className="co-sc-name">{NAMES[i]}<small>{ASKS[i]}</small></span>
+          {e.votes.map((v, i) => { const on = fired(i); const [, col] = STANCE[v.stance]; return (
+            <li key={v.role} className={on ? 'on' : ''} title={`${NAMES[i]}: ${ASKS[i]} ${v.reason}`}>
+              <span className="co-sc-name">{NAMES[i]}</span>
               <span className="co-sc-bar"><i style={{ width: on ? `${q(v.support)}%` : '0%', background: col }} /></span>
               <span className="co-sc-val" style={{ color: on ? col : undefined }}>{on ? q(v.support) : '–'}</span>
               <span className="co-sc-w">{Math.round(v.weight * 100)}%</span>
             </li>); })}
         </ul>
-        <p className="co-sc-note">Each seat scores 0 to 100. The grey % is how much that seat counts. Not a chance of success.</p>
 
         <h4 className="co-sc-h">Final judgement</h4>
         <div className="co-sc-final" style={{ '--c': OUT[oc?.state ?? 'not_started'] }}>
           <b>{oc ? oc.headline : 'Not started'}</b>
-          {oc && <p>{oc.detail}</p>}
-          {oc && <p className="co-sc-next"><em>Next</em>{oc.next}</p>}
+          {oc && <p className="co-sc-next">{oc.next}</p>}
           {oc && <span className="co-sc-prog" aria-label={`${oc.progress.done} of ${oc.progress.total} steps done`}>{Array.from({ length: oc.progress.total }, (_, k) => <i key={k} className={k < oc.progress.done ? 'on' : ''} />)}</span>}
         </div>
         <a className="co-sc-more" href="#/council">Open the full story ›</a>
