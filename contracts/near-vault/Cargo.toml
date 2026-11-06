@@ -13,6 +13,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 near-sdk = { version = "=5.6.0", default-features = false }
 
+[features]
+# Token payouts (stablecoin `pay`, v1.1). OFF by default: the default build is the attested v1.
+payouts = []
+
 [dev-dependencies]
 near-sdk = { version = "=5.6.0", default-features = false, features = ["unit-testing"] }
 

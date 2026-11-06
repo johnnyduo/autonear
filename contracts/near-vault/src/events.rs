@@ -107,3 +107,60 @@ pub enum Event {
     #[event_version("1.0.0")]
     OwnershipTransferred { old: AccountId, new: AccountId },
 }
+
+/// Events of the `payouts` build (stage 1 token payouts). Same standard name; `version` 1.1.0.
+/// Every state mutation emits exactly one of these (an idempotent `allow_payee` emits none).
+#[cfg(feature = "payouts")]
+#[near(event_json(standard = "autonear_vault"))]
+pub enum PayEvent {
+    #[event_version("1.1.0")]
+    TokenAllowed {
+        token: AccountId,
+        per_pay_cap: U128,
+        period_cap: U128,
+        total_cap: U128,
+        updated: bool,
+        by: AccountId,
+    },
+    #[event_version("1.1.0")]
+    TokenDisallowed { token: AccountId, by: AccountId },
+    #[event_version("1.1.0")]
+    PayeeAllowed { payee: AccountId, by: AccountId },
+    #[event_version("1.1.0")]
+    PayeeDisallowed { payee: AccountId, by: AccountId },
+    /// `ft_transfer` dispatched and the amount charged to the token budget (optimistic).
+    /// Failure is `PayFailed`; there is no separate confirmation event.
+    #[event_version("1.1.0")]
+    Paid {
+        agent: AccountId,
+        token: AccountId,
+        to: AccountId,
+        amount: U128,
+        memo: Option<String>,
+        epoch: U64,
+        total_spent: U128,
+        period_spent: U128,
+    },
+    /// The transfer failed: charge reversed (`reversed = true`) unless the mandate epoch changed meanwhile.
+    #[event_version("1.1.0")]
+    PayFailed {
+        token: AccountId,
+        to: AccountId,
+        amount: U128,
+        epoch: U64,
+        reversed: bool,
+    },
+    #[event_version("1.1.0")]
+    TokenWithdrawn {
+        token: AccountId,
+        to: AccountId,
+        amount: U128,
+    },
+    /// The owner's `ft_transfer` failed; nothing was charged, so there is nothing to reverse.
+    #[event_version("1.1.0")]
+    TokenWithdrawFailed {
+        token: AccountId,
+        to: AccountId,
+        amount: U128,
+    },
+}

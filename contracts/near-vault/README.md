@@ -200,6 +200,40 @@ Not part of the table (plain messages): `new` called twice, invalid `network_id`
 | Owner key compromise | owner is all-powerful by design; use a multisig and two-step transfer | n/a |
 | Front-running of init | deploy + `new` in one batch | n/a |
 
+## Payouts feature (v1.1.0, cargo feature `payouts`, stage 1)
+
+**Off by default.** A normal `cargo build` / `scripts/near-vault-build.sh` is the attested v1 and its wasm hash does not change; all
+payout code (`src/payouts.rs`, extra errors and events, tests in `src/tests_pay.rs`) is compiled only with `--features payouts`.
+`scripts/near-vault-build.sh --payouts` builds `dist/autonear_vault_pay.wasm` (the JSON gets `"features":"payouts"`); `config().version`
+is `1.1.0` in that build only. Design: `docs/superpowers/specs/2026-11-06-stablecoin-payouts-design.md` (stage 1 only: no `fund_product`,
+no claim contract; money flows out only).
+
+| Method | Who | Rule |
+|---|---|---|
+| `allow_token(token, per_pay_cap, period_cap, total_cap)` | owner | `0 < per_pay <= period <= total`; <= 8 tokens; not the vault / a zero account / an allowed payee, else `BadToken`. Re-allow updates the caps and **keeps the usage** |
+| `disallow_token(token)` | owner | unknown => `TokenNotAllowed`; usage record is kept |
+| `allow_payee(account)` / `disallow_payee(account)` | owner | <= 64 payees; not the vault / zero account / an allowed token, else `BadPayee`; allowing twice is a silent no-op; disallowing an unknown one => `PayeeNotAllowed` |
+| `withdraw_token(token, amount)` | owner | `ft_transfer(owner, amount)` with 1 yocto; works while paused, revoked, expired and for any token account; a failed transfer only emits `token_withdraw_failed` |
+| `pay(token, to, amount, memo?)` | the mandate agent | order: NoMandate, Unauthorized, Paused, MandateInactive, `TokenNotAllowed`, `PayeeNotAllowed`, `BadAmount` (0), `PerPayCap`, `PeriodCap`, `TotalCap`, `BadMemo` (> 128 bytes), `InsufficientBalance` (no spendable NEAR for the 1 yocto). Optimistic charge, event `paid`, `ft_transfer(to, amount, memo)` on `token` (1 yocto, 30 Tgas), then `on_paid` (10 Tgas) reverses the charge on failure (same epoch only, saturating) and emits `pay_failed`. Attach >= 100 Tgas |
+| views | anyone | `tokens()`, `payees(from_index, limit)`, `token_usage(token)`, `token_period_state(token, now?)`, `preview_pay(token, to, amount)` (same error code as the real call, `""` = ok) |
+
+Token limits use the NEAR mandate's clock, agent, expiry, revoke, pause and `epoch`. Token usage is stamped with the epoch of the charge, so
+`set_mandate` (which bumps the epoch) resets it for every token while the allowlists and caps stay. The vault never calls anything on a token
+except `ft_transfer` (never `ft_transfer_call`); the wasm imports the same host functions as v1 (no key / delete / stake) and has no
+upgrade export. Payout state is stored under its own key (`p:state`), not in the `Vault` struct, so v1's state layout is untouched.
+New error codes (`TokenNotAllowed`, `PayeeNotAllowed`, `PerPayCap`, `BadToken`, `BadPayee`, `BadMemo`) are not in `Code::ALL` (the shared
+v1 list, compared with `contracts/vault-conformance.json`); they are in `Code::PAYOUTS`. New events use `version` `1.1.0`.
+
+Limits to know: the token's own balance is not tracked (the token rejects an over-balance transfer and the callback reverses); the vault
+account must be registered on the token (`storage_deposit`) before it can receive it; the first `pay` of a token stores ~100 bytes of usage
+(staked from the vault balance); the payouts wasm is ~80 KB larger than v1 (more storage staking).
+
+```
+scripts/near-vault-build.sh --payouts
+cd contracts/near-vault
+cargo fmt --check && cargo clippy --locked --all-targets --features payouts -- -D warnings && cargo test --locked --features payouts
+```
+
 ## Upgrade strategy
 
 **None.** There is no upgrade, migrate or arbitrary-call method (the exported method list is asserted by the integration crate). To change

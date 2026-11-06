@@ -109,8 +109,13 @@ pub fn panic_message(e: &Box<dyn std::any::Any + Send>) -> String {
 pub fn code_of(msg: &str) -> Option<String> {
     let rest = &msg[msg.find("E_")? + 2..];
     let code = &rest[..rest.find(':')?];
+    #[cfg(feature = "payouts")]
+    let extra = Code::PAYOUTS.iter();
+    #[cfg(not(feature = "payouts"))]
+    let extra = [].iter();
     Code::ALL
         .iter()
+        .chain(extra)
         .any(|c| c.as_str() == code)
         .then(|| code.to_string())
 }

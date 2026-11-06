@@ -24,9 +24,40 @@ pub enum Code {
     BadName,
     BadTemplate,
     BadOwner,
+    /// Payout codes (cargo feature `payouts`); not part of `Code::ALL` (the shared v1 list).
+    #[cfg(feature = "payouts")]
+    TokenNotAllowed,
+    #[cfg(feature = "payouts")]
+    PayeeNotAllowed,
+    #[cfg(feature = "payouts")]
+    PerPayCap,
+    #[cfg(feature = "payouts")]
+    BadToken,
+    #[cfg(feature = "payouts")]
+    BadPayee,
+    #[cfg(feature = "payouts")]
+    BadMemo,
 }
 
+/// Behaviour/event version of this build: 1.0.0 (attested v1) or 1.1.0 with the `payouts` feature.
+pub const CONTRACT_VERSION: &str = if cfg!(feature = "payouts") {
+    "1.1.0"
+} else {
+    "1.0.0"
+};
+
 impl Code {
+    /// The extra codes of the `payouts` build.
+    #[cfg(feature = "payouts")]
+    pub const PAYOUTS: [Code; 6] = [
+        Code::TokenNotAllowed,
+        Code::PayeeNotAllowed,
+        Code::PerPayCap,
+        Code::BadToken,
+        Code::BadPayee,
+        Code::BadMemo,
+    ];
+
     /// Every code, in spec order.
     pub const ALL: [Code; 17] = [
         Code::Unauthorized,
@@ -67,6 +98,18 @@ impl Code {
             Code::BadName => "BadName",
             Code::BadTemplate => "BadTemplate",
             Code::BadOwner => "BadOwner",
+            #[cfg(feature = "payouts")]
+            Code::TokenNotAllowed => "TokenNotAllowed",
+            #[cfg(feature = "payouts")]
+            Code::PayeeNotAllowed => "PayeeNotAllowed",
+            #[cfg(feature = "payouts")]
+            Code::PerPayCap => "PerPayCap",
+            #[cfg(feature = "payouts")]
+            Code::BadToken => "BadToken",
+            #[cfg(feature = "payouts")]
+            Code::BadPayee => "BadPayee",
+            #[cfg(feature = "payouts")]
+            Code::BadMemo => "BadMemo",
         }
     }
 }

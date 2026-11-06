@@ -14,6 +14,10 @@
 #    Cargo.toml, Cargo.lock, rust-toolchain.toml and every file under src/ (paths relative to
 #    contracts/near-vault, "/" separated; same scheme as scripts/evm-build.mjs).
 #
+# Variant: `near-vault-build.sh --payouts` builds with `--features payouts` (token payouts, version 1.1.0) into
+# contracts/near-vault/dist/autonear_vault_pay.wasm and adds `"features":"payouts"` to the JSON. Without the
+# flag nothing changes: the default build is the attested v1 (dist/autonear_vault.wasm).
+#
 # Reproducibility: --locked, pinned toolchain, absolute paths remapped via --remap-path-prefix.
 # If `wasm-tools` is on PATH (or WASM_TOOLS=/path/to/wasm-tools) the wasm is also validated against
 # the feature set the NEAR runtime accepts (MVP + sign-extension; no reference-types/bulk-memory/multivalue/simd).
@@ -23,6 +27,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CRATE="$ROOT/contracts/near-vault"
 DIST="$CRATE/dist"
 cd "$CRATE"
+
+FEATURES=""
+OUT_NAME="autonear_vault.wasm"
+case "${1:-}" in
+  "") ;;
+  --payouts) FEATURES="payouts"; OUT_NAME="autonear_vault_pay.wasm" ;;
+  *) echo "usage: $0 [--payouts]" >&2; exit 2 ;;
+esac
 
 sha256_file() { shasum -a 256 "$1" | awk '{print $1}'; }
 
@@ -36,12 +48,17 @@ export RUSTFLAGS="--remap-path-prefix=$CRATE=/src --remap-path-prefix=$CARGO_HOM
 unset CARGO_ENCODED_RUSTFLAGS CARGO_BUILD_RUSTFLAGS || true
 
 log "rustc: $(rustc --version)"
-cargo build --locked --release --target wasm32-unknown-unknown >&2
+if [ -n "$FEATURES" ]; then
+  log "features: $FEATURES"
+  cargo build --locked --release --target wasm32-unknown-unknown --features "$FEATURES" >&2
+else
+  cargo build --locked --release --target wasm32-unknown-unknown >&2
+fi
 
 WASM_SRC="target/wasm32-unknown-unknown/release/autonear_vault.wasm"
 mkdir -p "$DIST"
-cp "$WASM_SRC" "$DIST/autonear_vault.wasm"
-WASM="$DIST/autonear_vault.wasm"
+cp "$WASM_SRC" "$DIST/$OUT_NAME"
+WASM="$DIST/$OUT_NAME"
 
 WT="${WASM_TOOLS:-$(command -v wasm-tools || true)}"
 if [ -n "$WT" ]; then
@@ -68,5 +85,7 @@ trap 'rm -f "$TMP"' EXIT
 done > "$TMP"
 SRC_SHA="$(sha256_file "$TMP")"
 
-printf '{"sha256":"%s","bytes":%s,"rustc":"%s","nearSdk":"%s","cargoLockSha256":"%s","sourceSha256":"%s"}\n' \
-  "$SHA" "$BYTES" "$RUSTC" "$NEAR_SDK" "$LOCK_SHA" "$SRC_SHA"
+EXTRA=""
+[ -n "$FEATURES" ] && EXTRA=",\"features\":\"$FEATURES\""
+printf '{"sha256":"%s","bytes":%s,"rustc":"%s","nearSdk":"%s","cargoLockSha256":"%s","sourceSha256":"%s"%s}\n' \
+  "$SHA" "$BYTES" "$RUSTC" "$NEAR_SDK" "$LOCK_SHA" "$SRC_SHA" "$EXTRA"

@@ -44,7 +44,7 @@ pub const CALLBACK_GAS: u64 = 10 * TGAS;
 pub const DRAW_CALLBACK_GAS: u64 = 5 * TGAS;
 pub const DEFAULT_PAGE: u64 = 50;
 pub const MAX_PAGE: u64 = 100;
-pub const EVENT_STANDARD_VERSION: &str = "1.0.0";
+pub const EVENT_STANDARD_VERSION: &str = errors::CONTRACT_VERSION;
 
 const NS_PER_SEC: u64 = 1_000_000_000;
 
@@ -978,7 +978,11 @@ impl Vault {
 
 #[cfg(test)]
 mod conformance;
+#[cfg(feature = "payouts")]
+pub mod payouts;
 #[cfg(test)]
 mod testkit;
 #[cfg(test)]
 mod tests;
+#[cfg(all(test, feature = "payouts"))]
+mod tests_pay;
