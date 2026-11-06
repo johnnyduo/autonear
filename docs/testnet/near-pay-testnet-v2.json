@@ -1,0 +1,533 @@
+{
+  "network": "near-testnet",
+  "chainId": "testnet",
+  "signers": {
+    "owner": "autonear-owner-1106.testnet (DEMO owner key; automated, not a human signature)",
+    "agent": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34 (agent keystore key, call-limited signer: vault pay only)",
+    "stranger": "autonear-agent-1106.testnet (mints from the open faucet)"
+  },
+  "accounts": {
+    "owner": "autonear-owner-1106.testnet",
+    "agent": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+    "vault": "vault-v2.autonear-owner-1106.testnet",
+    "token": "usdc-v2.autonear-owner-1106.testnet",
+    "alice": "alice-v2.autonear-owner-1106.testnet",
+    "bob": "bob-v2.autonear-owner-1106.testnet"
+  },
+  "scope": "NEAR public testnet. Owner-side transactions are signed by a DEMO owner key held on the same machine as the agent key (automation, not a human). The token is a MOCK (open faucet, no value). Not an independent audit; no mainnet.",
+  "startedAt": "2026-11-06T13:10:29.772Z",
+  "finishedAt": "2026-11-06T13:13:46.109Z",
+  "runs": [
+    {
+      "name": "run 1 (deploy, mint, setup, first payment attempts)",
+      "startedAt": "2026-11-06T13:10:29.772Z",
+      "finishedAt": "2026-11-06T13:11:55.916Z",
+      "result": {
+        "pass": 11,
+        "fail": 9,
+        "failed": [
+          "mint above the per-call ceiling is refused by the chain (E_MintCeiling)",
+          "pay tx: all receipts succeeded",
+          "alice received exactly 8 USDC; the vault paid it",
+          "adapter.verifyPay ok (18 independent checks incl. vault event, token ft_transfer event, signer, receipts)",
+          "vault usage counted 8 USDC",
+          "second 10 USDC accepted (18 of 20 used)",
+          "over the period cap: chain says E_PeriodCap",
+          "alice holds 18 USDC; nothing the refused calls asked for moved",
+          "script error: near-admin: tx 2RE9t1tHmga5ZczXwLarxRZ3StddcL61Lz4Jz4iFXPQq to vault-v2.autonear-owner-1106.testnet failed: {\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract pani"
+        ]
+      },
+      "note": "Deploys, mints and owner setup passed. Every payment was refused with E_InsufficientBalance (\"no NEAR for the 1 yocto deposit\"): the vault had only its storage + the 1 NEAR reserve in NEAR, and pay() attaches 1 yocto from the SPENDABLE NEAR. No funds moved. The script then also hit a script bug (admin call threw on an expected failure). Fixed by topping the vault up with 1.8 NEAR."
+    },
+    {
+      "name": "run 2 (resume: top up, new mandate, payments, negatives, revoke, withdraw)",
+      "startedAt": "2026-11-06T13:12:36.756Z",
+      "finishedAt": "2026-11-06T13:13:46.109Z",
+      "result": {
+        "pass": 16,
+        "fail": 0,
+        "failed": []
+      }
+    }
+  ],
+  "txs": [
+    {
+      "label": "storage_deposit: register vault-v2 on USDC",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "5hVHvtRCZEPoqAAa2m7yYA8XVaADRkjCbu3GUPnrzAHg",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/5hVHvtRCZEPoqAAa2m7yYA8XVaADRkjCbu3GUPnrzAHg"
+    },
+    {
+      "label": "storage_deposit: register alice-v2 on USDC",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "3hqAv3cQioGmrviCSUy9wfXcRaug6TLJiSy7ubcRhp8X",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/3hqAv3cQioGmrviCSUy9wfXcRaug6TLJiSy7ubcRhp8X"
+    },
+    {
+      "label": "storage_deposit: register bob-v2 on USDC",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "EHX8jK1nnCEgS12Ebwo5uHBiRdowveFcs9MBjXE9qX59",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/EHX8jK1nnCEgS12Ebwo5uHBiRdowveFcs9MBjXE9qX59"
+    },
+    {
+      "label": "owner allow_token (per pay 10, per period 20, total 50 USDC)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "7xo65szAYoVmm5asDHBYAyfXjoTbXVbnj2AYeKCPanfL",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/7xo65szAYoVmm5asDHBYAyfXjoTbXVbnj2AYeKCPanfL"
+    },
+    {
+      "label": "owner allow_payee alice",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "FJZxZhHXzV19rmBsAaiG8XXtfwoxLSFNFVTT4cbBFRqJ",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/FJZxZhHXzV19rmBsAaiG8XXtfwoxLSFNFVTT4cbBFRqJ"
+    },
+    {
+      "label": "owner funds the vault: ft_transfer 100 USDC",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "D7GSvb1AW8bZ3SrEstCjpqG5QB4jqxpnw3kqs6sntrBu",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/D7GSvb1AW8bZ3SrEstCjpqG5QB4jqxpnw3kqs6sntrBu"
+    },
+    {
+      "label": "owner set_mandate (agent, 3 h)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "DnW1ExcKihxXJn3TsN7taSJSVMLQk7hUkoveJsqGWcpj",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/DnW1ExcKihxXJn3TsN7taSJSVMLQk7hUkoveJsqGWcpj"
+    },
+    {
+      "label": "agent pay 8 USDC to alice (memo \"invoice 1\")",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "bETgvALiG63eiMSgkxJoMd7oULfT1ej9NuJuMMpg9NK",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/bETgvALiG63eiMSgkxJoMd7oULfT1ej9NuJuMMpg9NK"
+    },
+    {
+      "label": "NEGATIVE pay 11 USDC (per-pay cap is 10)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "8s6Ty3XLRwfm91dQBS6hu9mkBqTW4U43W5Pf4vVoVD3A",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/8s6Ty3XLRwfm91dQBS6hu9mkBqTW4U43W5Pf4vVoVD3A"
+    },
+    {
+      "label": "NEGATIVE pay to bob (registered on the token, NOT allowlisted)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "6X8iEjWUXYH578XxHncSoTuWKcToNRbUPTUCDUVvURBx",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/6X8iEjWUXYH578XxHncSoTuWKcToNRbUPTUCDUVvURBx"
+    },
+    {
+      "label": "NEGATIVE pay another token (not allowed)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "6xaPjYABq1AthZvTccrGwdExjGkFWJdtbwvDnBmY2ekM",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/6xaPjYABq1AthZvTccrGwdExjGkFWJdtbwvDnBmY2ekM"
+    },
+    {
+      "label": "agent pay 10 USDC to alice",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "ANoeyjKABx7sak7saRDhyX7uQ4yJKCZrWrAj8TjiFcw3",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/ANoeyjKABx7sak7saRDhyX7uQ4yJKCZrWrAj8TjiFcw3"
+    },
+    {
+      "label": "NEGATIVE third pay of 5 USDC (period cap 20, already 18 used)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "3qEviDuLtF9VoZkvcBT8baxZGkyikH6afa2N2214hN1d",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/3qEviDuLtF9VoZkvcBT8baxZGkyikH6afa2N2214hN1d"
+    },
+    {
+      "label": "owner revoke",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "Fg7gTiqFRAguQP8A9h8H7AAKYEeC3C6sFYV4cdAxfvBd",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/Fg7gTiqFRAguQP8A9h8H7AAKYEeC3C6sFYV4cdAxfvBd"
+    },
+    {
+      "label": "NEGATIVE pay after revoke",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "GZEKYxLapRWGsUHHyu1LtYU4xc3UEoux5DHHTrT25SR5",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/GZEKYxLapRWGsUHHyu1LtYU4xc3UEoux5DHHTrT25SR5"
+    },
+    {
+      "label": "owner tops the vault up with 1.8 NEAR (spendable NEAR above storage + 1 NEAR reserve)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "3nxs5CZfFeFNd3K9dNkkJvkkXGTHh4daXHVeucrPCxL8",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/3nxs5CZfFeFNd3K9dNkkJvkkXGTHh4daXHVeucrPCxL8"
+    },
+    {
+      "label": "owner set_mandate (agent, 3 h)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "AF1HFdvLfckftTyWnNVtpQJHSVB7uRTKzP1ujEjDi7Z6",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/AF1HFdvLfckftTyWnNVtpQJHSVB7uRTKzP1ujEjDi7Z6"
+    },
+    {
+      "label": "agent pay 8 USDC to alice (memo \"invoice 1\")",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "3tswc1rZXuU4FoSGpRcKFBp3dKyzBbB4SCtFTduEpjNk",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/3tswc1rZXuU4FoSGpRcKFBp3dKyzBbB4SCtFTduEpjNk"
+    },
+    {
+      "label": "NEGATIVE pay 11 USDC (per-pay cap is 10)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "5y8xJuQG2Cn1i5tc5ckRgavXAp3MSA8AaG3JZJakkQ4A",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/5y8xJuQG2Cn1i5tc5ckRgavXAp3MSA8AaG3JZJakkQ4A"
+    },
+    {
+      "label": "NEGATIVE pay to bob (registered on the token, NOT allowlisted)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "GYpKLADZxHqJs2LNnBGExR8n9XQp2fNTjQ6aUYi36ts3",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/GYpKLADZxHqJs2LNnBGExR8n9XQp2fNTjQ6aUYi36ts3"
+    },
+    {
+      "label": "NEGATIVE pay another token (not allowed)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "HbqUXXQmLiSUGkdeFuvbgHndiBtiM9BBrSuP4au1vHZ2",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/HbqUXXQmLiSUGkdeFuvbgHndiBtiM9BBrSuP4au1vHZ2"
+    },
+    {
+      "label": "agent pay 10 USDC to alice",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "bHqATTBY17QHeHnMnnFgtCBzbe4e4xpZgVeQ3sbvkap",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/bHqATTBY17QHeHnMnnFgtCBzbe4e4xpZgVeQ3sbvkap"
+    },
+    {
+      "label": "NEGATIVE third pay of 5 USDC (period cap 20, already 18 used)",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "ChwkHyEx6jWn5duWWpMayD2Wdfy6Yw7WsJrmL2H3DZEA",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/ChwkHyEx6jWn5duWWpMayD2Wdfy6Yw7WsJrmL2H3DZEA"
+    },
+    {
+      "label": "owner revoke",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "An62vZ3udAx9qbs3ZWieGYZKM6B14w5QJg3xQNBEf5Yb",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/An62vZ3udAx9qbs3ZWieGYZKM6B14w5QJg3xQNBEf5Yb"
+    },
+    {
+      "label": "NEGATIVE pay after revoke",
+      "signer": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+      "hash": "BuoXb27YuiWMJewBpgp7W5EbSDAsd5T6p9zCjspxBwBs",
+      "ok": false,
+      "explorer": "https://testnet.nearblocks.io/txns/BuoXb27YuiWMJewBpgp7W5EbSDAsd5T6p9zCjspxBwBs"
+    },
+    {
+      "label": "owner withdraw_token 82 USDC back to itself while revoked",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "3g1qZn6mG2eJSNDrP1Sg6ouwKjynm8Z9XRmy1yEnQbEE",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/3g1qZn6mG2eJSNDrP1Sg6ouwKjynm8Z9XRmy1yEnQbEE"
+    }
+  ],
+  "checks": {
+    "run1": [
+      {
+        "name": "mint above the per-call ceiling is refused by the chain (E_MintCeiling)",
+        "ok": false,
+        "detail": "[object Object]"
+      },
+      {
+        "name": "vault, alice and bob registered on the token",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "allow_token accepted",
+        "ok": true,
+        "detail": "7xo65szAYoVmm5asDHBYAyfXjoTbXVbnj2AYeKCPanfL"
+      },
+      {
+        "name": "allow_payee accepted",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "vault holds 100 USDC",
+        "ok": true,
+        "detail": "100.00 USDC"
+      },
+      {
+        "name": "mandate set",
+        "ok": true,
+        "detail": "DnW1ExcKihxXJn3TsN7taSJSVMLQk7hUkoveJsqGWcpj"
+      },
+      {
+        "name": "on-chain tokens/payees equal what the owner set",
+        "ok": true,
+        "detail": "[{\"token\":\"usdc-v2.autonear-owner-1106.testnet\",\"per_pay_cap\":\"10000000\",\"period_cap\":\"20000000\",\"total_cap\":\"50000000\"}]"
+      },
+      {
+        "name": "pay tx: all receipts succeeded",
+        "ok": false,
+        "detail": "bETgvALiG63eiMSgkxJoMd7oULfT1ej9NuJuMMpg9NK EXECUTED_OPTIMISTIC"
+      },
+      {
+        "name": "alice received exactly 8 USDC; the vault paid it",
+        "ok": false,
+        "detail": "alice 0.00 USDC, vault 100.00 USDC"
+      },
+      {
+        "name": "adapter.verifyPay ok (18 independent checks incl. vault event, token ft_transfer event, signer, receipts)",
+        "ok": false,
+        "detail": "[{\"name\":\"top-level tx status is SuccessValue\",\"ok\":false,\"detail\":\"{\\\"ActionError\\\":{\\\"index\\\":0,\\\"kind\\\":{\\\"FunctionCallError\\\":{\\\"ExecutionError\\\":\\\"Smart contract panicked: E_InsufficientBalance: "
+      },
+      {
+        "name": "the same tx does NOT verify for a different amount",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "vault usage counted 8 USDC",
+        "ok": false,
+        "detail": "{\"total_spent\":\"0\",\"period_index\":\"0\",\"period_spent\":\"0\"}"
+      },
+      {
+        "name": "over per-pay cap: chain says E_PerPayCap",
+        "ok": true,
+        "detail": "rt contract panicked: E_PerPayCap: per-pay cap exceeded\"}}}}"
+      },
+      {
+        "name": "payee not allowlisted: E_PayeeNotAllowed",
+        "ok": true,
+        "detail": "ract panicked: E_PayeeNotAllowed: payee not allowlisted\"}}}}"
+      },
+      {
+        "name": "token not allowlisted: E_TokenNotAllowed",
+        "ok": true,
+        "detail": "ract panicked: E_TokenNotAllowed: token not allowlisted\"}}}}"
+      },
+      {
+        "name": "second 10 USDC accepted (18 of 20 used)",
+        "ok": false,
+        "detail": ""
+      },
+      {
+        "name": "over the period cap: chain says E_PeriodCap",
+        "ok": false,
+        "detail": " E_InsufficientBalance: no NEAR for the 1 yocto deposit\"}}}}"
+      },
+      {
+        "name": "alice holds 18 USDC; nothing the refused calls asked for moved",
+        "ok": false,
+        "detail": "alice 0.00 USDC, bob 0.00 USDC"
+      },
+      {
+        "name": "after revoke: E_MandateInactive",
+        "ok": true,
+        "detail": "panicked: E_MandateInactive: mandate revoked or expired\"}}}}"
+      }
+    ],
+    "run2": [
+      {
+        "name": "mint above the per-call ceiling is refused by the chain (E_MintCeiling)",
+        "ok": true,
+        "detail": "[object Object]"
+      },
+      {
+        "name": "mandate set",
+        "ok": true,
+        "detail": "AF1HFdvLfckftTyWnNVtpQJHSVB7uRTKzP1ujEjDi7Z6"
+      },
+      {
+        "name": "on-chain tokens/payees equal what the owner set",
+        "ok": true,
+        "detail": "[{\"token\":\"usdc-v2.autonear-owner-1106.testnet\",\"per_pay_cap\":\"10000000\",\"period_cap\":\"20000000\",\"total_cap\":\"50000000\"}]"
+      },
+      {
+        "name": "pay tx: all receipts succeeded",
+        "ok": true,
+        "detail": "3tswc1rZXuU4FoSGpRcKFBp3dKyzBbB4SCtFTduEpjNk EXECUTED"
+      },
+      {
+        "name": "alice received exactly 8 USDC; the vault paid it",
+        "ok": true,
+        "detail": "alice 8.00 USDC, vault 92.00 USDC"
+      },
+      {
+        "name": "adapter.verifyPay ok (23 independent checks incl. vault event, token ft_transfer event, signer, receipts)",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "the same tx does NOT verify for a different amount",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "vault usage counted 8 USDC",
+        "ok": true,
+        "detail": "{\"total_spent\":\"8000000\",\"period_index\":\"0\",\"period_spent\":\"8000000\"}"
+      },
+      {
+        "name": "over per-pay cap: chain says E_PerPayCap",
+        "ok": true,
+        "detail": "rt contract panicked: E_PerPayCap: per-pay cap exceeded\"}}}}"
+      },
+      {
+        "name": "payee not allowlisted: E_PayeeNotAllowed",
+        "ok": true,
+        "detail": "ract panicked: E_PayeeNotAllowed: payee not allowlisted\"}}}}"
+      },
+      {
+        "name": "token not allowlisted: E_TokenNotAllowed",
+        "ok": true,
+        "detail": "ract panicked: E_TokenNotAllowed: token not allowlisted\"}}}}"
+      },
+      {
+        "name": "second 10 USDC accepted (18 of 20 used)",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "over the period cap: chain says E_PeriodCap",
+        "ok": true,
+        "detail": "art contract panicked: E_PeriodCap: period cap exceeded\"}}}}"
+      },
+      {
+        "name": "alice holds 18 USDC; nothing the refused calls asked for moved",
+        "ok": true,
+        "detail": "alice 18.00 USDC, bob 0.00 USDC"
+      },
+      {
+        "name": "after revoke: E_MandateInactive",
+        "ok": true,
+        "detail": "panicked: E_MandateInactive: mandate revoked or expired\"}}}}"
+      },
+      {
+        "name": "owner can still withdraw after revoke; vault USDC is 0",
+        "ok": true,
+        "detail": "vault 0.00 USDC, owner 182.00 USDC"
+      }
+    ]
+  },
+  "verifyPay": [
+    {
+      "name": "tx hash returned by the node == requested",
+      "ok": true
+    },
+    {
+      "name": "tx finalized",
+      "ok": true
+    },
+    {
+      "name": "signer == the agent",
+      "ok": true
+    },
+    {
+      "name": "receiver == the vault",
+      "ok": true
+    },
+    {
+      "name": "exactly one action: FunctionCall `pay` with 0 attached deposit",
+      "ok": true
+    },
+    {
+      "name": "pay args are exactly { token, to, amount [, memo] }",
+      "ok": true
+    },
+    {
+      "name": "pay token == approved token",
+      "ok": true
+    },
+    {
+      "name": "pay payee == approved payee",
+      "ok": true
+    },
+    {
+      "name": "pay amount == approved amount",
+      "ok": true
+    },
+    {
+      "name": "pay memo == approved memo",
+      "ok": true
+    },
+    {
+      "name": "top-level tx status is SuccessValue",
+      "ok": true
+    },
+    {
+      "name": "no failed receipt anywhere in the receipt tree (a failed ft_transfer shows up here)",
+      "ok": true
+    },
+    {
+      "name": "exactly one vault -> token ft_transfer receipt",
+      "ok": true
+    },
+    {
+      "name": "ft_transfer is the receipt's only action, with exactly 1 yoctoNEAR",
+      "ok": true
+    },
+    {
+      "name": "ft_transfer receiver_id == approved payee",
+      "ok": true
+    },
+    {
+      "name": "ft_transfer amount == approved amount",
+      "ok": true
+    },
+    {
+      "name": "token executed ft_transfer successfully",
+      "ok": true
+    },
+    {
+      "name": "token event ft_transfer vault -> payee for the approved amount",
+      "ok": true
+    },
+    {
+      "name": "on_paid callback receipt present",
+      "ok": true
+    },
+    {
+      "name": "on_paid callback executed successfully",
+      "ok": true
+    },
+    {
+      "name": "on_paid names the same token / payee / amount",
+      "ok": true
+    },
+    {
+      "name": "vault emitted exactly one `paid` for this agent / token / payee / amount",
+      "ok": true
+    },
+    {
+      "name": "no `pay_failed` event (the callback did not reverse the charge)",
+      "ok": true
+    }
+  ],
+  "gas": {
+    "agentGasNear": "0.0006 NEAR",
+    "note": "measured on public testnet from the agent balance difference"
+  },
+  "final": {
+    "tokenUsage": {
+      "total_spent": "18000000",
+      "period_index": "0",
+      "period_spent": "18000000"
+    },
+    "alice": "18000000",
+    "vaultUsdc": "0"
+  },
+  "result": {
+    "finalRun": {
+      "pass": 16,
+      "fail": 0,
+      "failed": []
+    },
+    "note": "run 1 had failures (see runs[0].note); run 2 is the resumed run on the same contracts"
+  }
+}
