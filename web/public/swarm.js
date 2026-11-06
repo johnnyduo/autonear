@@ -179,7 +179,7 @@
       '.sw-lab{position:absolute;left:12px;top:15px;padding:1px 6px;border-radius:4px;font:600 11px/16px system-ui,-apple-system,sans-serif;color:#0a0c0f;white-space:nowrap}',
       '.sw-g{position:absolute;box-sizing:border-box;pointer-events:none}',
       '.sw-caret{position:absolute;width:2px;pointer-events:none}',
-      '.sw-tag{position:absolute;left:12px;top:12px;padding:5px 10px;border-radius:99px;background:rgba(10,12,15,.82);color:#ece9df;font:500 12px/16px system-ui,-apple-system,sans-serif;border:1px solid rgba(255,255,255,.18)}',
+      '.sw-tag{position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:99px;background:rgba(10,12,15,.82);color:#ece9df;font:500 12px/16px system-ui,-apple-system,sans-serif;border:1px solid rgba(255,255,255,.18)}',
       '.sw-ctl{position:fixed;right:16px;bottom:16px;z-index:2147483001;display:flex;gap:8px}',
       '.sw-ctl button{font:600 13px/1 system-ui,-apple-system,sans-serif;padding:10px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:rgba(10,12,15,.88);color:#fff;cursor:pointer}',
       '.sw-ctl button:focus-visible{outline:2px solid #c6f432;outline-offset:2px}',
