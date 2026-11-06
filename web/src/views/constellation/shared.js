@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { typedCount } from '../../app/live-text.js';
 // Tiny, dependency-free helpers shared by the Overview shell (main bundle) and the lazy constellation chunk.
 export const RECENT_MS = 20 * 60e3;
 
@@ -32,4 +33,26 @@ export function CountUp({ value, ms = 900 }) {
     raf = requestAnimationFrame(step); return () => cancelAnimationFrame(raf);
   }, [value, ms, calm]);
   return shown;
+}
+
+export const prefersCalm = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Typewriter: returns the visible prefix of `text`. Restarts when `key` changes; shows everything at once when `calm`
+ * (default: the reduced-motion setting) or when there is nothing to type. Ticks at about 30 fps and stops on unmount.
+ */
+export function useTyped(text, { key, cps = 55, calm } = {}) {
+  const s = text ?? ''; const instant = calm ?? prefersCalm();
+  const [st, setSt] = useState({ k: key, n: instant ? s.length : 0 });
+  const t0 = useRef({ k: key, at: 0 });
+  useEffect(() => {
+    if (instant || !s) { setSt({ k: key, n: s.length }); return undefined; }
+    if (t0.current.k !== key || !t0.current.at) t0.current = { k: key, at: performance.now() };
+    const step = () => { const n = typedCount(s.length, performance.now() - t0.current.at, cps); setSt((p) => (p.k === key && p.n === n ? p : { k: key, n })); return n >= s.length; };
+    if (step()) return undefined;
+    const id = setInterval(() => { if (step()) clearInterval(id); }, 33);
+    return () => clearInterval(id);
+  }, [key, s, instant, cps]);
+  if (instant || !s) return s;
+  return s.slice(0, st.k === key ? Math.min(st.n, s.length) : 0);
 }

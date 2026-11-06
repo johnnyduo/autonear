@@ -51,7 +51,7 @@ export function ConstellationPanel({ status, opps, evidenceCount, full = false, 
         <div className={`co-poster ${ready ? 'gone' : ''}`} aria-hidden="true"><i /></div>
         <header className="co-title" data-reserve>
           <p className="eyebrow">Evidence</p>
-          <h2 id={hid}>Everything the agent has <em>read</em>.</h2>
+          <h2 id={hid}>Everything the agents have <em>read</em>.</h2>
           <p className="co-title-s mono">{typeof total === 'number' ? <><CountUp value={total} /> records</> : '…'} · {src.length ? <CountUp value={src.length} /> : '…'} sources · {typeof oppN === 'number' ? <CountUp value={oppN} /> : '…'} opportunities</p>
         </header>
         {mount && (

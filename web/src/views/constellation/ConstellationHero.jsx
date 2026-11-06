@@ -13,7 +13,9 @@ import { Scene } from './scene.js';
 import { ListView } from './ListView.jsx';
 import { focusEntry } from './council-star.js';
 import ScoreBox from './ScoreBox.jsx';
-import { ROLES, isRecent, lastIngest, roleStates, CountUp } from './shared.js';
+import AgentFeed, { Typed } from './AgentFeed.jsx';
+import { ROLES, isRecent, lastIngest, roleStates, CountUp, useTyped } from './shared.js';
+import { chipState, eventMeta, excerptOf, tickNumbers, shortReason } from '../../app/live-text.js';
 import './hero.css';
 
 const TIERS = [
@@ -23,14 +25,58 @@ const keyStr = (k) => (k ? `${k.t}:${k.i}` : '');
 const sameKey = (a, b) => keyStr(a) === keyStr(b);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
-function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow, councilData }) {
+/** Evidence text: the title types out when the card opens, then the stored excerpt (only what is stored, never the full article). */
+function EvText({ e, calm }) {
+  const title = e.title ?? ''; const ex = excerptOf(e);
+  const typedT = useTyped(title, { key: e.id, calm });
+  const doneT = typedT.length >= title.length;
+  return (
+    <>
+      <p className="co-card-t"><Typed text={title} k={e.id} calm={calm} /></p>
+      {ex && (
+        <div className="co-card-x">
+          <span className="eyebrow">stored excerpt · {ex.length} characters</span>
+          <p><Typed text={ex} k={`${e.id}:x`} cps={140} calm={calm} hold={!doneT} /></p>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Agent card body: this role's real events from the shown run (the active run, else the latest stored one), newest last. */
+function RoleBody({ rid, label, run, live, events, loading, calm }) {
+  const mine = (events ?? []).filter((x) => x.agent_role === rid); const more = Math.max(0, mine.length - 6); const rows = mine.slice(-6);
+  const last = mine[mine.length - 1]; const working = Boolean(live && last?.status === 'started');
+  return (
+    <>
+      <p className="co-card-hint faint">{run ? `${live ? 'active run' : 'last run'} ${run.id.slice(0, 14)} · ${run.state} · ${live ? 'started' : 'ended'} ${fmt.ago(run.ended_at ?? run.started_at)}` : 'No run is stored yet.'}</p>
+      {run && loading && <p className="co-card-t dim">Loading stored events…</p>}
+      {run && !loading && events && mine.length === 0 && <p className="co-card-t dim">{label} has no event in this run.</p>}
+      {more > 0 && <p className="co-card-hint faint">{more} earlier event{more === 1 ? '' : 's'} not shown</p>}
+      {rows.length > 0 && (
+        <ol className="co-ev-ls" aria-label={`${label} events, newest last`}>
+          {rows.map((x, j) => (
+            <li key={x.id ?? j}>
+              <span className="co-ev-m"><Typed text={eventMeta(x)} k={`${run.id}:${x.id}:m`} cps={90} calm={calm} cursor={false} /></span>
+              {x.detail && <span className="co-ev-d"><Typed text={String(x.detail)} k={`${run.id}:${x.id}:d`} cps={90} calm={calm} cursor={false} />{working && j === rows.length - 1 && !calm && <span className="co-cur blink" aria-hidden="true" />}</span>}
+              {!x.detail && working && j === rows.length - 1 && !calm && <span className="co-cur blink" aria-hidden="true" />}
+            </li>
+          ))}
+        </ol>
+      )}
+      {working && <p className="co-card-hint">working</p>}
+    </>
+  );
+}
+
+function Card({ k, model, srcInfo, run, live, runEvents, evLoading, pinned, onClose, kb, narrow, councilData, calm }) {
   const n = k.t === 'ev' ? model.nodes[k.i] : null;
   if (k.t === 'ev') {
     const e = n.e; const t = when(e);
     return (
       <div className="co-card-in">
         <div className="co-card-h"><span className="co-sw" style={{ background: srcColor(e.source_id) }} aria-hidden="true" /><b>{srcShort(e.source_id)}</b><span className="faint">{e.published_at ? 'published' : 'observed'} {fmt.date(t)}</span></div>
-        <p className="co-card-t">{e.title}</p>
+        <EvText e={e} calm={calm} />
         <div className="co-card-m">
           <span className="eyebrow">NEAR relevance</span><span className="co-bar" aria-hidden="true"><i style={{ width: `${Math.round(clamp(e.relevance ?? 0, 0, 1) * 100)}%` }} /></span><b className="num">{(e.relevance ?? 0).toFixed(2)}</b>
         </div>
@@ -130,12 +176,12 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
       </div>
     );
   }
-  const [rid, label] = ROLES[k.i]; const st = runId ? roleState[rid] ?? 'idle' : 'idle';
+  const [rid, label] = ROLES[k.i]; const st0 = run && runEvents ? chipState(runEvents, rid) : 'idle'; const st = st0 === 'working' && !live ? 'idle' : st0;
   return (
     <div className="co-card-in">
       <div className="co-card-h"><span className={`co-sw role ${st}`} aria-hidden="true" /><b>{label} agent</b><span className={st === 'idle' ? 'faint' : st === 'halted' ? 'bad' : 'ok'}>{st}</span></div>
-      <p className="co-card-t">{runId ? (st === 'idle' ? `No event from run ${runId.slice(0, 14)} reports this role yet.` : `State taken from the stored events of run ${runId.slice(0, 14)}.`) : 'No research run is active, so this role stays dark.'}</p>
-      {pinned && <div className="co-card-a">{runId && <a className="btn sm primary" href={`#/run/${runId}`}>Open run</a>}<button type="button" className="btn sm ghost" onClick={onClose}>Release<kbd>Esc</kbd></button></div>}
+      <RoleBody rid={rid} label={label} run={run} live={live} events={runEvents} loading={evLoading} calm={calm} />
+      {pinned && <div className="co-card-a">{run && <a className="btn sm primary" href={`#/run/${run.id}`}>Open run</a>}<button type="button" className="btn sm ghost" onClick={onClose}>Release<kbd>Esc</kbd></button></div>}
     </div>
   );
 }
@@ -164,8 +210,16 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   const total = status?.counts?.evidence;
 
   // run events -> role states (REAL events only; idle when there is no active run)
-  const ev = useApi(activeRun ? `/api/runs/${activeRun.id}/events` : '', { poll: 4000, enabled: Boolean(activeRun) });
-  const roles = useMemo(() => roleStates(activeRun ? ev.data?.events : null), [activeRun, ev.data]);
+  // The run shown on agent cards and in the feed: the active run, else the latest stored one. Events are polled only while it is queued or running.
+  const runsApi = useApi('/api/runs', { poll: 20000, enabled: !demo });
+  const shownRun = demo ? null : activeRun ?? runsApi.data?.items?.[0] ?? null;
+  const live = Boolean(shownRun && ['queued', 'running'].includes(shownRun.state));
+  const ev = useApi(shownRun ? `/api/runs/${shownRun.id}/events` : '', { poll: live ? 4000 : 0, enabled: Boolean(shownRun) && !demo });
+  const runEvents = shownRun ? ev.data?.events ?? (ev.error ? [] : null) : null; // null = still loading
+  const roles = useMemo(() => roleStates(activeRun ? ev.data?.events : null), [activeRun, ev.data]); // the scene lights roles from the ACTIVE run only
+
+  // last scheduler tick (stored): null on the landing illustration, { missing } when the status has no scheduler block
+  const tickInfo = useMemo(() => { if (demo) return null; const n = tickNumbers(status?.scheduler?.lastTick); return n ? { ...n, nextRunAt: status.scheduler.nextRunAt, reasonShort: shortReason(n.reason) } : { missing: true, nextRunAt: status?.scheduler?.nextRunAt }; }, [demo, status?.scheduler]);
 
   const srcInfo = useMemo(() => (model?.sources ?? []).map((m) => {
     const s = (sources ?? []).find((x) => x.id === m.id); if (!s) return {};
@@ -187,7 +241,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   useEffect(() => { if (!demo && data && typeof total === 'number' && total !== data.evidence.length && total !== known.current) { known.current = total; load(true); } }, [total, data, load]);
 
   const sourceKey = (sources ?? []).map((s) => s.id).join(',');
-  const syncScene = useCallback((sc) => { const L = latest.current; if (!sc || !L.model) return; sc.setSources(L.srcInfo ?? []); sc.setCouncil?.(L.council); sc.setRoles(L.roles ?? {}, L.oppId, L.active); sc.setFilter(L.filter ?? { srcOff: new Set(), topicOff: new Set() }); sc.auto = L.auto && !calm; }, [calm]);
+  const syncScene = useCallback((sc) => { const L = latest.current; if (!sc || !L.model) return; sc.setSources(L.srcInfo ?? []); sc.setCouncil?.(L.council); sc.tickInfo = L.tickInfo; sc.setRoles(L.roles ?? {}, L.oppId, L.active); sc.setFilter(L.filter ?? { srcOff: new Set(), topicOff: new Set() }); sc.auto = L.auto && !calm; }, [calm]);
   useEffect(() => {
     if (!data) return;
     const m = buildModel({ evidence: data.evidence, opps, links: data.links, labels: demo?.labels, sources: (sources ?? []).map((s) => ({ id: s.id, name: s.name })) });
@@ -212,7 +266,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     if (!model) return; model.wells.forEach((w) => { w.opp = (opps ?? []).find((o) => o.id === `opp_${w.id}`) ?? w.opp; });
     sceneRef.current?.computeStats?.();
   }, [opps, model]);
-  useEffect(() => { Object.assign(latest.current, { council: councilData, srcInfo, roles, oppId: activeRun?.opportunity_id, active: Boolean(activeRun), filter, auto }); syncScene(sceneRef.current); }, [srcInfo, roles, activeRun, filter, auto, model, syncScene, councilData]);
+  useEffect(() => { Object.assign(latest.current, { council: councilData, tickInfo, srcInfo, roles, oppId: activeRun?.opportunity_id, active: Boolean(activeRun), filter, auto }); syncScene(sceneRef.current); }, [srcInfo, tickInfo, roles, activeRun, filter, auto, model, syncScene, councilData]);
   useEffect(() => { const s = sceneRef.current; if (s) { s.pinned = pinnedK; s.focus = focusK; } }, [pinnedK, focusK]);
   useEffect(() => { if (view === 'list') { setHoverK(null); rt.current.hover = null; } }, [view]);
 
@@ -413,10 +467,11 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
           {star === 'council' && view === 'sphere' && !demo && councilData && <ScoreBox data={councilData} sceneRef={sceneRef} wide={(stage.current?.clientWidth ?? 0) > 900} />}
           {shown && (
             <aside ref={tip} className={`co-card ${pinnedK ? 'pinned' : ''} ${kbFocus ? 'kb' : ''}`} data-ui aria-label={pinnedK ? 'Pinned node details' : 'Node details'}>
-              <Card k={shown} councilData={councilData} model={model} srcInfo={srcInfo} roleState={roles} runId={activeRun?.id} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}
+              <Card k={shown} councilData={councilData} model={model} srcInfo={srcInfo} run={shownRun} live={live} runEvents={runEvents} evLoading={Boolean(shownRun) && runEvents === null} calm={calm} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}
                 onClose={() => rt.current.unpin?.()} />
             </aside>
           )}
+          {!demo && <AgentFeed status={status} run={shownRun} runEvents={runEvents} live={live} calm={calm} />}
           {replay.active && (
             <div className="co-replay" data-ui role="group" aria-label="Replay of stored records">
               <span className="co-badge">REPLAY</span>
@@ -457,8 +512,8 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
               <li><b>Orbits:</b> sources. A satellite&rsquo;s angle is the UTC time of day of that source&rsquo;s last ingest; the small white dot on each orbit is the UTC time now. It pulses if that ingest was under 20 minutes ago.</li>
               <li><b>Drag</b> to spin (it keeps its momentum), <b>Ctrl + wheel</b> or pinch to zoom, <b>hover or click a glyph</b> to see its source and stored opportunity links; clicking turns the globe to face it. Hover a source or topic chip to light its records.</li>
               <li><b>Readouts:</b> stored record count, top opportunity score (bar) and confidence (dashed), share of records with relevance 0.95 or higher, flagged share.</li>
-              <li><b>Agent roles</b> on the small ring light up only while a run reports them active.</li>
-              <li><b>Illustration, not live events:</b> the dots that fly from an orbit to a glyph of that source, the arcs between glyphs of one topic and the FETCH / DEDUPE / SCORE / LINK bars loop to show how the pipeline works. <b>Real:</b> the next-scheduled-tick countdown (the cron runs every 15 minutes), the last-ingest line, and the bright beams that fire only for a genuinely new record or an active run.</li>
+              <li><b>Agent roles</b> on the small ring light up only while a run reports them active. An agent card also lists that role&rsquo;s stored events from the active run, or from the latest run when none is active.</li>
+              <li><b>Illustration, not live events:</b> the dots that fly from an orbit to a glyph of that source and the arcs between glyphs of one topic loop to show how the pipeline works.{demo && ' The FETCH / DEDUPE / SCORE / LINK bars loop too.'} <b>Real:</b> {demo ? 'the next-scheduled-tick countdown' : 'the LAST TICK bars (sources fetched and not refetched, ideas rescored, whether a run was started; read from the scheduler’s last stored tick), the agent feed (stored run events, the last tick and each source’s last ingest; only new lines are typed out), the next-scheduled-tick countdown'} (the cron runs every 15 minutes), the last-ingest line, and the bright beams that fire only for a genuinely new record or an active run.</li>
               <li><b>Decoration only:</b> dot skin, grid lines, scan ring, dust (including the motes streaming off each orbit), limb glow, auto spin and cursor sparks carry no data.</li>
             </ul>
           ) : view === 'disc' ? (
