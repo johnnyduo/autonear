@@ -7,6 +7,7 @@ import { T } from './copy.js';
 import { href } from './nav.js';
 import '../views/constellation/panel.css';
 import WalletButton from './WalletButton.jsx';
+import LandingCard from './LandingCard.jsx';
 
 const Hero = lazy(() => import('../views/constellation/ConstellationHero.jsx'));
 
@@ -31,6 +32,7 @@ export default function Landing({ data, connected = false }) {
             <Hero status={null} sources={demo.sources} activeRun={null} opps={demo.opps} demo={demo} calm={calm} onReady={() => setReady(true)} />
           </Suspense>
         </div>
+        <LandingCard />
         <div className="ln-copy" data-reserve>
           <h1>An agent that works for you, <em>on a leash you hold.</em></h1>
           <p className="ln-sub">{T.tagline}</p>
