@@ -403,6 +403,15 @@
       "ok": true,
       "explorer": "https://testnet.nearblocks.io/txns/9yWx7xFg9wfE3EDPSo3W1WrMqtoyzDfKehxnTE9GYdP1",
       "ownerBalanceIncreased": true
+    },
+    {
+      "label": "owner proposes ownership of the vault to the user's NEAR ETH-implicit account (step 1 of 2; NOT effective until that account calls accept_ownership)",
+      "signer": "autonear-owner-1106.testnet",
+      "hash": "FDMd6h9USbUerrZ5EfzVfxUekZrVZLsJZqk2nbhhPsDD",
+      "ok": true,
+      "explorer": "https://testnet.nearblocks.io/txns/FDMd6h9USbUerrZ5EfzVfxUekZrVZLsJZqk2nbhhPsDD",
+      "pendingOwner": "0x5ebaddf71482d40044391923be1fc42938129988",
+      "owner": "autonear-owner-1106.testnet"
     }
   ],
   "final": {

@@ -29,6 +29,7 @@ export default function Landing({ data }) {
           <div className="ln-cta">
             <WalletButton big hint={false} />
             <a className="btn lg" href={href('', { demo: true })}>{T.demo}</a>
+            <a className="btn lg" href={href('constellation')}>See the evidence constellation</a>
           </div>
           <p className="ln-hint">{T.signHint}</p>
         </div>
