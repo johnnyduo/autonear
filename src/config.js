@@ -42,6 +42,12 @@ export const autonomyMaxPerDay = (e = process.env) => {
   const n = Number(e.AUTONOMY_MAX_PER_DAY);
   return Number.isInteger(n) && n >= 1 ? Math.min(n, AUTONOMY_HARD_MAX_PER_DAY) : 5;
 };
+/** Token payments (rule l) have their OWN rolling-24h limit, separate from the deploy limit above: default 5, compiled-in hard maximum 20. */
+export const AUTONOMY_HARD_MAX_PAYMENTS_PER_DAY = 20;
+export const autonomyMaxPaymentsPerDay = (e = process.env) => {
+  const n = Number(e.AUTONOMY_MAX_PAYMENTS_PER_DAY);
+  return Number.isInteger(n) && n >= 1 ? Math.min(n, AUTONOMY_HARD_MAX_PAYMENTS_PER_DAY) : 5;
+};
 
 export const config = {
   port: num('PORT', 8787),

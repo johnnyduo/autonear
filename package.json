@@ -43,13 +43,14 @@
     "agent:propose": "node src/cli.js agent propose",
     "e2e:near-sandbox": "node scripts/e2e-near-sandbox.mjs",
     "e2e:near-testnet": "node scripts/e2e-near-testnet.mjs",
-    "test:vault": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" node --test tests/vault-model.test.js tests/vault-model-pay.test.js tests/vault-pay-conformance.test.js tests/vault-service.test.js tests/autonomy.test.js tests/vault-near.test.js tests/vault-near-pay.test.js",
+    "test:vault": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" node --test tests/vault-model.test.js tests/vault-model-pay.test.js tests/vault-pay-conformance.test.js tests/vault-service.test.js tests/autonomy.test.js tests/vault-near.test.js tests/vault-near-pay.test.js tests/autonomy-pay.test.js",
     "cf:dry": "npx wrangler deploy --dry-run --outdir .wrangler/dry",
     "test:web": "node --test web/src/app/",
     "scan:secrets": "node scripts/secret-scan.mjs",
     "scan:secrets:history": "node scripts/secret-scan.mjs --history",
     "hooks:install": "git config core.hooksPath .githooks",
-    "e2e:near-loop": "ENABLE_EVM=1 node scripts/e2e-near-loop.mjs"
+    "e2e:near-loop": "ENABLE_EVM=1 node scripts/e2e-near-loop.mjs",
+    "e2e:near-pay": "ENABLE_EVM=1 node scripts/e2e-near-pay.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

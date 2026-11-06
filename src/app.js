@@ -15,7 +15,7 @@ import { PROTOCOLS, findNetwork } from './protocols.js';
 import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from './policy.js';
 import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant, activateVault, getVault } from './vault/index.js';
-import { createPayment, listPayments } from './payments.js';
+import { createPayment, listPayments, recordPayment } from './payments.js';
 import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
 import { currentCouncil, journeyFor } from './council.js';
 import { getWatch, setWatch } from './watch.js';
@@ -288,7 +288,8 @@ export function createApp(deps) {
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/receipt$/)) && m === 'POST') {
       await ownsDecision(await needOwner(req), g[1]);
       const b = await body(req, { type: 'object', required: ['txHash'], properties: { txHash: { type: 'string', maxLength: 100 } } });
-      return out(await recordDeployment(db, g[1], { txHash: b.txHash, fetchImpl }));
+      const isPayment = (await db.get('SELECT action FROM decisions WHERE id=?', [g[1]]))?.action === 'pay_testnet'; // a stuck payment is recorded (verified) the same way
+      return out(isPayment ? await recordPayment(db, g[1], { txHash: b.txHash, fetchImpl }) : await recordDeployment(db, g[1], { txHash: b.txHash, fetchImpl }));
     }
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/deploy-data$/)) && m === 'GET') {
       await ownsDecision(await needOwner(req), g[1]);

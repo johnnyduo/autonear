@@ -251,7 +251,7 @@ export async function readVault(db, vault, { fetchImpl, maxAgeMs = 15_000, force
 }
 
 // ------------------------------------------------------------------ hash-chained ledger
-export const LEDGER_KINDS = ['draw', 'deploy', 'refused', 'anomaly', 'activate', 'loop'];
+export const LEDGER_KINDS = ['draw', 'deploy', 'pay', 'refused', 'anomaly', 'activate', 'loop'];
 export const LEDGER_STATUS = ['confirmed', 'failed', 'refused'];
 export async function appendLedger(db, vaultId_, e, { redact } = {}) {
   if (!LEDGER_KINDS.includes(e.kind)) throw new Error(`ledger: bad kind ${e.kind}`);
