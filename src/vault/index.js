@@ -586,9 +586,13 @@ async function vaultTokenBalance(db, vault, token, adapter, net, deps) {
   const key = `${vault.id}|${token}`; const hit = cache.get(key);
   if (hit?.value && now() - hit.at < ttl) return hit.value;
   if (hit?.p) return hit.p; // concurrent readers share ONE in-flight RPC (public report: no fan-out)
+  const limitMs = deps.balanceTimeoutMs ?? 15_000; // a read that never settles must not pin every later report to the same promise
   const p = (async () => {
-    try { const balance = await adapter.ftBalance({ net, token, account: vault.address, fetchImpl: deps.fetchImpl }); return { balance }; } catch (e) { return { balance: hit?.value?.balance ?? null, balanceError: safeMsg(e, deps.redact) }; }
+    try {
+      const timeout = new Promise((_, rej) => { const t = setTimeout(() => rej(new Error('the token balance read timed out')), limitMs); t.unref?.(); });
+      const balance = await Promise.race([adapter.ftBalance({ net, token, account: vault.address, fetchImpl: deps.fetchImpl }), timeout]); return { balance }; } catch (e) { return { balance: hit?.value?.balance ?? null, balanceError: safeMsg(e, deps.redact) }; }
   })();
+  if (cache.size >= 256) cache.delete(cache.keys().next().value); // bounded: oldest entry out (vault x token keys are few, this is a backstop)
   cache.set(key, { p });
   const value = await p; cache.set(key, { at: now(), value }); return value;
 }

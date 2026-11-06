@@ -348,6 +348,17 @@ describe('vault report with payouts', { skip: skipNoBuilds }, () => {
     assert.ok(count() - n <= tokens, `at most one read per token for 8 concurrent reports, got ${count() - n}`);
     assert.ok(reports.every((r) => r.vaults[0].payouts.tokens[0].balance === reports[0].vaults[0].payouts.tokens[0].balance));
   });
+  test('a token balance read that never settles times out; the next report is not stuck on it', async () => {
+    const world = await makeWorld();
+    const hang = (url, init) => { const b = JSON.parse(init?.body ?? '{}'); if (b.params?.method_name === 'ft_balance_of') return new Promise(() => {}); return world.fetchImpl(url, init); };
+    const t0 = Date.now();
+    const r = await vaultReport(world.db, { fetchImpl: hang, balanceMaxAgeMs: 0, balanceTimeoutMs: 50 });
+    assert.ok(Date.now() - t0 < 5000, 'returned despite the hung read');
+    const tok = r.vaults[0].payouts.tokens[0];
+    assert.equal(tok.balance, null); assert.match(String(tok.balanceError), /timed out/);
+    const again = await vaultReport(world.db, { fetchImpl: world.fetchImpl, balanceMaxAgeMs: 0 });
+    assert.notEqual(again.vaults[0].payouts.tokens[0].balance, null, 'a later report reads normally');
+  });
   test('balance reads are cached per database for a few seconds (a polling UI is not one RPC per poll)', async () => {
     const world = await makeWorld();
     const count = () => world.w.calls.filter((c) => c.params?.method_name === 'ft_balance_of').length;
