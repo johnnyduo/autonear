@@ -12,6 +12,7 @@ import { SphereScene } from './sphere.js';
 import { Scene } from './scene.js';
 import { ListView } from './ListView.jsx';
 import { focusEntry } from './council-star.js';
+import ScoreBox from './ScoreBox.jsx';
 import { ROLES, isRecent, lastIngest, roleStates, CountUp } from './shared.js';
 import './hero.css';
 
@@ -147,6 +148,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   const [model, setModel] = useState(null);
   const [view, setView] = useState('sphere');
   const [star, setStar] = useState('evidence');
+  useEffect(() => { const sc = sceneRef.current; if (sc) sc.rightInset = star === 'council' && (stage.current?.clientWidth ?? 0) > 900 ? 352 : 0; });
   const councilApi = useApi('/api/council', { poll: 30000 });
   const [hoverK, setHoverK] = useState(null); const [pinnedK, setPinnedK] = useState(null); const [focusK, setFocusK] = useState(null);
   const [filter, setFilter] = useState({ srcOff: new Set(), topicOff: new Set() });
@@ -219,7 +221,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     const R = rt.current; const st = stage.current;
     let sc = scenes.current[view];
     if (!sc) { sc = view === 'sphere' ? new SphereScene({ calm }) : view === 'disc' ? new DiscScene({ calm }) : new Scene({ calm }); sc.setModel(latest.current.model); scenes.current[view] = sc; }
-    sceneRef.current = sc; sc.onSwap = (to) => setStar(to ? 'council' : 'evidence'); setStar(sc.swapT ? 'council' : 'evidence'); R.pinned = null; R.hover = null; R.focus = null; R.sized = false; setPinnedK(null); setFocusK(null); setHoverK(null); syncScene(sc);
+    sceneRef.current = sc; sc.rightInset = 0; sc.onSwap = (to) => setStar(to ? 'council' : 'evidence'); setStar(sc.swapT ? 'council' : 'evidence'); R.pinned = null; R.hover = null; R.focus = null; R.sized = false; setPinnedK(null); setFocusK(null); setHoverK(null); syncScene(sc);
     let renderer;
     try { renderer = rk === 'gl' ? new GLRenderer(glCv.current, { onLost: () => setRk('2d') }) : new Canvas2DRenderer(glCv.current); } catch { if (rk === 'gl') { setRk('2d'); return undefined; } setErr(new Error('Canvas is unavailable in this browser.')); return undefined; }
     const ovx = ovCv.current.getContext('2d');
@@ -404,6 +406,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
               </li>
             ))}
           </ul>
+          {star === 'council' && view === 'sphere' && councilApi.data && <ScoreBox data={councilApi.data} sceneRef={sceneRef} wide={(stage.current?.clientWidth ?? 0) > 900} />}
           {shown && (
             <aside ref={tip} className={`co-card ${pinnedK ? 'pinned' : ''} ${kbFocus ? 'kb' : ''}`} data-ui aria-label={pinnedK ? 'Pinned node details' : 'Node details'}>
               <Card k={shown} councilData={councilApi.data} model={model} srcInfo={srcInfo} roleState={roles} runId={activeRun?.id} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}

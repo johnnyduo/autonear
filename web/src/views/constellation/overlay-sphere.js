@@ -117,25 +117,16 @@ function councilOverlay(ctx, sc, { W, H, narrow, calm, fs, items, hot, isHot, ev
   ctx.save(); ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
   const q100 = (x) => Math.round(x * 100); const rules = cs.data?.council?.rules ?? { goAt: 0.62, watchAt: 0.48 }; const STW = { back: 'backs it', abstain: 'unsure', object: 'objects' };
   if (main) {
-    if (e) {
-      // header, on an 8px rhythm, kept clear of the toolbar above it
-      const y0 = Math.max(narrow ? 100 : 60, (cs.topSafe ?? 0) + 24); const ln = narrow ? [0, 26, 52, 74, 92] : [0, 30, 60, 84, 104];
-      ctx.font = MONO(fs - 1.5, 600); ctx.fillStyle = '#7ee9ff'; ctx.fillText((calm || (cs.cycle ?? 0) >= 10.3 ? 'COUNCIL STAR · THE VERDICT' : 'COUNCIL STAR · REPLAYING THE STORED VOTES'), W / 2, y0 + ln[0]);
-      ctx.font = SERIF(narrow ? 22 : 30); ctx.fillStyle = 'rgba(236,233,223,0.95)'; ctx.fillText(cut(e.title, narrow ? 30 : 60), W / 2, y0 + ln[1]);
-      ctx.font = MONO(fs, 600); ctx.fillStyle = vcol; ctx.shadowColor = vcol; ctx.shadowBlur = 10;
-      ctx.fillText(`${e.verdict === 'go' ? 'GO · THE COUNCIL BACKS BUILDING THIS' : e.verdict === 'watch' ? 'WATCH · NOT STRONG ENOUGH TO BUILD YET' : 'DROP · NOT NOW'}`, W / 2, y0 + ln[2]); ctx.shadowBlur = 0;
-      ctx.font = MONO(fs - 1, 500); ctx.fillStyle = COL.chalk2; ctx.fillText(`COUNCIL SCORE ${q100(e.support)} OUT OF 100  ·  ${q100(rules.goAt)} IS NEEDED TO BUILD`, W / 2, y0 + ln[3]);
-      if (oc) { ctx.font = MONO(fs - 1, 600); ctx.fillStyle = OCSS[oc.state]; ctx.fillText(`FINAL JUDGEMENT  ·  ${oc.headline.toUpperCase()}  ·  ${cut(oc.next, narrow ? 30 : 84)}`, W / 2, y0 + ln[4]); }
-      res.push({ x: W / 2 - 360, y: y0 - 10, w: 720, h: ln[4] + 22 });
-    } else { ctx.font = MONO(fs); ctx.fillStyle = COL.chalk2; ctx.fillText('The council has nothing to vote on yet.', W / 2, 90); }
+    // the verdict, the score and the final judgement live in the scoring box (ScoreBox.jsx), not on the canvas
+    if (!e) { ctx.font = MONO(fs); ctx.fillStyle = COL.chalk2; ctx.fillText('The council has nothing to vote on yet.', W / 2, 90); }
     cs.seats.forEach((s) => { if (s.z < -40 || !s.vote) return; const c = s.lit ? SCSS[s.vote.stance] : COL.chalk3; items.push({ key: `seat${s.i}`, x: s.x, y: s.y, r: 12, a: s.lit ? 1 : 0.55, pr: isHot('seat', s.i) ? 0 : 3, lines: [[s.name.toUpperCase(), fs, COL.chalk, 600], [s.lit ? `${q100(s.vote.support)} · ${STW[s.vote.stance]}` : 'waiting…', fs - 1, c, 500]] }); });
     cs.cry.forEach((c) => { items.push({ key: `prod${c.i}`, x: c.x, y: c.y, r: c.r, a: c.z > 0 ? 1 : 0.5, pr: isHot('prod', c.i) ? 0 : c.win ? 1 : 4, lines: [[cut(c.o.title, 26), fs, c.win ? COL.chalk : COL.chalk2, 600], [c.win ? `${c.o.verdict.toUpperCase()} · WAITING TO BE BUILT` : `${c.o.verdict.toUpperCase()} · ${q100(c.o.support)}/100`, fs - 1, VCSS[c.o.verdict], 500]] }); });
     { const gap = cs.lane.length > 1 ? cs.lane[1].x - cs.lane[0].x : 120; const maxCh = Math.max(8, Math.floor(gap / 6.4));
       cs.lane.forEach((n) => { const c = n.state === 'verdict' ? vcol : n.state === 'done' ? '#c6f432' : n.state === 'active' ? '#f2b84b' : n.state === 'blocked' ? '#ff4080' : '#8c8b82'; ctx.font = MONO(narrow ? 8.5 : fs - 0.5, 600); ctx.fillStyle = c; ctx.fillText(narrow ? cut(n.label, 8).toUpperCase() : cut(n.label.toUpperCase(), maxCh), n.x, n.y + 26); if (!narrow) { ctx.font = MONO(fs - 1.5); ctx.fillStyle = COL.chalk2; ctx.fillText(cut(n.detail ?? '', maxCh), n.x, n.y + 42); } }); }
     if (cs.podV) { const pv = cs.podV; const c = OCSS[oc?.state ?? 'not_started']; ctx.font = MONO(narrow ? 8.5 : fs - 1, 600); ctx.fillStyle = c; ctx.fillText('OUTCOME', pv.x, pv.y + pv.r + 16); if (!narrow && oc) { ctx.font = MONO(fs - 2.5); ctx.fillStyle = COL.chalk2; ctx.fillText(cut(oc.headline, 22), pv.x, pv.y + pv.r + 30); } if (isHot('outcome', 0)) { ctx.strokeStyle = c; ctx.lineWidth = 1.4; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.arc(pv.x, pv.y, pv.r * 1.7, 0, TAU); ctx.stroke(); ctx.setLineDash([]); } }
-    if (cs.lane.length && !narrow) { ctx.font = MONO(fs - 1.5, 500); ctx.fillStyle = 'rgba(126,233,255,0.85)'; ctx.fillText('PRODUCT LAUNCH LANE  ·  each step is coloured from the stored state of the real journey', W / 2, cs.lane[0].y - 30); res.push({ x: W / 2 - 300, y: cs.lane[0].y - 42, w: 600, h: 22 }); }
+    if (cs.lane.length && !narrow) { ctx.font = MONO(fs - 1.5, 500); ctx.fillStyle = 'rgba(126,233,255,0.85)'; { const lx = (cs.lane[0].x + cs.lane[cs.lane.length - 1].x) / 2; ctx.fillText('PRODUCT LAUNCH LANE  ·  each step is coloured from the stored state of the real journey', lx, cs.lane[0].y - 30); res.push({ x: lx - 300, y: cs.lane[0].y - 42, w: 600, h: 22 }); } }
     if (cs.verdictCurve && !narrow) { ctx.font = MONO(fs - 1.5, 500); ctx.fillStyle = vcol; ctx.globalAlpha = 0.9; ctx.fillText('THE VERDICT STARTS THE LANE', cs.verdictCurve.x, cs.verdictCurve.y + 14); ctx.globalAlpha = 1; res.push({ x: cs.verdictCurve.x - 90, y: cs.verdictCurve.y + 4, w: 180, h: 20 }); }
-    if (cs.lane.length) { const ly = cs.lane[0].y; res.push({ x: 0, y: ly - 20, w: W, h: 70 }); }
+    if (cs.lane.length) { const ly = cs.lane[0].y; res.push({ x: 0, y: ly - 20, w: W - (sc.rightInset ?? 0) + 40, h: 70 }); }
 
   } else {
     ctx.font = MONO(fs - 1, 600); ctx.fillStyle = '#7ee9ff'; ctx.fillText('COUNCIL', v.cx, v.cy + v.R * 2.6 + 6); ctx.font = MONO(fs - 2, 500); ctx.fillStyle = e ? vcol : COL.chalk3; ctx.fillText(e ? `${e.verdict.toUpperCase()} · ${cut(e.title, 18)}` : 'counting votes…', v.cx, v.cy + v.R * 2.6 + 20);
