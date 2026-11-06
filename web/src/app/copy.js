@@ -26,7 +26,7 @@ export const T = {
   signOut: 'Disconnect',
   activity: 'Activity',
   modeManualTitle: 'I approve each action',
-  modeManualBody: 'The agent prepares requests and waits for you. Nothing happens without your OK.',
+  modeManualBody: 'The agent never acts on its own. Anything it wants to publish waits for your OK.',
   modeAutoTitle: 'Let it act within my limits',
   modeAutoBody: 'The agent acts on its own, but only inside the limits on the Vault page. It also keeps its fuel topped up.',
   hold: 'Hold to approve',
@@ -35,7 +35,7 @@ export const T = {
   emptyApprovals: 'Nothing is waiting for you.',
   emptyApprovalsHelp: 'When the agent wants to do something, it will show up here first.',
   stop: 'Stop the agent',
-  stopHelp: 'Pauses the agent everywhere. You can start it again whenever you like.',
+  stopHelp: 'Stops the agent on the server, then asks your wallet to pause the vault on chain. You can start it again whenever you like.',
   resume: 'Start the agent again',
 };
 

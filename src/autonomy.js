@@ -363,6 +363,20 @@ async function topUp(ctx, { vault, adapter, net, agent }) {
   if (!dp.ok) return { refused: dp.refused };
   if (dp.code) { await appendLedgerOnce(db, vault.id, `topup-refused:${dp.code}`, { kind: 'refused', status: 'refused', detail: `top-up refused by vault rules: ${dp.code}` }, { redact: ctx.redact }); return null; }
 
+  // A STALE claim is never just overwritten: its outcome must be established first, or a draw that was broadcast could be sent twice.
+  //  - 'claimed' (we died before signing anything): nothing was sent, safe to retry.
+  //  - 'submitted' with a tx hash: ask the chain; mined/reverted settles it (the balance read above is then the judge); no receipt = unknown.
+  //  - 'submitted' without a hash (died while sending) or an unknown receipt: the loop BLOCKS for an operator instead of guessing.
+  const prev = parse((await db.get('SELECT v FROM kv WHERE k=?', [key]))?.v, null);
+  if (prev && prev.at < now() - TOPUP_STALE_MS && prev.status === 'submitted') {
+    const st = prev.txHash && typeof adapter.receiptStatus === 'function' ? await adapter.receiptStatus({ net, txHash: prev.txHash, fetchImpl: ctx.fetchImpl }) : 'unknown';
+    if (st === 'unknown') {
+      const why = `a gas top-up was sent ${prev.txHash ? `(tx ${prev.txHash})` : 'but its transaction hash was never recorded'} and its outcome cannot be established; check the agent address on the explorer, then resume the loop`;
+      await blockLoop(db, why, { vaultId: vault.id, redact: ctx.redact });
+      return { blocked: true, refused: 'top-up outcome unknown' };
+    }
+    await appendLedger(db, vault.id, { kind: 'loop', status: 'confirmed', txHash: prev.txHash, detail: `earlier top-up settled on chain as ${st}; the balance decides whether another is needed` }, { redact: ctx.redact });
+  }
   // durable claim: atomic insert-or-replace-if-stale; a second concurrent/crashed attempt inside the stale window changes 0 rows
   const claim = await db.run("INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v WHERE CAST(json_extract(kv.v,'$.at') AS INTEGER) < ?", [key, JSON.stringify({ status: 'claimed', at: now() }), now() - TOPUP_STALE_MS]);
   if (!claim.changes) return null;
@@ -373,7 +387,11 @@ async function topUp(ctx, { vault, adapter, net, agent }) {
   await db.run('UPDATE kv SET v=? WHERE k=?', [JSON.stringify({ status: 'submitted', at: now() }), key]);
   const res = await signer.signAndSend(adapter.buildCall('draw', { vault: vault.address, amount }), { maxFeePerTx: fee > hardMax ? hardMax : fee, allowedTargets: [vault.address] });
   await db.run('UPDATE kv SET v=? WHERE k=?', [JSON.stringify({ status: 'submitted', at: now(), txHash: res.txHash ?? null }), key]);
-  await appendLedger(db, vault.id, { kind: 'draw', status: res.ok ? 'confirmed' : res.status === 'pending' ? 'confirmed' : 'failed', txHash: res.txHash, amount, detail: res.ok ? `top-up: drew ${amount} so the agent can pay for its own transactions (low-water ${cfg.low}, target ${cfg.target})` : res.status === 'pending' ? 'top-up draw submitted; receipt not seen before the timeout, the next tick re-reads the balance' : `top-up draw transaction ${res.status}` }, { redact: ctx.redact });
+  if (res.status === 'pending') { // sent, receipt not seen: NOT confirmed. The claim keeps the hash; a later tick settles it from the chain before anything else is sent.
+    await appendLedger(db, vault.id, { kind: 'loop', status: 'confirmed', txHash: res.txHash, detail: 'top-up draw submitted; receipt not seen before the timeout. It is not counted as done until the chain shows it' }, { redact: ctx.redact });
+    return { pending: true };
+  }
+  await appendLedger(db, vault.id, { kind: 'draw', status: res.ok ? 'confirmed' : 'failed', txHash: res.txHash, amount, detail: res.ok ? `top-up: drew ${amount} so the agent can pay for its own transactions (low-water ${cfg.low}, target ${cfg.target})` : `top-up draw transaction ${res.status}` }, { redact: ctx.redact });
   return res.ok ? { toppedUp: true, amount: String(amount) } : { refused: `top-up ${res.status}` };
 }
 

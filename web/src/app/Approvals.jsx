@@ -50,7 +50,7 @@ export default function Approvals({ data, owner, canWrite: canOwn, opts, toast }
   return (
     <div className="ap-wrap">
       <h1 className="pg">Approvals</h1>
-      <p className="pg-sub">{data.autonomy?.mode === 'auto' ? 'Auto mode is on: the agent handles what it safely can. You only see what it left for you.' : 'Manual mode: the agent asks you before it does anything.'}</p>
+      <p className="pg-sub">{data.autonomy?.mode === 'auto' ? 'Auto mode is on: the agent handles what it safely can. You only see what it left for you.' : 'Manual mode: nothing is published unless you approve it here.'}</p>
       {!canWrite && <p className="why"><Icon name="lock" size={14} />{why}</p>}
       {!pending.length && !approved.length && <Empty title={T.emptyApprovals}>{T.emptyApprovalsHelp}</Empty>}
       <ul className="req">

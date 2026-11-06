@@ -405,6 +405,21 @@ describe('autonomous cycle on a LOCAL anvil (31337)', { skip: !haveAnvil && 'anv
       await w.tick(); assert.equal((await topups(w)).length, 1, 'the retry holds a fresh claim again: no second draw');
       w.cleanup();
     });
+    test('a stale submitted claim is settled from the chain first: no hash -> the loop BLOCKS; a mined hash -> one more top-up may follow', async () => {
+      const w = await lowGas(await makeWorld(anvil));
+      await w.db.run('INSERT INTO kv(k,v) VALUES(?,?)', [`topup:${w.vaultId}`, JSON.stringify({ status: 'submitted', at: Date.now() - 31 * 60_000 })]); // died while sending, hash unknown
+      const r = await w.tick();
+      assert.equal(r.vaults[0].blocked, true, JSON.stringify(r)); assert.equal((await getLoop(w.db)).state, 'blocked'); assert.match((await getLoop(w.db)).reason, /outcome cannot be established/);
+      assert.equal((await topups(w)).length, 0);
+      w.cleanup();
+      const w2 = await lowGas(await makeWorld(anvil));
+      await w2.tick(); assert.equal((await topups(w2)).length, 1);
+      const claim = JSON.parse((await w2.db.get('SELECT v FROM kv WHERE k=?', [`topup:${w2.vaultId}`])).v); assert.ok(claim.txHash, 'the claim kept the tx hash');
+      await anvil.raw('anvil_setBalance', [w2.agent, '0x38d7ea4c68000']);
+      await w2.db.run('UPDATE kv SET v=? WHERE k=?', [JSON.stringify({ ...claim, at: Date.now() - 31 * 60_000 }), `topup:${w2.vaultId}`]);
+      await w2.tick(); assert.equal((await topups(w2)).length, 2, 'the earlier tx is mined, so the balance decides');
+      w2.cleanup();
+    });
     test('mode flipped to manual between the claim and the send aborts before signing', async () => {
       let armed = false; let sawEstimate = false; let flipped = false; let w;
       const f = async (u, init) => {

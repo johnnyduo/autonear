@@ -84,3 +84,8 @@ Run 2026-11-06 on the code after the review-3 fixes. The reviewer confirmed V-1 
 | R-1 | Medium | Social spam could dominate score components (0.4 weight per record in the recency, friction and quality means; only author/source breadth was capped) | Fixed. All social records of a topic together are capped at 0.25x the core weight (at most 20% of any weighted mean) and count for nothing when a topic has no core records; the cap also bounds the breadth and confidence terms. `/api/scoring` publishes the cap. Tests: 1 core + 200 spam records scores exactly like 1 core + 10 |
 | R-2 | Medium | Instructions in social text that evade the literal injection patterns reached LLM prompts | Mitigated, not eliminated. By default social text is withheld from LLM prompts (metadata only); `LLM_INCLUDE_SOCIAL=1` adds it truncated, stripped of angle brackets and fenced as untrusted; an LLM finding must cite at least one non-social record or the whole output is rejected. **Still open:** no check that a claim matches the cited text, no constrained extraction step |
 | R-3 | Low | One vault with an unreadable state aborted the whole autonomy tick (no refusal ledgered, later vaults skipped) | Fixed. Refuse-and-ledger before verification, per-vault isolation in the tick, `verifyMandate` fails closed on missing state. Live-anvil test with two vaults. The implementing engineer found its earlier guard edit had silently not applied; this review is what caught it |
+
+
+## Added 2026-11-06
+
+`codex-redesign-review.raw.md`: two read-only Codex passes (plan, then implementation) on the owner-app redesign, with the author's triage and fix status. Same caveat: an automated model review, not an audit.

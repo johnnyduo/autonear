@@ -12,7 +12,7 @@ const other = privateKeyToAccount(generatePrivateKey());
 const call = (app, path, init = {}) => app(new Request('http://' + HOST + path, { ...init, headers: { host: HOST, 'x-peer-ip': app.ip, 'content-type': 'application/json', ...(init.headers ?? {}) } }))
   .then(async (r) => ({ status: r.status, body: await r.text().then((t) => { try { return JSON.parse(t); } catch { return t; } }) }));
 let n = 0;
-const mk = async (extra = {}) => { const app = createApp({ db: await memDb(), operatorToken: 'op-token', ownerAddress: owner.address, defer: () => {}, ...extra }); app.ip = `10.0.0.${++n}`; return app; };
+const mk = async (extra = {}) => { const db = await memDb(); const app = createApp({ db, operatorToken: 'op-token', ownerAddress: owner.address, defer: () => {}, ...extra }); app.__db = db; app.ip = `10.0.0.${++n}`; return app; };
 
 async function signIn(app, account, tweak = (m) => m) {
   const ch = await call(app, '/api/auth/challenge', { method: 'POST', body: JSON.stringify({ address: account.address }) });
@@ -132,4 +132,26 @@ test('autonomy mode: public read, owner/operator write, junk rejected', async ()
   assert.equal((await call(app, '/api/autonomy/mode', { method: 'PUT', headers: h, body: JSON.stringify({ mode: 'auto' }) })).body.mode, 'auto');
   assert.equal((await call(app, '/api/autonomy/mode', { method: 'PUT', headers: h, body: JSON.stringify({ mode: 'yolo' }) })).status, 400);
   assert.equal((await call(app, '/api/status')).body.autonomy.mode, 'auto');
+});
+
+test('PUBLIC_HOSTS allowlist: a challenge cannot be minted or redeemed for another domain', async () => {
+  const app = await mk({ publicHosts: ['other.example'] });
+  const ch = await call(app, '/api/auth/challenge', { method: 'POST', body: JSON.stringify({ address: owner.address }) });
+  assert.equal(ch.status, 400); assert.match(JSON.stringify(ch.body), /not available on this domain/);
+  const ok = await mk({ publicHosts: [HOST] });
+  assert.equal((await signIn(ok, owner)).body.isOwner, true);
+});
+
+test('owner session reaches receipt/deploy-data only for requests bound to its own wallet; the operator reaches any', async () => {
+  const app = await mk();
+  const { body } = await signIn(app, owner);
+  const h = { authorization: `Bearer ${body.token}` };
+  const db = app.__db;
+  const ins = (id, signer) => db.run("INSERT INTO decisions(id,run_id,artifact_hash,action,chain_id,target,method,max_spend,expiry,nonce,payload,payload_hash,status,created_at,bound_signer) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [id, null, 'h', 'deploy_testnet', 'evm:84532', 't', 'deploy', '0', Date.now() + 1e6, `n_${id}`, '{}', 'ph', 'approved', Date.now(), signer]);
+  await ins('dec_mine', owner.address); await ins('dec_other', other.address);
+  const get = (id, hh) => call(app, `/api/decisions/${id}/deploy-data`, { headers: hh });
+  assert.notEqual((await get('dec_mine', h)).status, 400, 'own request passes the scope check');
+  const r = await get('dec_other', h); assert.equal(r.status, 400); assert.match(JSON.stringify(r.body), /different signer/);
+  assert.equal((await call(app, '/api/decisions/dec_other/receipt', { method: 'POST', headers: h, body: JSON.stringify({ txHash: '0x1' }) })).status, 400);
+  assert.notEqual((await get('dec_other', { authorization: 'Bearer op-token' })).status, 400, 'operator is not scoped');
 });

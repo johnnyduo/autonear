@@ -269,12 +269,17 @@ function planSteps({ net, payload, vault }) {
   return steps;
 }
 
+/** 'mined' | 'reverted' | 'unknown' for a tx hash (unknown = no receipt on this RPC yet, or the RPC failed). */
+async function receiptStatus({ net, txHash, fetchImpl }) {
+  try { const r = await eth(net.rpc, 'eth_getTransactionReceipt', [txHash], fetchImpl); return !r ? 'unknown' : r.status === '0x1' ? 'mined' : 'reverted'; } catch { return 'unknown'; }
+}
+
 export const adapter = {
   chain: 'evm',
   unit: UNITS.evm,
   attested: ATTESTED_VAULT,
   readState, verifyVaultCode, expectedTemplate, buildCall, verifyDeploy, explorerTx, explorerAddress,
   // extensions (see src/vault/index.js REQUIRED_ADAPTER_METHODS)
-  preview, estimateFee, signerOptions, deployTarget, planSteps,
+  preview, estimateFee, signerOptions, deployTarget, planSteps, receiptStatus,
 };
 export default adapter;

@@ -5,7 +5,7 @@ import { CommandPalette, Dialog, ErrorPanel, Icon, SkeletonRows, useToast } from
 import { useAppData } from './data.js';
 import { APP_ROUTES, goto, href, parseRoute } from './nav.js';
 import { ROUTES, T } from './copy.js';
-import { shortAddr, signOut, useOwner } from './session.js';
+import { shortAddr, signOut, useOwner, verifySession } from './session.js';
 import WalletButton from './WalletButton.jsx';
 import Landing from './Landing.jsx';
 import './app.css';
@@ -30,6 +30,7 @@ export default function Shell() {
   const owner = useOwner(); const toast = useToast(); const data = useAppData(); const token = useToken(); const [tokDlg, setTokDlg] = useState(false);
   useEffect(() => { const f = () => { setRoute(parseRoute()); }; addEventListener('hashchange', f); return () => removeEventListener('hashchange', f); }, []);
   useEffect(() => { const f = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(true); } }; addEventListener('keydown', f); return () => removeEventListener('keydown', f); }, []);
+  useEffect(() => { verifySession(); }, []);
   useEffect(() => { document.title = `${ROUTES[route.name] ?? 'Details'} · ${T.brand}`; window.scrollTo(0, 0); }, [route.name]);
 
   const demo = route.demo || data.demo;

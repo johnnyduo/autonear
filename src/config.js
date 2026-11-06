@@ -46,6 +46,7 @@ export const autonomyMaxPerDay = (e = process.env) => {
 export const config = {
   port: num('PORT', 8787),
   ownerAddress: env('OWNER_ADDRESS'),
+  publicHosts: env('PUBLIC_HOSTS').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean), // sign-in challenge domains allowed (host[:port]); empty = trust the request host
   host: env('HOST', '127.0.0.1'),
   dbPath: resolve(ROOT, env('DB_PATH', 'data/autonear.db')),
   databaseUrl: env('DATABASE_URL'),

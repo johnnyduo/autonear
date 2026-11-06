@@ -80,6 +80,11 @@ export function createApp(deps) {
   const sessionSecret = deriveSecret(operatorToken);
   const ownerOf = async () => (deps.resolveOwner ? String((await deps.resolveOwner()) ?? '').toLowerCase() || null : resolveOwner(db, deps.ownerAddress ?? config.ownerAddress));
   const sessionTtl = deps.sessionTtlMs ?? SESSION_TTL_MS;
+  const publicHosts = deps.publicHosts ?? config.publicHosts;
+  // The sign-in message is bound to a domain. Behind a proxy the Host header is client-influenced, so a configured allowlist (PUBLIC_HOSTS) decides which domains can be signed for.
+  const signInHost = (url) => { const h = url.host.toLowerCase(); if (publicHosts.length && !publicHosts.includes(h)) throw new PolicyError('sign-in is not available on this domain', 'input'); return url.host; };
+  /** For receipt/deploy-data: an owner session may touch only requests bound to its own wallet; the operator token may touch any. */
+  const ownsDecision = async (who, id) => { if (!who.address) return; const d = await db.get('SELECT bound_signer FROM decisions WHERE id=?', [id]); if (!d || String(d.bound_signer ?? '').toLowerCase() !== who.address) throw new PolicyError('this request is bound to a different signer', 'signer'); };
   const sessionOf = async (req) => {
     const s = readSession(bearer(req), { secret: sessionSecret });
     if (!s) return null;
@@ -154,13 +159,13 @@ export function createApp(deps) {
       if (!sessionSecret) throw new PolicyError('sign-in is disabled: OPERATOR_TOKEN is not configured', 'auth');
       const b = await body(req, { type: 'object', required: ['address'], properties: { address: { type: 'string', maxLength: 64 } } });
       if (!/^0x[0-9a-fA-F]{40}$/.test(b.address)) throw new PolicyError('an EVM address is required', 'input');
-      const { message, exp } = buildChallenge({ host: url.host, address: b.address });
+      const { message, exp } = buildChallenge({ host: signInHost(url), address: b.address });
       return out({ message, exp });
     }
     if (p === '/api/auth/session' && m === 'POST') {
       if (!sessionSecret) throw new PolicyError('sign-in is disabled: OPERATOR_TOKEN is not configured', 'auth');
       const b = await body(req, { type: 'object', required: ['address', 'message', 'signature'], properties: { address: { type: 'string', maxLength: 64 }, message: { type: 'string', maxLength: 1000 }, signature: { type: 'string', maxLength: 400 } } });
-      let c; try { c = await checkSignedChallenge({ ...b, host: url.host }); } catch (e) { throw new PolicyError(e.message, 'auth'); }
+      let c; try { c = await checkSignedChallenge({ ...b, host: signInHost(url) }); } catch (e) { throw new PolicyError(e.message, 'auth'); }
       const owner = await ownerOf();
       if (!owner || owner !== c.signer) return out({ isOwner: false, address: c.signer, token: null, exp: null }); // read-only wallet: no token, no nonce row
       if (!(await consumeNonce(db, c.nonce, c.exp))) throw new PolicyError('this sign-in challenge was already used', 'auth');
@@ -271,12 +276,12 @@ export function createApp(deps) {
     }
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/reject$/)) && m === 'POST') { const who = await needOwner(req); const b = await body(req); return out(await rejectDecision(db, g[1], { actor: who.actor, reason: b.reason })); }
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/receipt$/)) && m === 'POST') {
-      await needOwner(req);
+      await ownsDecision(await needOwner(req), g[1]);
       const b = await body(req, { type: 'object', required: ['txHash'], properties: { txHash: { type: 'string', maxLength: 100 } } });
       return out(await recordDeployment(db, g[1], { txHash: b.txHash, fetchImpl }));
     }
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/deploy-data$/)) && m === 'GET') {
-      await needOwner(req);
+      await ownsDecision(await needOwner(req), g[1]);
       const d = await db.get('SELECT * FROM decisions WHERE id=?', [g[1]]);
       if (!d) return out({ error: 'not found' }, 404);
       if (d.action !== 'deploy_testnet') throw new PolicyError(`a ${d.action} decision has no deploy data`, 'state');

@@ -29,7 +29,7 @@ export async function listWallets() {
 export async function connectAndSignIn(connectorId) {
   set({ busy: true, error: '' });
   try {
-    const { config, getConnectors, connect, getConnection, signMessage } = await wagmi();
+    const { config, getConnectors, connect, getConnection, signMessage, ...actions } = await wagmi();
     const connectors = getConnectors(config);
     const connector = connectors.find((c) => c.id === connectorId) ?? connectors[0];
     if (!connector) throw new Error('NO_WALLET');
@@ -41,7 +41,7 @@ export async function connectAndSignIn(connectorId) {
     const r = await api('/api/auth/session', { method: 'POST', body: { address, message: ch.message, signature } });
     if (r.token) setToken(r.token);
     set({ address: r.address ?? address.toLowerCase(), isOwner: Boolean(r.isOwner), exp: r.exp ?? Date.now() + 8 * 3600_000, busy: false });
-    persist();
+    persist(); watchWallet(config, actions);
     return r;
   } catch (e) {
     const msg = e.message === 'NO_WALLET' ? 'NO_WALLET' : /user rejected|denied/i.test(e.message) ? 'You closed the wallet window. Nothing was signed.' : e.message;
@@ -50,7 +50,21 @@ export async function connectAndSignIn(connectorId) {
   }
 }
 
+let unwatch = null;
+/** If the wallet switches to another account (or disconnects) the session no longer matches it: drop it rather than show owner controls for the wrong wallet. */
+function watchWallet(config, actions) {
+  unwatch?.();
+  unwatch = actions.watchAccount(config, { onChange(a) { if (state.address && a.address && a.address.toLowerCase() !== state.address.toLowerCase()) signOut(); } });
+}
+
+/** On load: a restored session is only trusted after the server confirms it. */
+export async function verifySession() {
+  if (!state.address) return;
+  try { const me = await api('/api/auth/me'); if (state.isOwner && !me.isOwner) { setToken(''); set({ address: null, isOwner: false, exp: 0 }); persist(); } } catch { /* offline: keep what we have */ }
+}
+
 export async function signOut() {
+  unwatch?.(); unwatch = null;
   try { const { config, disconnect } = await wagmi(); await disconnect(config); } catch { /* not connected */ }
   setToken('');
   set({ address: null, isOwner: false, exp: 0, error: '' });
