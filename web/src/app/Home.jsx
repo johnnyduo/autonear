@@ -18,7 +18,7 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
   const model = useMemo(() => buildScene({ sources, vault, autonomy: data.autonomy, pending, demo, paused }), [sources, vault, data.autonomy, pending, demo, paused]);
   const ok = sources.filter((x) => x.status === 'ok').length;
   const [l1, l2] = homeLine({ demo, paused, mode, pending: pending.length, vaultLive: Boolean(vault) && !demo, sourcesOk: ok, sourcesTotal: sources.length, signing: Boolean(data.vault?.signingSupported && data.vault?.enabled) });
-  const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : demo ? T.demoNote : '';
+  const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : T.demoNote;
 
   const setMode = async (m) => {
     if (m === mode || !canWrite) return;
@@ -38,7 +38,7 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
         <h1>{l1} <span>{l2}</span></h1>
       </section>
       <div className="hm-stage"><LeashScene model={model} reducedMotion={calm} className="hm-scene" />
-        <ul className="hm-legend" aria-hidden="true"><li><i className="d1" />Sources it reads</li><li><i className="d2" />Your limits, used so far</li><li><i className="d3" />Agent fuel</li></ul>
+        <ul className="hm-legend" aria-hidden="true" style={{ '--tone': paused ? 'var(--risk)' : demo ? 'var(--mineral-hi)' : 'var(--signal)' }}><li><i className="d1" />Sources it reads</li><li><i className="d2" />Your limits, used so far</li><li><i className="d3" />Agent fuel</li></ul>
       </div>
       <section className="hm-cards">
         <article className="card" aria-labelledby="c-mode">
@@ -55,8 +55,8 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
         <article className="card" aria-labelledby="c-gas">
           <h2 id="c-gas">Agent fuel</h2>
           {vault ? <>
-            <div className="big">{fmtAmount(vault.agentBalance, u.decimals, 4)} <small>{u.symbol}</small></div>
-            <Meter value={gasFrac} tone={lowGas ? 'bad' : undefined} label="Agent fuel" />
+            <div className="big">{fmtAmount(vault.agentBalance, u.decimals, 4)?.text ?? '–'} <small>{u.symbol}</small></div>
+            <Meter value={gasFrac} tone={lowGas ? 'risk' : ''} label="Agent fuel" />
             <p>{lowGas ? 'Running low. ' : ''}{mode === 'auto' ? 'It refills itself from the vault when it runs low, never past your limits.' : 'It only refills itself in Auto mode. In Manual mode it can wait for you.'}</p>
           </> : <p>No vault is connected yet. When one is, the agent’s fuel shows here.</p>}
         </article>

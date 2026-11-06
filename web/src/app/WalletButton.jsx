@@ -4,7 +4,7 @@ import { Icon } from '../ui.jsx';
 import { T } from './copy.js';
 import { connectAndSignIn, listWallets, useOwner } from './session.js';
 
-export default function WalletButton({ big = false }) {
+export default function WalletButton({ big = false, hint = true }) {
   const o = useOwner();
   const [choices, setChoices] = useState(null);
   const [note, setNote] = useState('');
@@ -30,7 +30,7 @@ export default function WalletButton({ big = false }) {
           {choices.map((c) => <button key={c.id} type="button" className="btn" onClick={() => go(c.id)}>{c.icon && <img src={c.icon} alt="" width="18" height="18" />}{c.name}</button>)}
         </div>
       )}
-      {!err && !choices && <p className="wb-hint">{T.signHint}</p>}
+      {hint && !err && !choices && <p className="wb-hint">{T.signHint}</p>}
       {err && <p className="wb-err" role="alert">{err}</p>}
     </div>
   );

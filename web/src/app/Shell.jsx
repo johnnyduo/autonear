@@ -34,7 +34,7 @@ export default function Shell() {
 
   const demo = route.demo || data.demo;
   const connected = Boolean(owner.address);
-  const canWrite = owner.isOwner && !demo;
+  const canWrite = owner.isOwner && !route.demo; // the preview (?fixture=1) can never write; "no vault yet" demo data only blocks vault-bound actions (pages check `demo`)
   const pending = useMemo(() => data.decisions.filter((d) => d.effectiveStatus === 'pending').length, [data.decisions]);
   const opts = { demo: route.demo };
   const commands = useMemo(() => [
@@ -72,7 +72,7 @@ export default function Shell() {
           <a className="btn sm ghost" href={href(base, { ...opts, activity: true })}><Icon name="clock" size={16} />{T.activity}</a>
           {connected
             ? <WalletChip owner={owner} />
-            : <WalletButton />}
+            : <WalletButton hint={false} />}
         </div>
       </header>
       {demo && <div className="ap-demo" role="note"><b>{T.demoBadge}</b><span>{T.demoNote}</span>{route.demo && <a href={href(base)} onClick={() => { /* leaving the preview */ }}>Leave the demo</a>}</div>}

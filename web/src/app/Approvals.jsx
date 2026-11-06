@@ -32,7 +32,8 @@ function Finish({ d, reload, opts, toast }) {
   );
 }
 
-export default function Approvals({ data, owner, canWrite, demo, opts, toast }) {
+export default function Approvals({ data, owner, canWrite: canOwn, demo, opts, toast }) {
+  const canWrite = canOwn && !demo; // example requests cannot be approved
   const [busy, setBusy] = useState('');
   const pending = pendingOf(data.decisions);
   const approved = data.decisions.filter((d) => d.effectiveStatus === 'approved' && !String(d.approver ?? '').startsWith('mandate:'));

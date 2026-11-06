@@ -27,9 +27,10 @@ export default function Landing({ data }) {
           <h1>An agent that works for you, <em>on a leash you hold.</em></h1>
           <p className="ln-sub">{T.tagline}</p>
           <div className="ln-cta">
-            <WalletButton big />
+            <WalletButton big hint={false} />
             <a className="btn lg" href={href('', { demo: true })}>{T.demo}</a>
           </div>
+          <p className="ln-hint">{T.signHint}</p>
         </div>
         <LeashScene model={model} reducedMotion={calm} className="ln-scene" label="Animated picture: sources feeding an agent that sits inside a ring that stands for your limits." />
       </section>

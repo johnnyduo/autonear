@@ -23,7 +23,7 @@ export default function Watch({ data, owner, canWrite, demo, toast }) {
   const w = data.watch ?? { keywords: [], excludes: [], hackathons: [], sources: {} };
   const [busy, setBusy] = useState(false);
   const sources = data.status.data?.sources ?? [];
-  const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : demo ? T.demoNote : '';
+  const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : T.demoNote;
   const save = async (patch, okMsg = 'Saved. The agent uses this from its next check.') => {
     setBusy(true);
     try { await api('/api/watch', { method: 'PUT', body: { keywords: w.keywords, excludes: w.excludes, hackathons: w.hackathons, sources: w.sources, ...patch } }); toast(okMsg); data.reloadWatch(); }

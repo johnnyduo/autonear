@@ -9,7 +9,10 @@ import { href } from './nav.js';
 import { sendVaultTx } from './ownerTx.js';
 import HoldButton from './HoldButton.jsx';
 
-export default function VaultPage({ data, owner, canWrite, demo, opts, toast }) {
+const tn = (f) => (f > 0.9 ? 'risk' : f > 0.7 ? 'warn' : '');
+
+export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, toast }) {
+  const canWrite = canOwn && !demo; // an example vault cannot be changed
   const v = mainVault(data.vault); const s = data.status.data; const stopped = Boolean(s?.paused);
   const [busy, setBusy] = useState(''); const [amt, setAmt] = useState('');
   const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : demo ? T.demoNote : '';
@@ -19,7 +22,7 @@ export default function VaultPage({ data, owner, canWrite, demo, opts, toast }) 
   if (!v) return <div className="ap-wrap"><h1 className="pg">Vault</h1><div className="card"><h2>No vault yet</h2><p>A vault holds the test funds the agent may use, inside limits you set. Set one up with the advanced tools, or look at the demo.</p><div className="row"><a className="btn primary" href={href('vault/advanced', opts)}>Set up a vault</a><a className="btn" href={href('vault', { demo: true })}>{T.demo}</a></div></div></div>;
 
   const u = unitOf(v); const m = v.mandate; const live = m && !m.revoked;
-  const money = (x) => `${fmtAmount(x, u.decimals, 4)} ${u.symbol}`;
+  const money = (x) => `${fmtAmount(x, u.decimals, 4)?.text ?? '–'} ${u.symbol}`;
   const stop = () => run('stop', async () => { await api('/api/security/pause', { method: 'POST' }); await api('/api/vault/loop/pause', { method: 'POST' }).catch(() => {}); }, 'The agent is stopped.');
   const start = () => run('start', async () => { await api('/api/security/resume', { method: 'POST' }); await api('/api/vault/loop/resume', { method: 'POST' }).catch(() => {}); }, 'The agent can work again.');
   const wei = (() => { try { const [i, f = ''] = String(amt).trim().split('.'); return BigInt(i || '0') * 10n ** BigInt(u.decimals) + BigInt((f + '0'.repeat(u.decimals)).slice(0, u.decimals) || '0'); } catch { return 0n; } })();
@@ -37,8 +40,8 @@ export default function VaultPage({ data, owner, canWrite, demo, opts, toast }) 
         {live ? <>
           <ul className="lim">
             <li>At most <b>{money(m.perDrawCap)}</b> each time</li>
-            <li>At most <b>{money(m.periodCap)}</b> every <b>{secsLabel(m.periodSecs)}</b> <Meter value={ratio(v.usage?.periodSpent, m.periodCap)} label="Used this period" /></li>
-            <li>At most <b>{money(m.totalCap)}</b> in total <Meter value={ratio(v.usage?.totalSpent, m.totalCap)} label="Used in total" /></li>
+            <li>At most <b>{money(m.periodCap)}</b> every <b>{secsLabel(m.periodSecs)}</b> <Meter value={ratio(v.usage?.periodSpent, m.periodCap)} tone={tn(ratio(v.usage?.periodSpent, m.periodCap))} label="Used this period" /></li>
+            <li>At most <b>{money(m.totalCap)}</b> in total <Meter value={ratio(v.usage?.totalSpent, m.totalCap)} tone={tn(ratio(v.usage?.totalSpent, m.totalCap))} label="Used in total" /></li>
             <li>At most <b>{m.maxDeploys}</b> publishes ({v.usage?.deploys ?? 0} used)</li>
             <li>Until <b>{fmt.date(toMs(m.expiresAt))}</b></li>
           </ul>
