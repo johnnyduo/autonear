@@ -2,7 +2,7 @@
 // Jargon map (internal -> shown): mandate -> limits, dossier -> finding, run -> check, circuit open -> paused, retrying, decision -> request, ledger -> history.
 export const BANNED = ['mandate', 'dossier', 'circuit', 'hash', 'epoch', 'calldata', 'ledger', 'nonce', 'payload', 'allowlist'];
 
-export const ROUTES = { welcome: 'Welcome', home: 'Home', council: 'Council', approvals: 'Approvals', watch: 'Watch', vault: 'Vault' };
+export const ROUTES = { welcome: 'Welcome', home: 'Home', council: 'Council', approvals: 'Approvals', watch: 'Watch', vault: 'Vault', build: 'Build' };
 
 export const T = {
   brand: 'AutoNEAR',
@@ -47,6 +47,34 @@ export const T = {
   stop: 'Stop the agent',
   stopHelp: 'Stops the agent on the server, then asks your wallet to pause the vault on chain. You can start it again whenever you like.',
   resume: 'Start the agent again',
+  // The Build page: the agents write an example page for a product the council backs.
+  build: {
+    intro: 'The agents write an example page for a product the council backs. You approve it, then you publish it.',
+    queue: 'Waiting for a vote',
+    queueHelp: 'Ranked by council score. The votes are recounted at every scheduled check; nobody votes on them by hand.',
+    queueEmpty: 'No product has been scored yet. The council convenes after the first collection.',
+    open: 'Open', selected: 'Selected', showAll: 'Show all', showFewer: 'Show fewer',
+    pageBuilt: 'Page built', pagePublished: 'Published',
+    steps: ['Council vote', 'Owner vote', 'Build', 'Publish'],
+    voteNote: 'These are the stored scores. The bars replay them one by one; it is not a live vote.',
+    watchWarn: 'The council said watch, not build. If you go ahead, the page is marked as built on the owner’s call.',
+    ownerHelp: 'Your approval starts the build. It is saved in the audit log. It is not a transaction on chain.',
+    connect: 'Connect the owner wallet to approve. Everyone else can look and replay.',
+    pick: 'Pick a product first.',
+    busy: 'A build is running.',
+    buildIdle: 'Nothing has been built for this product yet.',
+    buildDone: 'The page is built.',
+    publishHelp: 'Publishing puts this exact version on the web at the public link. The page says it is an example, not a live service.',
+    needBuild: 'Build the page first, then you can publish it.',
+    publish: 'Publish', unpublish: 'Unpublish', publishing: 'Publishing…',
+    linkPublic: 'Public link (always the latest published version)', linkExact: 'Link to this exact version',
+    copy: 'Copy', copied: 'Link copied.',
+    preview: 'Preview', replay: 'Replay', skip: 'Skip',
+    replayLabel: 'Replay of a stored build. The page was written once by Gemini from stored evidence.',
+    emptyPreview: 'No page has been built for this product yet. After you approve, the agents write one and it appears here.',
+    reduced: 'Your system asks for less motion, so the replay is off and the page is shown as it is.',
+    loadFail: 'Could not load the list of products.',
+  },
 };
 
 export const CHAIN_NAMES = { 'evm:84532': 'Base Sepolia', 'evm:11155111': 'Sepolia', 'evm:421614': 'Arbitrum Sepolia', 'evm:11155420': 'OP Sepolia', 'evm:10143': 'Monad testnet', 'evm:97': 'BNB testnet', 'evm:31337': 'local test chain', 'near-testnet': 'NEAR testnet' };

@@ -3,6 +3,8 @@ export const hashParts = () => { const [path, q = ''] = (location.hash || '#/').
 export const href = (path, { demo = false, activity = false } = {}) => { const q = new URLSearchParams(); if (demo) q.set('fixture', '1'); if (activity) q.set('activity', '1'); const s = q.toString(); return `#/${path}${s ? `?${s}` : ''}`; };
 export const goto = (path, opts) => { location.hash = href(path, opts); };
 export const APP_ROUTES = ['home', 'council', 'approvals', 'watch', 'vault'];
+// Pages inside the owner app that are not tabs: the mobile bottom bar already holds five, so Build is reached from the Council page and the command palette.
+export const SUB_ROUTES = ['build'];
 export const parseRoute = () => {
   const { segs, q } = hashParts();
   let name = segs[0] ?? 'home'; if (name === 'overview') name = 'home';

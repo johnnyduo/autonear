@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fmt, useApi } from '../api.js';
 import { CountUp } from '../views/constellation/shared.js';
+import { href } from './nav.js';
 
 const COL = { back: '#c6f432', abstain: '#f2b84b', object: '#ff6a3d' };
 const SEAT_LABEL = { signal_collector: 'Collector', evidence_analyst: 'Analyst', skeptic: 'Skeptic', product_architect: 'Architect', builder: 'Builder', security_reviewer: 'Security', launch_planner: 'Planner' };
@@ -123,7 +124,7 @@ function Pod({ oc }) {
   );
 }
 
-export default function Council({ data }) {
+export default function Council({ data, opts }) {
   const api = useApi('/api/council', { poll: 30000 });
   const [pick, setPick] = useState(null); const [replay, setReplay] = useState(0);
   const council = api.data?.council; const journey = api.data?.journey; const mode = api.data?.mode ?? data.autonomy?.mode ?? 'manual';
@@ -151,7 +152,7 @@ export default function Council({ data }) {
     <div className="ap-wrap cn">
       <header className="cn-head">
         <div><h1 className="ap-h1">Council</h1><p className="dim">One product, one story: what the agent saw, who voted, what was decided, and where it stands on the way to a deployed contract.</p></div>
-        <a className="btn sm" href="#/constellation">See it in the constellation</a>
+        <div className="row"><a className="btn sm primary" href={href('build', opts)}>Build a product page</a><a className="btn sm" href="#/constellation">See it in the constellation</a></div>
       </header>
       <p className="cn-now" role="status"><span className="cn-pulse-dot" style={{ background: vd[2] }} aria-hidden="true" /><b>{entry.title}</b> · {vd[1].toLowerCase()}. {oc ? `${oc.headline}. ${oc.next}` : 'Pick the top opportunity in the ranking to follow it all the way.'}</p>
       <Story stops={stops} here={here} />
