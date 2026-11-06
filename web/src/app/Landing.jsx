@@ -16,14 +16,15 @@ const HEAD_A = 'An agent that works for you,'; const HEAD_B = 'on a leash you ho
 // each word sits in a mask and rises into it; the heading stays one sentence for screen readers (aria-label on the h1)
 const Words = ({ text, from }) => text.split(' ').map((w, i, all) => <Fragment key={w + i}><span className="ln-word" aria-hidden="true" style={{ '--i': from + i }}><span>{w}</span></span>{i < all.length - 1 ? ' ' : null}</Fragment>);
 
-// Only standards the code really uses. ERC-8004 is an adapter for a draft standard and is off unless AGENT_PUBLIC_URL is set.
+// Only standards the code really uses. ERC-8004 is an adapter and is off unless AGENT_PUBLIC_URL is set.
 const STANDARDS = [
   ['NEP-518', 'MetaMask signs NEAR', 'An Ethereum wallet signs NEAR transactions; a relayer submits them. The owner never installs a second wallet.'],
   ['EIP-191', 'owner sign-in', 'Signing a plain-text challenge proves control of the owner address. No transaction, no cost.'],
   ['EIP-1193 · 6963', 'wallet connect', 'Injected wallets are discovered and used through the standard provider API. No WalletConnect.'],
   ['NEP-141 · 145', 'payout tokens', 'The vault reads fungible-token metadata and storage registration before a payout is allowed.'],
   ['NEP-297', 'contract events', 'Every state change in the contracts emits one standard event, so the audit trail can be read from the chain.'],
-  ['ERC-8004', 'agent identity (draft)', 'An adapter that can publish the agent registration file. Off unless the operator sets a public URL.'],
+  ['EIP-1559 · 155 · 55', 'agent EVM signer', 'The agent signs its own EVM transactions (type 2 and legacy) and checks address checksums, with its own key code. No wallet library.'],
+  ['ERC-8004', 'agent identity', 'An adapter that can publish the agent registration file. Off unless the operator sets a public URL.'],
 ];
 
 export default function Landing({ data, connected = false }) {
