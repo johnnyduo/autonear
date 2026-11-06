@@ -37,11 +37,13 @@ The vault's `pending_owner` is the user's `0x…9988`. It becomes the owner only
 - NEAR vault attached to the production backend (`POST /api/vault/attach`), so Home shows a NEAR vault and fuel in NEAR.
 - Tests: `npm test` 375 (372 pass, 3 skipped), `npm run test:web` 15, `npm run test:near-only`.
 
-## In progress (do not commit until verified)
-- MetaMask signs NEAR owner transactions in the web app (NEP-518): files `web/src/wallet/nearEth.js`, `testProvider.js`, `e2e-near-eth.mjs`, `e2e-ui.mjs`, `web/src/app/NearSteps.jsx`, `nearEth.test.js`, edits in `Approvals.jsx`, `VaultPage.jsx`, `copy.js`, `ownerTx.js`. A fork was running this and had not reported at handoff time. Check `git status`, read the files, run `npm run test:web`, and re-run its e2e against testnet with a test key (budget at most 15 NEAR from the spare accounts). First real proof for the user: `accept_ownership` on the vault from MetaMask with the 9988 wallet (network "NEAR testnet (EVM wallet)", chain 398, RPC the relayer; first use may need an onboarding transaction; NEP-518 has no batching, so one signature per step).
+## Done since (2026-11-06, commit 4c19720, live)
+- MetaMask signs NEAR owner transactions (NEP-518), implemented directly with viem in `web/src/wallet/nearEth.js` (the wallet-selector package needs wagmi 2; the app has 3). Vault page: Accept ownership (when the connected wallet is the pending owner), Pause/Un-pause, Switch the limits off, Take it back. Approvals: `NearSteps` lists the grant steps, one signature each.
+- Proof: testnet run on scratch vaults with 9/9 checks (`web/src/wallet/e2e-near-eth.e2e1.evidence.json`) and a browser run on the real app. Both were signed by a TEST key through an injected provider, not by a human MetaMask. Not yet verified: MetaMask's own prompts (adding the network, 18-decimal fees), and `NearSteps` on a real `grant_mandate` decision.
+- First real proof for the user: connect MetaMask (0x...9988), open Vault on `vault-v1.autonear-owner-1106.testnet`, click Accept ownership, approve the network add, the one-time setup tx, then the real tx.
 
 ## Open work, in order
-1. Finish and verify the MetaMask item above, then commit and deploy.
+1. The user clicks Accept ownership with the 9988 wallet and reports what MetaMask shows; fix whatever breaks. Then try a real `grant_mandate` through `NearSteps`.
 2. A pending request the owner can really approve in Approvals: run a pipeline run that creates a `deploy_testnet` decision on `near-testnet` (needs an LLM key on the host that runs it; check whether production has one).
 3. Put the real testnet deployment into the app's history (the 14 transactions are only in `docs/testnet`).
 4. More independent non-social demand sources (every opportunity still says `LOW CONFIDENCE: only 2 independent non-social sources`); `data_indexing` and `ai_agents` have no on-chain corroboration.
