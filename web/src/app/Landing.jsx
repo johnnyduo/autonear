@@ -46,7 +46,7 @@ export default function Landing({ data, connected = false }) {
         <a className="ap-brand" href={href('welcome')} aria-label={`${T.brand} home`}><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0f1317" stroke="#232c34" /><path d="M8 24V8l16 16V8" fill="none" stroke="#c6f432" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" /></svg><b>{T.brand}</b></a>
         <span className="chip warn">{T.testnet}</span>
       </header>
-      <section className={`ln-hero co-stagewrap${calm ? '' : ' fx'}`} ref={heroRef} aria-label="Illustration: topics the agent reads, drawn as a sphere of example records">
+      <section className={`ln-hero co-stagewrap${calm ? '' : ' fx'}`} ref={heroRef} aria-label="Illustration: topics the agent reads, drawn as a sphere of made-up records">
         <div className={`ln-poster ${ready ? 'gone' : ''}`} aria-hidden="true"><i /></div>
         <div className={`ln-bg${ready || calm ? ' in' : ''}`}>
           <Suspense fallback={null}>
@@ -64,7 +64,6 @@ export default function Landing({ data, connected = false }) {
             <a className="btn lg" href={href('constellation')}>See the real evidence</a>
           </div>
           {!connected && <p className="ln-hint">{T.signHint}</p>}
-          <p className="ln-live mono">Illustration: made-up records and scores. Click the pink orb to open the council card. Real data is in the app.</p>
           <ul className="ln-std mono" aria-label="Standards AutoNEAR is built on">
             {STANDARDS.map(([id, what, tip]) => <li key={id} title={tip}><b>{id}</b> {what}</li>)}
           </ul>
