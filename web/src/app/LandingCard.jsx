@@ -2,7 +2,7 @@
 // then streams the text in. Nothing here is stored data; the real votes are on the Council page.
 import { useEffect, useRef, useState } from 'react';
 import { useCalm } from '../ui.jsx';
-import { STORIES, SEATS, scoreStory } from './landing-cards.js';
+import { STORIES, scoreStory, councilFrom } from './landing-cards.js';
 
 const CYCLE = 8200; const BURST = 460; const TYPE = 26; // ms per cycle, static burst, per character
 const VERDICT = { go: ['GO', 'The council backs building this', '#c6f432'], watch: ['WATCH', 'Not strong enough to build yet', '#f2b84b'], drop: ['DROP', 'Not now', '#8c8b82'] };
@@ -26,12 +26,14 @@ function Snow({ amp }) { // canvas snow: strong during the burst, a faint hiss t
   return <canvas ref={ref} className="lc-snow" aria-hidden="true" />;
 }
 
-export default function LandingCard() {
+export default function LandingCard({ onStory }) {
   const calm = useCalm();
   const order = useRef(null); if (!order.current) order.current = [...STORIES.keys()].sort(() => Math.random() - 0.5);
   const [n, setN] = useState(0); const [ms, setMs] = useState(calm ? 1e9 : BURST * 0.5 + 1);
   const amp = useRef(calm ? 0 : 0.06); const story = useRef(null);
   if (!story.current || story.current.n !== n) story.current = { n, ...scoreStory(STORIES[order.current[n % order.current.length]]) };
+
+  useEffect(() => { onStory?.(councilFrom(story.current)); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps -- the council star on the landing shows the same example
 
   useEffect(() => {
     if (calm) { const id = setInterval(() => setN((k) => k + 1), 9000); return () => clearInterval(id); }

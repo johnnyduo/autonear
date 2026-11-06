@@ -16,6 +16,7 @@ export default function Landing({ data, connected = false }) {
   const s = data.status.data;
   const sources = s?.sources ?? [];
   const [ready, setReady] = useState(false);
+  const [star, setStar] = useState('evidence'); const [cc, setCc] = useState(null); // the score card belongs to the council star: it shows only while that star is selected
   const [demo] = useState(() => makeLandingDemo()); // example data for the picture only, see landing-demo.js
   const ok = sources.filter((x) => x.status === 'ok').length;
   const proof = [...data.ledger].reverse().find((e) => e.kind === 'deploy' && e.status === 'confirmed' && !data.demo);
@@ -29,10 +30,10 @@ export default function Landing({ data, connected = false }) {
         <div className={`ln-poster ${ready ? 'gone' : ''}`} aria-hidden="true"><i /></div>
         <div className="ln-bg">
           <Suspense fallback={null}>
-            <Hero status={null} sources={demo.sources} activeRun={null} opps={demo.opps} demo={demo} calm={calm} onReady={() => setReady(true)} />
+            <Hero status={null} sources={demo.sources} activeRun={null} opps={demo.opps} demo={demo} demoCouncil={cc} onStar={setStar} calm={calm} onReady={() => setReady(true)} />
           </Suspense>
         </div>
-        <LandingCard />
+        {star === 'council' && <LandingCard onStory={setCc} />}
         <div className="ln-copy" data-reserve>
           <h1>An agent that works for you, <em>on a leash you hold.</em></h1>
           <p className="ln-sub">{T.tagline}</p>
@@ -42,7 +43,7 @@ export default function Landing({ data, connected = false }) {
             <a className="btn lg" href={href('constellation')}>See the real evidence</a>
           </div>
           {!connected && <p className="ln-hint">{T.signHint}</p>}
-          <p className="ln-live mono">Illustration: example topics and made-up records. The real ones are in the app.</p>
+          <p className="ln-live mono">Illustration: made-up records and scores. Click the pink orb to open the council card. Real data is in the app.</p>
         </div>
       </section>
       <section className="ln-proof" aria-label="Live numbers">

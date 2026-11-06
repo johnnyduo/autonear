@@ -141,7 +141,7 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
 }
 
 /** `demo` ({ evidence, links, labels }) swaps the stored data for an illustration (the landing hero). Nothing is fetched then. */
-export default function ConstellationHero({ status, sources, activeRun, opps, calm, full = false, demo = null, onReady, onStats }) {
+export default function ConstellationHero({ status, sources, activeRun, opps, calm, full = false, demo = null, demoCouncil = null, onStar, onReady, onStats }) {
   const stage = useRef(null); const glCv = useRef(null); const ovCv = useRef(null); const tip = useRef(null);
   const sceneRef = useRef(null); const scenes = useRef({ sphere: null, disc: null, graph: null }); const latest = useRef({}); const rt = useRef({ hover: null, pinned: null, focus: null, pointer: null, engaged: false, touch: false, tier: undefined, fps: 0 });
   const [rk, setRk] = useState('gl');
@@ -149,8 +149,10 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   const [model, setModel] = useState(null);
   const [view, setView] = useState('sphere');
   const [star, setStar] = useState('evidence');
-  useEffect(() => { const sc = sceneRef.current; if (sc) { const sw = stage.current?.clientWidth ?? 0; sc.rightInset = star === 'council' && sw > 900 ? Math.min(380, Math.max(300, sw * 0.24)) + 28 : 0; } });
+  useEffect(() => { onStar?.(star); }, [star, onStar]);
+  useEffect(() => { const sc = sceneRef.current; if (sc) { const sw = stage.current?.clientWidth ?? 0; sc.rightInset = star === 'council' && sw > 900 ? (demo ? Math.round(sw * 0.06) : Math.min(380, Math.max(300, sw * 0.24)) + 28) : 0; } }); // landing: the card floats over the right edge, so the star keeps most of the width and sits further right
   const councilApi = useApi('/api/council', { poll: 30000, enabled: !demo });
+  const councilData = demo ? demoCouncil : councilApi.data; // the landing passes example council data; nothing is fetched then
   const [hoverK, setHoverK] = useState(null); const [pinnedK, setPinnedK] = useState(null); const [focusK, setFocusK] = useState(null);
   const [filter, setFilter] = useState({ srcOff: new Set(), topicOff: new Set() });
   const [replay, setReplay] = useState({ active: false, playing: false, pos: 0, mode: 'ingest', cur: null });
@@ -210,7 +212,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     if (!model) return; model.wells.forEach((w) => { w.opp = (opps ?? []).find((o) => o.id === `opp_${w.id}`) ?? w.opp; });
     sceneRef.current?.computeStats?.();
   }, [opps, model]);
-  useEffect(() => { Object.assign(latest.current, { council: councilApi.data, srcInfo, roles, oppId: activeRun?.opportunity_id, active: Boolean(activeRun), filter, auto }); syncScene(sceneRef.current); }, [srcInfo, roles, activeRun, filter, auto, model, syncScene, councilApi.data]);
+  useEffect(() => { Object.assign(latest.current, { council: councilData, srcInfo, roles, oppId: activeRun?.opportunity_id, active: Boolean(activeRun), filter, auto }); syncScene(sceneRef.current); }, [srcInfo, roles, activeRun, filter, auto, model, syncScene, councilData]);
   useEffect(() => { const s = sceneRef.current; if (s) { s.pinned = pinnedK; s.focus = focusK; } }, [pinnedK, focusK]);
   useEffect(() => { if (view === 'list') { setHoverK(null); rt.current.hover = null; } }, [view]);
 
@@ -411,7 +413,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
           {star === 'council' && view === 'sphere' && councilApi.data && <ScoreBox data={councilApi.data} sceneRef={sceneRef} wide={(stage.current?.clientWidth ?? 0) > 900} />}
           {shown && (
             <aside ref={tip} className={`co-card ${pinnedK ? 'pinned' : ''} ${kbFocus ? 'kb' : ''}`} data-ui aria-label={pinnedK ? 'Pinned node details' : 'Node details'}>
-              <Card k={shown} councilData={councilApi.data} model={model} srcInfo={srcInfo} roleState={roles} runId={activeRun?.id} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}
+              <Card k={shown} councilData={councilData} model={model} srcInfo={srcInfo} roleState={roles} runId={activeRun?.id} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}
                 onClose={() => rt.current.unpin?.()} />
             </aside>
           )}
