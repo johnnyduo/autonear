@@ -6,6 +6,7 @@ import { Icon, Meter } from '../ui.jsx';
 import { secsLabel } from '../views/vault/format.js';
 import { P, payError, pfill } from './copy.js';
 import { href } from './nav.js';
+import { payFuelWarning } from './vaultView.js';
 import { payBody, payFormOff, paymentRows, shortAccount, tokenView, validatePay } from './pay.js';
 
 const tone = (f) => (f > 0.9 ? 'risk' : f > 0.7 ? 'warn' : '');
@@ -54,6 +55,7 @@ export default function Payments({ v, data, owner, canWrite, demo, opts, toast, 
     <section className="card pay" aria-labelledby="pay-h">
       <div className="row sp"><h2 id="pay-h">{P.title}</h2><span className="chip mineral">{P.testToken}</span></div>
       <p>{P.intro}{data.autonomy?.mode === 'auto' ? P.introAuto : ''}</p>
+      {payFuelWarning(v) && <p className="vp-warnline" role="alert"><Icon name="alert" size={16} />{payFuelWarning(v)}</p>}
       {tokens.map((tk) => (
         <div className="pay-tok" key={tk.token}>
           <div className="row sp"><h3><span className="mono-v" title={tk.token}>{tk.symbol ?? shortAccount(tk.token)}</span></h3>

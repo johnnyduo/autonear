@@ -7,7 +7,7 @@ import { budgetUse, fuelState, maxText, shortAddr, vaultStatus, withdrawCheck } 
 import { T, chainName } from './copy.js';
 import { mainVault } from './data.js';
 import { href } from './nav.js';
-import { readNearVault, sendNearTx, sendVaultTx } from './ownerTx.js';
+import { readNearVault, sendNearTx, sendSetupSigned, sendVaultTx } from './ownerTx.js';
 import OnboardHelp from './OnboardHelp.jsx';
 import HoldButton from './HoldButton.jsx';
 import Payments from './Payments.jsx';
@@ -95,7 +95,7 @@ export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, t
         {['accept', 'unpause', 'start'].includes(status.action) && <button type="button" className="btn primary" disabled={ctlOff || ['accept', 'pause', 'start'].includes(busy)} onClick={onBanner}>{bannerLabel}</button>}
       </section>
       {ctlReason && <p className="why vp-why"><Icon name="lock" size={14} />{ctlReason}</p>}
-      {near && setup && <OnboardHelp setup={setup} onClose={() => setSetup(null)} />}
+      {near && setup && <OnboardHelp setup={setup} onClose={() => setSetup(null)} onSign={() => sendSetupSigned({ account: owner.address })} />}
 
       <div className="vp-tiles">
         <section className="vp-tile">

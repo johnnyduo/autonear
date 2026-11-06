@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { vaultStatus, fuelState, budgetUse, withdrawCheck, maxText, shortAddr, LOW_FUEL } from './vaultView.js';
+import { vaultStatus, fuelState, budgetUse, withdrawCheck, maxText, shortAddr, payFuelWarning, payoutsNeedNote, LOW_FUEL } from './vaultView.js';
 
 const NEAR = 10n ** 24n;
 test('vaultStatus: the most urgent thing wins, in a fixed order, and each state names the next step', () => {
@@ -35,3 +35,13 @@ test('maxText is the exact available amount, never rounded; empty when nothing t
   assert.equal(withdrawCheck(maxText(String(NEAR + 1n), 24), String(NEAR + 1n), 24).base, NEAR + 1n, 'pressing Max then Take back is always accepted');
 });
 test('shortAddr keeps short strings whole and shortens long ones in the middle', () => { assert.equal(shortAddr('vault.testnet'), 'vault.testnet'); assert.equal(shortAddr('0x5ebaddf71482d40044391923be1fc42938129988'), '0x5ebadd…129988'); assert.equal(shortAddr(null), ''); });
+
+test('payFuelWarning: only a paying vault with NO spendable NEAR is warned; unknown balances and ordinary vaults are not', () => {
+  assert.match(payFuelWarning({ payouts: { tokens: [] }, available: '0' }), /No payment can go out yet/);
+  assert.equal(payFuelWarning({ payouts: { tokens: [] }, available: '1' }), ''); assert.equal(payFuelWarning({ payouts: { tokens: [] }, available: String(NEAR) }), '');
+  assert.equal(payFuelWarning({ available: '0' }), '', 'a vault that cannot pay people needs no such warning'); assert.equal(payFuelWarning({ payouts: { tokens: [] }, available: null }), ''); assert.equal(payFuelWarning(null), '');
+});
+test('payoutsNeedNote: shown only for a grant with at least one payout token', () => {
+  assert.match(payoutsNeedNote({ payouts: { tokens: [{ token: 'usdc.testnet' }] } }), /1 NEAR reserve/);
+  for (const p of [null, {}, { payouts: {} }, { payouts: { tokens: [] } }, { payouts: { tokens: 'x' } }]) assert.equal(payoutsNeedNote(p), '', JSON.stringify(p));
+});
