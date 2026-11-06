@@ -45,6 +45,7 @@ export const autonomyMaxPerDay = (e = process.env) => {
 
 export const config = {
   port: num('PORT', 8787),
+  ownerAddress: env('OWNER_ADDRESS'),
   host: env('HOST', '127.0.0.1'),
   dbPath: resolve(ROOT, env('DB_PATH', 'data/autonear.db')),
   databaseUrl: env('DATABASE_URL'),

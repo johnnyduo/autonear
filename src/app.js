@@ -16,6 +16,7 @@ import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from
 import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant } from './vault/index.js';
 import { WELL_KNOWN_PATH } from './identity/erc8004.js';
+import { buildChallenge, checkSignedChallenge, consumeNonce, deriveSecret, issueSession, readSession, resolveOwner, SESSION_TTL_MS } from './owner-session.js';
 
 const SEC_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -54,6 +55,8 @@ const ALLOW = [
   [/^\/api\/ingest$/, 'POST'],
   [/^\/api\/vault(\/ledger|\/plan|\/verify)?$/, 'GET, HEAD'],
   [/^\/api\/vault\/(loop\/(pause|resume)|mandates\/propose|attach)$/, 'POST'],
+  [/^\/api\/auth\/(challenge|session)$/, 'POST'],
+  [/^\/api\/auth\/me$/, 'GET, HEAD'],
 ];
 const safeEq = (a, b) => { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
 const bearer = (req) => (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
@@ -68,6 +71,23 @@ export function createApp(deps) {
 
   const isOperator = (req) => Boolean(operatorToken) && safeEq(bearer(req), operatorToken);
   const needOperator = (req) => { if (!isOperator(req)) throw new PolicyError(operatorToken ? 'operator token required' : 'mutations disabled: OPERATOR_TOKEN is not configured', 'auth'); };
+  // Owner sessions (wallet-signed). Valid only for the few routes that call needOwner; ownership is re-resolved on every request.
+  const sessionSecret = deriveSecret(operatorToken);
+  const ownerOf = async () => (deps.resolveOwner ? String((await deps.resolveOwner()) ?? '').toLowerCase() || null : resolveOwner(db, deps.ownerAddress ?? config.ownerAddress));
+  const sessionTtl = deps.sessionTtlMs ?? SESSION_TTL_MS;
+  const sessionOf = async (req) => {
+    const s = readSession(bearer(req), { secret: sessionSecret });
+    if (!s) return null;
+    const o = await ownerOf();
+    return o && o === s.address ? s : null;
+  };
+  /** Operator token OR a valid owner session. Returns { actor, address|null }. */
+  const needOwner = async (req) => {
+    if (isOperator(req)) return { actor: 'operator', address: null };
+    const s = await sessionOf(req);
+    if (!s) throw new PolicyError(operatorToken ? 'operator token or owner sign-in required' : 'mutations disabled: OPERATOR_TOKEN is not configured', 'auth');
+    return { actor: `owner:${s.address}`, address: s.address };
+  };
   const body = async (req, schema) => {
     const text = await req.text();
     if (text.length > 64_000) throw new PolicyError('body too large', 'input');
@@ -109,6 +129,28 @@ export function createApp(deps) {
     let g;
 
     if (p === '/api/health' && m === 'GET') return out({ ok: true, time: now() });
+    if (p === '/api/auth/challenge' && m === 'POST') {
+      if (!sessionSecret) throw new PolicyError('sign-in is disabled: OPERATOR_TOKEN is not configured', 'auth');
+      const b = await body(req, { type: 'object', required: ['address'], properties: { address: { type: 'string', maxLength: 64 } } });
+      if (!/^0x[0-9a-fA-F]{40}$/.test(b.address)) throw new PolicyError('an EVM address is required', 'input');
+      const { message, exp } = buildChallenge({ host: url.host, address: b.address });
+      return out({ message, exp });
+    }
+    if (p === '/api/auth/session' && m === 'POST') {
+      if (!sessionSecret) throw new PolicyError('sign-in is disabled: OPERATOR_TOKEN is not configured', 'auth');
+      const b = await body(req, { type: 'object', required: ['address', 'message', 'signature'], properties: { address: { type: 'string', maxLength: 64 }, message: { type: 'string', maxLength: 1000 }, signature: { type: 'string', maxLength: 400 } } });
+      let c; try { c = await checkSignedChallenge({ ...b, host: url.host }); } catch (e) { throw new PolicyError(e.message, 'auth'); }
+      const owner = await ownerOf();
+      if (!owner || owner !== c.signer) return out({ isOwner: false, address: c.signer, token: null, exp: null }); // read-only wallet: no token, no nonce row
+      if (!(await consumeNonce(db, c.nonce, c.exp))) throw new PolicyError('this sign-in challenge was already used', 'auth');
+      const t = now(); const exp = t + sessionTtl;
+      await audit(db, `owner:${c.signer}`, 'owner.signed_in', {});
+      return out({ isOwner: true, address: c.signer, token: issueSession({ address: c.signer, secret: sessionSecret, t, ttlMs: sessionTtl }), exp });
+    }
+    if (p === '/api/auth/me' && m === 'GET') {
+      const s = await sessionOf(req); const o = await ownerOf();
+      return out({ isOwner: Boolean(s), address: s?.address ?? null, ownerConfigured: Boolean(o), operator: isOperator(req) });
+    }
     if (p === '/api/ready' && m === 'GET') {
       const checks = {};
       try { await db.get('SELECT 1 x'); checks.storage = true; } catch { checks.storage = false; }
@@ -201,18 +243,19 @@ export function createApp(deps) {
     if (p === '/api/decisions' && m === 'GET') return out({ items: await listDecisions(db) });
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)$/)) && m === 'GET') { const d = await getDecision(db, g[1]); return d ? out(d) : out({ error: 'not found' }, 404); }
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/approve$/)) && m === 'POST') {
-      needOperator(req);
+      const who = await needOwner(req);
       const b = await body(req, { type: 'object', required: ['nonce', 'payloadHash', 'confirm', 'signer'] });
-      return out(await approveDecision(db, g[1], { ...b, actor: 'operator' }));
+      if (who.address && String(b.signer ?? '').toLowerCase() !== who.address) throw new PolicyError('the signer must be the signed-in wallet', 'input');
+      return out(await approveDecision(db, g[1], { ...b, actor: who.actor }));
     }
-    if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/reject$/)) && m === 'POST') { needOperator(req); const b = await body(req); return out(await rejectDecision(db, g[1], { actor: 'operator', reason: b.reason })); }
+    if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/reject$/)) && m === 'POST') { const who = await needOwner(req); const b = await body(req); return out(await rejectDecision(db, g[1], { actor: who.actor, reason: b.reason })); }
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/receipt$/)) && m === 'POST') {
-      needOperator(req);
+      await needOwner(req);
       const b = await body(req, { type: 'object', required: ['txHash'], properties: { txHash: { type: 'string', maxLength: 100 } } });
       return out(await recordDeployment(db, g[1], { txHash: b.txHash, fetchImpl }));
     }
     if ((g = p.match(/^\/api\/decisions\/(dec_\w+)\/deploy-data$/)) && m === 'GET') {
-      needOperator(req);
+      await needOwner(req);
       const d = await db.get('SELECT * FROM decisions WHERE id=?', [g[1]]);
       if (!d) return out({ error: 'not found' }, 404);
       if (d.action !== 'deploy_testnet') throw new PolicyError(`a ${d.action} decision has no deploy data`, 'state');
@@ -237,8 +280,8 @@ export function createApp(deps) {
       if (!/^dec_\w+$/.test(id)) throw new PolicyError('decisionId (dec_...) required', 'input');
       return out(await verifyGrant(db, id, { fetchImpl }));
     }
-    if (p === '/api/vault/loop/pause' && m === 'POST') { needOperator(req); await pauseLoop(db, 'operator'); return out({ loop: await getLoop(db) }); }
-    if (p === '/api/vault/loop/resume' && m === 'POST') { needOperator(req); await resumeLoop(db, 'operator'); return out({ loop: await getLoop(db) }); }
+    if (p === '/api/vault/loop/pause' && m === 'POST') { const who = await needOwner(req); await pauseLoop(db, who.actor); return out({ loop: await getLoop(db) }); }
+    if (p === '/api/vault/loop/resume' && m === 'POST') { const who = await needOwner(req); await resumeLoop(db, who.actor); return out({ loop: await getLoop(db) }); }
     if (p === '/api/vault/attach' && m === 'POST') {
       needOperator(req);
       const b = await body(req, { type: 'object', required: ['chainId', 'address'], properties: { chainId: { type: 'string', maxLength: 32 }, address: { type: 'string', maxLength: 96 } } });
@@ -246,7 +289,7 @@ export function createApp(deps) {
       return out({ vaultId: r.vault.id, created: r.created, activation: r.activation }, r.created ? 201 : 200);
     }
     if (p === '/api/vault/mandates/propose' && m === 'POST') {
-      needOperator(req);
+      await needOwner(req);
       const b = await body(req, {
         type: 'object', required: ['chainId', 'vault', 'mandate', 'templates', 'fund'],
         properties: { chainId: { type: 'string', maxLength: 32 }, mandate: { type: 'object' }, templates: { type: 'array', minItems: 1, maxItems: 8, items: { type: 'object', required: ['artifactHash'] } }, fund: { type: 'object', required: ['amount'] }, loop: { type: 'object' } },
@@ -269,8 +312,8 @@ export function createApp(deps) {
         runbook: 'docs/INCIDENT-RUNBOOK.md',
       });
     }
-    if (p === '/api/security/pause' && m === 'POST') { needOperator(req); await setPaused(db, true, 'operator'); return out({ paused: true }); }
-    if (p === '/api/security/resume' && m === 'POST') { needOperator(req); await setPaused(db, false, 'operator'); return out({ paused: false }); }
+    if (p === '/api/security/pause' && m === 'POST') { const who = await needOwner(req); await setPaused(db, true, who.actor); return out({ paused: true }); }
+    if (p === '/api/security/resume' && m === 'POST') { const who = await needOwner(req); await setPaused(db, false, who.actor); return out({ paused: false }); }
     if (p === '/api/ingest' && m === 'POST') {
       needOperator(req);
       const res = await ingestAll(db, { trigger: 'manual', fetchImpl }); await refreshOpportunities(db);
