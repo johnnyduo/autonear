@@ -70,7 +70,7 @@ export default function Landing({ data, connected = false }) {
         </div>
       </section>
       <section className="ln-proof" aria-label="Live numbers">
-        <div title={feedList || undefined} aria-describedby={feedList ? 'ln-feeds' : undefined}><b>{s ? `${ok}/${sources.length}` : '–'}</b><span>sources being watched</span>{c?.feeds != null && <small>{c.feeds} feeds inside them</small>}{feedList && <i className="ln-sr" id="ln-feeds">{feedList}</i>}</div>
+        <div title={feedList || undefined} aria-describedby={feedList ? 'ln-feeds' : undefined}><b>{s ? (c?.feeds ?? ok) : '–'}</b><span>{c?.feeds != null ? 'feeds being watched' : 'sources being watched'}</span>{s && <small>from {ok} of {sources.length} sources</small>}{feedList && <i className="ln-sr" id="ln-feeds">{feedList}</i>}</div>
         <div><b>{c?.evidence ?? '–'}</b><span>posts and commits read</span></div>
         <div title={scoreTitle}><b>{c?.scores ?? '–'}</b><span>scores computed</span>{scoreParts && <small>{scoreParts}</small>}</div>
         <div><b>{s?.scheduler?.lastTick ? fmt.ago(s.scheduler.lastTick.at) : '–'}</b><span>last check</span></div>
