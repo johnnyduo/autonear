@@ -5,6 +5,7 @@ import { api } from '../api.js';
 import { Icon, SkeletonRows } from '../ui.jsx';
 import { T } from './copy.js';
 import { sendNearTx } from './ownerTx.js';
+import OnboardHelp from './OnboardHelp.jsx';
 
 const KEY = (id) => `autonear.nearsteps.${id}`;
 const load = (id) => { try { return JSON.parse(sessionStorage.getItem(KEY(id)) || '{}'); } catch { return {}; } };
@@ -21,7 +22,7 @@ export function stepWords(step, vault) {
 }
 
 export default function NearSteps({ d, owner, onDone }) {
-  const [plan, setPlan] = useState(null); const [err, setErr] = useState('');
+  const [plan, setPlan] = useState(null); const [err, setErr] = useState(''); const [setup, setSetup] = useState(null);
   const [prog, setProg] = useState(() => load(d.id)); const [busy, setBusy] = useState(-1); const [stage, setStage] = useState(''); const [verdict, setVerdict] = useState(null); const [on, setOn] = useState(null);
   const vault = d.payload?.vault?.address ?? d.target;
   useEffect(() => { let on = true; api(`/api/vault/plan?decisionId=${d.id}`).then((p) => on && setPlan(p)).catch((e) => on && setErr(e.message)); return () => { on = false; }; }, [d.id]);
@@ -42,7 +43,7 @@ export default function NearSteps({ d, owner, onDone }) {
         if (v.ok || v.fieldsOk) setOn(await api('/api/vault/activate', { method: 'POST', body: { decisionId: d.id } }).catch((e) => ({ activated: false, reason: e.message })));
         onDone?.();
       } catch (e) { setErr(e.message); } }
-    } catch (e) { setErr(/rejected|denied/i.test(e.message) ? 'You closed the wallet. Nothing was sent.' : e.message); }
+    } catch (e) { if (e?.onboard) setSetup(e.onboard); setErr(/rejected|denied/i.test(e.message) ? 'You closed the wallet. Nothing was sent.' : e.message); }
     finally { setBusy(-1); setStage(''); }
   };
   return (
@@ -58,6 +59,7 @@ export default function NearSteps({ d, owner, onDone }) {
         ); })}
       </ol>
       {err && <p className="why" role="alert">{err}</p>}
+      {setup && <OnboardHelp setup={setup} onClose={() => setSetup(null)} />}
       {verdict && <p role="status">{verdict.ok || verdict.fieldsOk ? 'Checked on the network: the limits match what you approved.' : 'The network does not match what you approved yet. Wait a minute and check again.'}</p>}
       {on && <p role="status">{on.activated ? T.nearOn : `${T.nearNotOn} ${on.reason ?? ''}`.trim()}</p>}
     </div>

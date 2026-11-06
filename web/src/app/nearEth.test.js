@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeAbiParameters, parseAbiParameters, keccak256, toBytes, hexToString } from 'viem';
+import { onboardRows, ONBOARD_STEPS } from './onboardHelp.js';
 import { accountToAddress, b58encode, buildTx, encodeAction, encodeOnboarding, onboardingStatus, nearRpc, explainWalletError, callNear, SELECTORS, NEAR_EVM } from '../wallet/nearEth.js';
 
 test('selectors match the wallet contract (near/near-wallet-contract types.rs)', () => {
@@ -90,7 +91,7 @@ test('nearRpc raises a { result: { error } } answer, and still returns ordinary 
 
 test('the MetaMask self-address rule is explained in plain words; every other error passes through untouched', () => {
   const mm = Object.assign(new Error('External transactions to internal accounts cannot include data'), { code: -32602 });
-  const e = explainWalletError(mm); assert.equal(e.code, 'WALLET_SELF_DATA_BLOCKED'); assert.match(e.message, /owner:onboard/); assert.equal(e.cause, mm);
+  const e = explainWalletError(mm); assert.equal(e.code, 'WALLET_SELF_DATA_BLOCKED'); assert.match(e.message, /inside MetaMask itself/); assert.equal(e.cause, mm);
   const other = new Error('User rejected the request.'); assert.equal(explainWalletError(other), other);
   assert.equal(explainWalletError('External transactions to internal accounts cannot include data').code, 'WALLET_SELF_DATA_BLOCKED');
 });
@@ -100,6 +101,14 @@ test('callNear: when the wallet refuses the one-time setup the owner gets the ex
   const fx = async (url, init) => { const b = JSON.parse(init.body); const reply = (o) => ({ ok: true, status: 200, json: async () => ({ jsonrpc: '2.0', id: 1, ...o }) });
     if (String(url) === NEAR_EVM.rpc) return reply({ result: b.method === 'near_getPublicKey' ? { public_key: RELAYER_KEY } : '0x0' });
     return reply({ result: { block_hash: 'x', block_height: 1, error: 'access key does not exist while viewing', logs: [] } }); };
-  await assert.rejects(callNear({ provider, account: ACCT, receiver: 'v.testnet', method: 'm', args: {}, fetchImpl: fx }), (e) => e.code === 'WALLET_SELF_DATA_BLOCKED');
+  await assert.rejects(callNear({ provider, account: ACCT, receiver: 'v.testnet', method: 'm', args: {}, fetchImpl: fx }), (e) => e.code === 'WALLET_SELF_DATA_BLOCKED' && e.onboard.to === ACCT && e.onboard.gasLimit === '220000' && e.onboard.data.startsWith(SELECTORS.addKey) && e.onboard.chainId === NEAR_EVM.chainId && e.onboard.address === ACCT);
   assert.equal(sent.length, 1, 'only the setup was attempted');
+});
+
+test('onboardRows: lists the values to enter in MetaMask, and refuses anything malformed', () => {
+  const setup = { address: ACCT, to: ACCT, data: `${SELECTORS.addKey}${'00'.repeat(64)}`, gasLimit: '220000', gasPrice: '100000000000', chainId: 398, network: 'NEAR testnet (EVM wallet)' };
+  const rows = onboardRows(setup); const by = Object.fromEntries(rows.map((r) => [r.key, r]));
+  assert.equal(by.to.copy, ACCT); assert.equal(by.amount.copy, '0'); assert.equal(by.data.copy, setup.data); assert.equal(by.gas.copy, '220000'); assert.match(by.price.value, /^100 gwei$/); assert.match(by.network.value, /chain id 398/);
+  assert.equal(onboardRows(null), null); assert.equal(onboardRows({ ...setup, to: 'nope' }), null); assert.equal(onboardRows({ ...setup, data: 'zz' }), null);
+  assert.ok(ONBOARD_STEPS.length === 4 && ONBOARD_STEPS.every((s) => s.length > 20));
 });

@@ -7,6 +7,7 @@ import { T, chainName } from './copy.js';
 import { mainVault } from './data.js';
 import { href } from './nav.js';
 import { readNearVault, sendNearTx, sendVaultTx } from './ownerTx.js';
+import OnboardHelp from './OnboardHelp.jsx';
 import HoldButton from './HoldButton.jsx';
 import Payments from './Payments.jsx';
 
@@ -19,11 +20,12 @@ export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, t
   const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : demo ? T.demoNote : '';
   const evm = String(v?.chainId ?? '').startsWith('evm:'); const chainNum = evm ? Number(String(v.chainId).slice(4)) : null;
   const near = String(v?.chainId ?? '').startsWith('near'); const mine = (a) => Boolean(a && owner.address && String(a).toLowerCase() === owner.address.toLowerCase());
+  const [setup, setSetup] = useState(null); // the one-time wallet setup values, when MetaMask refused to let the page send it
   const [cfg, setCfg] = useState(null); // the vault's own owner / pending owner / paused flag, read from NEAR
   useEffect(() => { if (!near || !v?.address) return undefined; let on = true; readNearVault(v.address).then((c) => on && setCfg(c)).catch(() => {}); return () => { on = false; }; }, [near, v?.address, v?.owner, v?.paused, busy]);
   const nearOwner = near && mine(cfg?.owner ?? v?.owner); const nearPending = near && mine(cfg?.pending_owner);
   const nearTx = (method, args = {}) => sendNearTx({ account: owner.address, receiver: v.address, method, args });
-  const run = async (key, fn, ok) => { setBusy(key); try { await fn(); toast(ok); data.reload(); } catch (e) { toast(/rejected|denied/i.test(e.message) ? 'You closed the wallet. Nothing was sent.' : e.message, 'bad'); } finally { setBusy(''); } };
+  const run = async (key, fn, ok) => { setBusy(key); try { await fn(); toast(ok); data.reload(); } catch (e) { if (e?.onboard) setSetup(e.onboard); toast(/rejected|denied/i.test(e.message) ? 'You closed the wallet. Nothing was sent.' : e.message, 'bad'); } finally { setBusy(''); } };
 
   if (!v) return <div className="ap-wrap"><h1 className="pg">Vault</h1><div className="card"><h2>No vault yet</h2><p>A vault holds the test funds the agent may use, inside limits you set. Set one up with the advanced tools, or look at the demo.</p><div className="row"><a className="btn primary" href={href('vault/advanced', opts)}>Set up a vault</a><a className="btn" href={href('vault', { demo: true })}>{T.demo}</a></div></div></div>;
 
@@ -84,6 +86,7 @@ export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, t
           <input className="input" inputMode="decimal" placeholder={`Amount in ${u.symbol}`} value={amt} onChange={(e) => setAmt(e.target.value)} aria-label="Amount to take back" disabled={!canWrite} />
           <button type="button" className="btn sm" disabled={!canWrite || wei <= 0n || busy === 'wd'} onClick={() => run('wd', () => sendVaultTx({ chainId: chainNum, address: v.address, fn: 'withdraw', args: [wei], expect: owner.address }), 'Withdrawn to your wallet.')}>Take back to my wallet</button>
         </div>}
+        {near && setup && <OnboardHelp setup={setup} onClose={() => setSetup(null)} />}
         {near && nearPending && (
           <div className="row own"><b>{T.nearAccept}</b><span className="faint">{T.nearAcceptHelp} {T.nearSetupHint}</span>
             <button type="button" className="btn sm primary" disabled={!canWrite || busy === 'accept'} onClick={() => run('accept', () => nearTx('accept_ownership'), 'You are now the owner of this vault.')}>{busy === 'accept' ? 'Check your wallet…' : T.nearAccept}</button></div>
