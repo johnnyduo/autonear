@@ -12,8 +12,11 @@ export function buildScene({ sources = [], vault = null, autonomy = null, pendin
   const m = vault?.mandate;
   const has = Boolean(vault && m && !m.revoked);
   const used = has ? Math.max(frac(vault.usage?.totalSpent, m.totalCap), frac(vault.usage?.periodSpent, m.periodCap)) : 0;
-  const low = has ? big(vault.agentBalance) < big(autonomy?.topUp?.evm?.low ?? '3000000000000000') : false;
-  const target = big(autonomy?.topUp?.evm?.target ?? '10000000000000000');
+  // fuel thresholds follow the vault's own network: a NEAR vault is measured in NEAR (0.5 / 2 by default), an EVM vault in its native coin
+  const near = String(vault?.chainId ?? '').startsWith('near');
+  const tu = near ? autonomy?.topUp?.near : autonomy?.topUp?.evm;
+  const low = has ? big(vault.agentBalance) < big(tu?.low ?? (near ? '500000000000000000000000' : '3000000000000000')) : false;
+  const target = big(tu?.target ?? (near ? '2000000000000000000000000' : '10000000000000000'));
   const gas = has ? { pct: frac(vault.agentBalance, target), low } : null;
   const mode = autonomy?.mode === 'auto' ? 'auto' : 'manual';
   const beams = paused ? [] : pending.slice(0, 5).map((d, i) => ({ id: d.id, phase: i / Math.max(1, Math.min(5, pending.length)), waiting: mode !== 'auto' }));

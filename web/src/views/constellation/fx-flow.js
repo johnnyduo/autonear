@@ -1,10 +1,10 @@
-// DATA-BEARING animated relations for the glyph disc. Unlike fx-disc.js (pure ornament), everything here is computed from the stored model:
-//  1. source -> topic ribbons: one per (source, primary topic) pair that really has records; thickness/brightness = record count; dots flow source -> topic and pop where they land.
-//  2. ambient provenance tour: the scene steps through REAL stored records (round-robin over sources, most relevant first) and pops a card: which source it came from, which topic it sits in.
-//     It is a tour of stored data, NOT a live event feed (live arrivals use the separate spark beams), and the legend says so.
-//  3. focus web: hover/pin a glyph -> its source and every stored opportunity link (colour = relation) light up with flowing dots; hover a source -> a ripple floods its records and its ribbons
-//     brighten with counts; hover a topic -> its records converge on the rim and the sources feeding it light up.
-// Output: GL particles/lines through o.pushP / o.pushL, node brightness in sc.flowF, and overlay descriptions in sc.ov.pops / sc.ov.tags (drawn by overlay-flow.js).
+// Animated relations for the glyph disc. Everything here is computed from the stored model (unlike fx-disc.js, which is decoration).
+//  1. Ribbons from each source to each topic it fed. Width and brightness follow the record count; dots run source to topic.
+//  2. Provenance tour: cycles through stored records (one source after another, most relevant first) and shows a card with the record's source and topic.
+//     It is a tour of stored data, not a live feed. Live arrivals use the separate spark beams.
+//  3. Focus: hovering or pinning a glyph lights its source and every stored opportunity link (colour is the relation). Hovering a source floods its records and shows
+//     counts on its ribbons. Hovering a topic pulls its records to the rim and lights the sources that feed it.
+// Output: GL particles and lines through o.pushP / o.pushL, node brightness in sc.flowF, and overlay items in sc.ov.pops / sc.ov.tags (drawn by overlay-flow.js).
 import { srcShort } from '../_evidence-parts.jsx';
 import { WELLS } from './data.js';
 
@@ -16,7 +16,7 @@ const REL = { contradicts: [1, 0.416, 0.239], competitor: [0.949, 0.722, 0.294],
 const mixInt = (x) => { x = Math.imul(x ^ (x >>> 16), 0x45d2f9b); x = Math.imul(x ^ (x >>> 15), 0x45d2f9b); return (x ^ (x >>> 16)) >>> 0; };
 export const flowBudget = (fx) => Math.ceil(2600 * clamp(fx, 0, 1)) + 160;
 
-const bow = (ax, ay, bx, by, ox, oy, amt) => { // quadratic control point, bowed away from (ox,oy)
+const bow = (ax, ay, bx, by, ox, oy, amt) => { // quadratic control point, bowed away from (ox, oy)
   const mx = (ax + bx) / 2; const my = (ay + by) / 2; let nx = -(by - ay); let ny = bx - ax; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l; if (nx * (mx - ox) + ny * (my - oy) < 0) { nx = -nx; ny = -ny; }
   const d = Math.hypot(bx - ax, by - ay); return [mx + nx * d * amt, my + ny * d * amt];
 };
@@ -35,13 +35,13 @@ export function buildFlow(sc, o) {
     for (let i = 0; i < n; i++) {
       const u = (T * speed + i / n + off) % 1; const x = qx(p0[0], c[0], p1[0], u); const y = qx(p0[1], c[1], p1[1], u); const f = Math.sin(u * Math.PI);
       pushP(x, y, size * (0.6 + 0.8 * f), col[0], col[1], col[2], a * f, 0);
-      if (arrive && u > 0.9) { const v = (u - 0.9) / 0.1; pushP(p1[0], p1[1], 10 + 34 * v, col[0], col[1], col[2], a * 0.45 * (1 - v), 0.3); } // the dot "lands": a soft pop on the topic rim
+      if (arrive && u > 0.9) { const v = (u - 0.9) / 0.1; pushP(p1[0], p1[1], 10 + 34 * v, col[0], col[1], col[2], a * 0.45 * (1 - v), 0.3); } // soft pulse where the dot reaches the topic rim
     }
   };
   const srcCol = (s) => sc.srcColors?.[s] ?? [0.8, 0.8, 0.8];
   const srcName = (s) => srcShort(m.sources[s]?.id ?? '');
 
-  // ---- 1. source -> topic ribbons (stored counts)
+  // 1. Ribbons (stored counts)
   const pairs = sc.flowPairs ?? []; const max = sc.flowMax || 1;
   for (const pr of pairs) {
     const sat = sats[pr.s]; const A = anchor(pr.w, pr.s); if (!sat || !A) continue; const off = sc.filter.srcOff.has(m.sources[pr.s]?.id) || sc.filter.topicOff.has(WELLS[pr.w]);
@@ -54,9 +54,9 @@ export function buildFlow(sc, o) {
     if (boost > 1.5 && (fSrc >= 0 || fSec >= 0) && !off) ov.tags.push({ x: A[0], y: A[1], text: fSrc >= 0 ? `+${pr.c} ${m.wells[pr.w].label}` : `${srcName(pr.s)} ${pr.c}`, col, pop, side: Math.cos(anchorAng(pr.w, pr.s)) >= 0 ? 1 : -1, ang: anchorAng(pr.w, pr.s) });
   }
 
-  // ---- 2. ambient provenance tour (real stored records, round-robin over sources)
+  // 2. Provenance tour
   const F = sc.flow ?? (sc.flow = { tours: [], next: 1.4, seq: 0, order: null, model: null });
-  if (F.model !== m) { // order: for every source its records by relevance desc then recency, then interleave sources so small ones (Bluesky, Mastodon, Farcaster...) appear as often as GitHub
+  if (F.model !== m) { // Order: each source's records by relevance, then recency; sources are interleaved so small ones (Bluesky, Mastodon, Farcaster) show as often as GitHub
     const per = m.sources.map(() => []); nodes.forEach((n, i) => { if (n.slot) per[n.src]?.push(i); }); per.forEach((l) => l.sort((a, b) => nodes[b].rel - nodes[a].rel || nodes[b].p - nodes[a].p)); const order = []; for (let r = 0; r < 40; r++) for (const l of per) if (l[r] !== undefined) order.push(l[r]); F.order = order; F.model = m; F.tours.length = 0;
   }
   const focusing = Boolean(fk); const calmTour = calm && !F.tours.length;
@@ -64,7 +64,7 @@ export function buildFlow(sc, o) {
     for (let tries = 0; tries < 12; tries++) { const ni = F.order[F.seq++ % F.order.length]; if (sc.app[ni] > 0.9 && sc.vis[ni] > 0.5 && !F.tours.some((x) => x.ni === ni)) { F.tours.push({ ni, t0: T }); break; } }
     F.next = T + TOUR_GAP;
   }
-  if (calmTour && F.order.length && sc.app[F.order[0]] > 0.9) F.tours.push({ ni: F.order[0], t0: -0.4 + 1.4, static: true }); // reduced motion: one fixed provenance card so the idea is still shown
+  if (calmTour && F.order.length && sc.app[F.order[0]] > 0.9) F.tours.push({ ni: F.order[0], t0: -0.4 + 1.4, static: true }); // reduced motion: show one fixed card
   for (let q = F.tours.length - 1; q >= 0; q--) {
     const tr = F.tours[q]; const age = tr.static ? 1.6 : T - tr.t0; if (age > TOUR_LIFE) { F.tours.splice(q, 1); continue; }
     const n = nodes[tr.ni]; const sat = sats[n.src]; if (!n.slot || !sat) continue; const g = [cx + n.slot.x * k, cy + n.slot.y * k]; const col = srcCol(n.src); const fade = (age > TOUR_LIFE - 0.6 ? (TOUR_LIFE - age) / 0.6 : 1) * (focusing ? 1 - fage : 1); // a hover/pin takes over the stage: the tour fades out
@@ -79,8 +79,8 @@ export function buildFlow(sc, o) {
     ov.pops.push({ ni: tr.ni, age, fade, gx: g[0], gy: g[1], sx: sat.x, sy: sat.y, col, src: n.src, w: n.primary });
   }
 
-  // ---- 3. focus web
-  const flood = (s, fe) => { // a ripple leaves the satellite and lights its records as the wavefront crosses them
+  // 3. Focus
+  const flood = (s, fe) => { // a ripple leaves the satellite and lights each record as the wavefront reaches it
     const sat = sats[s]; if (!sat) return; const col = srcCol(s); const front = fe * 950; let cnt = 0;
     for (let i = 0; i < N; i++) {
       const n = nodes[i]; if (n.src !== s || !n.slot || sc.app[i] < 0.5) continue; const gx = cx + n.slot.x * k; const gy = cy + n.slot.y * k; const d = Math.hypot(gx - sat.x, gy - sat.y); const f = Math.exp(-(((d - front) / 90) ** 2)) + (d < front ? 0.35 : 0);

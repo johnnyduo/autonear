@@ -40,7 +40,7 @@ html.co-noscroll, html.co-noscroll body { overflow: hidden; }
 @media (max-width: 760px) { .co-full-foot { flex-wrap: wrap; } .co-full-foot .co-cap-main { white-space: normal; order: 3; flex-basis: 100%; } }
 @media (max-width: 1100px) { .co-fullpage .co-title .eyebrow { display: none; } }
 
-/* Home stage: the constellation IS the home page. Full-bleed under the command bar, as tall as the viewport allows. */
+/* Home stage: full width under the command bar, as tall as the viewport allows. */
 .co-stagepage.co-panel { border: 0; border-radius: 0; box-shadow: none; margin: 0; background: transparent; }
 .co-stagepage .co-stagewrap { height: clamp(560px, calc(100dvh - 150px), 980px); }
 @media (max-width: 760px) { .co-stagepage .co-stagewrap { height: clamp(560px, calc(100svh - 190px), 760px); } }

@@ -1,8 +1,7 @@
-// Decorative "spectacle" layers for the glyph disc. EVERYTHING in this file is ornament: it is driven by time and fixed random seeds only and carries NO data.
-// (The data-bearing layers stay in disc.js / overlay-disc.js: glyphs, sectors, score arcs, source orbits, gauges.)
-// Layers, back to front: nebula fog, spiral dust arms (rotating density wave), orbit rings with travelling bright waves, string-art mandalas,
-// shockwaves leaving the core, core sunburst + reactor ring, radar sweep (which also lifts glyph brightness while it passes), data-burst halos, comets, pointer halo.
-// All motion is slow and smooth (< 1 Hz modulation, nothing flashes faster than 3 Hz). With reduced motion (calm) time is frozen at 0 and the sweep/bursts/comets are off.
+// Decoration for the glyph disc. Nothing in this file carries data: it depends only on time and fixed random seeds.
+// Data layers are in disc.js, overlay-disc.js and fx-flow.js.
+// Back to front: nebula, spiral dust arms, orbit rings, star-polygon rings, shockwaves, core rays, radar sweep, glow bursts, comets, cursor effects.
+// Motion is slow. Nothing blinks faster than 3 Hz. With reduced motion the clock stays at 0 and the sweep, bursts and comets are off.
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -44,11 +43,11 @@ export function sweepGlyphs(sc, phi) {
  */
 export function buildFx(sc, o) {
   const { pushP, pushL, cx, cy, R, k, W, H } = o; const calm = sc.calm; const fx = clamp(sc.q.fx ?? 1, 0, 1); if (fx <= 0.01) return { phi: null };
-  const T = sc.fxT ?? 0; // ornament clock: advances only while motion is on (the pause button freezes it; reduced motion never starts it). Interaction effects below use the real clock sc.t.
+  const T = sc.fxT ?? 0; // Effect clock. It runs only while motion is on (pause stops it, reduced motion never starts it). Cursor effects below use the real clock sc.t.
   const S = seeds(); const ptr = calm ? null : sc.ptr; const zf = clamp(R / 300, 0.6, 2.4); const z = sc.cam.zoom;
   const inV = (x, y, p = 24) => x > -p && x < W + p && y > -p && y < H + p;
 
-  // ---- 1. nebula fog: big, soft, slowly orbiting colour clouds (the "fuzzy" part)
+  // 1. Nebula: large soft colour clouds drifting around the disc
   const nN = Math.floor(FX_NEB * fx);
   for (let i = 0; i < nN; i++) {
     const q = i * 6; const th = S.neb[q] + T * S.neb[q + 2]; const rad = S.neb[q + 1] * R * (1 + 0.05 * Math.sin(T * 0.13 + S.neb[q + 5])); const x = cx + Math.cos(th) * rad; const y = cy + Math.sin(th) * rad * 0.9;
@@ -56,7 +55,7 @@ export function buildFx(sc, o) {
     const breathe = 0.7 + 0.3 * Math.sin(T * 0.21 + S.neb[q + 5] * 2); pushP(x, y, size, col[0], col[1], col[2], 0.1 * breathe * (0.5 + 0.5 * smooth(0.3, 1.2, S.neb[q + 1])), 1);
   }
 
-  // ---- 2. spiral dust arms: five logarithmic arms turning as a density wave, motes wobble individually; the pointer pushes them aside
+  // 2. Dust: five spiral arms that turn slowly; the cursor pushes particles aside
   const nA = Math.floor(FX_ARMS * fx); const A = S.arms; const ps = 0.6 + 0.4 * Math.min(2, zf);
   for (let i = 0; i < nA; i++) {
     const q = i * 7; const rr = A[q]; const ph = A[q + 2];
@@ -70,7 +69,7 @@ export function buildFx(sc, o) {
     pushP(x, y, (big ? 3.4 : 1) * (1.8 + A[q + 4] * 3.2) * ps, col[0], col[1], col[2], big ? a * 0.6 : a, big ? 0.3 : 0);
   }
 
-  // ---- 3. orbit rings of motes; bright waves travel round each ring, alternate rings counter-rotate
+  // 3. Particle rings; a bright wave runs round each ring and neighbouring rings turn in opposite directions
   RING_R.forEach((rad, j) => {
     const n = Math.floor(rad * RING_DENS * fx); const dir = j % 2 ? -1 : 1; const om = dir * (0.05 + 0.025 * j); const kk = 2 + j; const ring = rad * R;
     for (let i = 0; i < n; i++) {
@@ -80,21 +79,21 @@ export function buildFx(sc, o) {
     }
   });
 
-  // ---- 4. string-art mandalas: star polygons {n/s} whose chords never cut deeper than ~1.2 R, so they stay outside the glyph disc and weave a moire
+  // 4. Star-polygon rings. The chords stay outside about 1.2 R so they never cross the glyphs
   [[48, 15, 2.3, 0.021, [0.62, 0.48, 1], 0.1], [36, 10, 1.9, -0.027, [0.3, 0.86, 0.95], 0.085], [60, 6, 1.56, 0.015, [0.95, 0.76, 0.42], 0.07]].forEach(([n, s, rad, om, col, al]) => {
     const rr = rad * R; const pts = []; for (let i = 0; i < n; i++) { const th = (i / n) * TAU + T * om; pts.push(cx + Math.cos(th) * rr, cy + Math.sin(th) * rr * 0.97); }
     const br = 0.8 + 0.2 * Math.sin(T * 0.3 + rad * 4);
     for (let i = 0; i < n; i++) { const j = (i + s) % n; const a = al * br * fx; pushL(pts[i * 2], pts[i * 2 + 1], a, pts[j * 2], pts[j * 2 + 1], a, col[0], col[1], col[2]); }
   });
 
-  // ---- 5. shockwaves leaving the core (three, staggered, 7 s period): thin additive rings that stretch and fade
+  // 5. Three rings expand from the core, 7 s apart, and fade out
   if (!calm) for (let w = 0; w < 3; w++) {
     const u = (T / 7 + w / 3) % 1; const rad = R * (0.3 + 2.2 * ease(u)); const a = 0.5 * (1 - u) ** 1.7 * smooth(0, 0.06, u) * fx; if (a < 0.01) continue;
     const col = ramp(0.1 + u * 0.8).slice(); const seg = 96;
     for (let i = 0; i < seg; i++) { const a0 = (i / seg) * TAU; const a1 = ((i + 1) / seg) * TAU; const wob = 1 + 0.012 * Math.sin(a0 * 6 + T * 0.8 + w); const wob1 = 1 + 0.012 * Math.sin(a1 * 6 + T * 0.8 + w); pushL(cx + Math.cos(a0) * rad * wob, cy + Math.sin(a0) * rad * wob, a, cx + Math.cos(a1) * rad * wob1, cy + Math.sin(a1) * rad * wob1, a, col[0], col[1], col[2]); }
   }
 
-  // ---- 6. core: sunburst rays inside the hollow centre, a spinning reactor ring and a breathing aura
+  // 6. Core: rays in the empty centre, a spinning ring and a slow glow
   const breath = 0.5 + 0.5 * Math.sin(T * 0.9);
   pushP(cx, cy, R * (0.52 + 0.05 * breath), 1, 0.62, 0.3, 0.16 + 0.05 * breath, 0.6);
   const rays = Math.floor(72 * Math.max(0.4, fx));
@@ -105,7 +104,7 @@ export function buildFx(sc, o) {
   const nr = Math.floor(48 * Math.max(0.4, fx));
   for (let i = 0; i < nr; i++) { const th = (i / nr) * TAU - T * 0.55; const w = 0.5 + 0.5 * Math.sin(th * 3 + T * 1.4); const col = ramp(0.25 + 0.5 * w); pushP(cx + Math.cos(th) * R * 0.165, cy + Math.sin(th) * R * 0.165, 2.6 + 3 * w, col[0], col[1], col[2], 0.25 + 0.5 * w, 0); }
 
-  // ---- 7. radar sweep: a fading wedge from the core to the rim; glyphs it has just passed glow (sweepGlyphs); off with reduced motion or at low quality
+  // 7. Radar sweep: a fading wedge from the core to the rim; glyphs it just passed get brighter (sweepGlyphs). Off with reduced motion or at low quality
   let phi = null;
   if (!calm && sc.auto && fx >= 0.5) {
     phi = (T * 0.55) % TAU; const r0 = R * 0.27; const r1 = R * 1.0;
@@ -115,7 +114,7 @@ export function buildFx(sc, o) {
   }
   sweepGlyphs(sc, phi);
 
-  // ---- 8. data-burst halos: a few glyphs bloom softly in turn (one slot every 0.7 s, different glyphs each time; area tiny, alpha low; well under 3 Hz)
+  // 8. Glow bursts: every 0.7 s three glyphs get a soft halo (small and dim)
   const nodes = sc.model.nodes;
   if (!calm && sc.auto && fx >= 0.5 && nodes.length) {
     const slotLen = 0.7; const s0 = Math.floor(T / slotLen); const ph = T / slotLen - s0;
@@ -125,7 +124,7 @@ export function buildFx(sc, o) {
     }
   }
 
-  // ---- 9. comets crossing the stage, each on its own lane and period (one visible at a time at most)
+  // 9. Comets cross the stage, each on its own lane and period
   if (!calm && sc.auto && fx >= 0.5) for (let i = 0; i < N_COMET; i++) {
     const q = i * 5; const per = S.com[q]; const u0 = (T / per + S.com[q + 1]) % 1; const vis = 0.55; if (u0 > vis) continue; const u = u0 / vis; const ang = S.com[q + 2];
     const dx = Math.cos(ang); const dy = Math.sin(ang); const diag = Math.hypot(W, H); const nx = -dy; const ny = dx; const lane = S.com[q + 3] * Math.min(W, H) * 0.9;
@@ -136,12 +135,12 @@ export function buildFx(sc, o) {
     pushP(hx, hy, 11, 1, 1, 1, 0.9 * fade, 0);
   }
 
-  // ---- 10. pointer halo: the stage answers the cursor with a soft light and a ring of orbiting sparks
+  // 10. Cursor: a soft light and a ring of sparks around the pointer
   if (ptr) {
     pushP(ptr.x, ptr.y, 170, 0.45, 0.8, 1, 0.09, 0.8);
     for (let j = 0; j < 10; j++) { const a = T * 1.6 + (j / 10) * TAU; const rr = 26 + 4 * Math.sin(T * 2 + j); const col = ramp(j / 10); pushP(ptr.x + Math.cos(a) * rr, ptr.y + Math.sin(a) * rr, 4.5, col[0], col[1], col[2], 0.55, 0); }
   }
-  // ---- 11. pointer trail (fading sparks behind the cursor) and click ripples (expanding ring + radial sparks); both use the real clock and exist only because the user moved or clicked
+  // 11. Cursor trail and click ripples (real clock; they only appear after the user moves or clicks)
   if (!calm) {
     const now = sc.t;
     for (let q = sc.trail.length - 1; q >= 0; q--) { const p = sc.trail[q]; const u = (now - p.t) / 0.85; if (u >= 1) { sc.trail.splice(q, 1); continue; } const col = ramp(0.35 + u * 0.6); pushP(p.x, p.y, 13 * (1 - u) + 3, col[0], col[1], col[2], 0.5 * (1 - u) ** 1.6, 0.1); }

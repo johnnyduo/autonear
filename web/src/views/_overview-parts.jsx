@@ -38,8 +38,8 @@ export function ConstellationPanel({ status, opps, evidenceCount, full = false, 
           ))}
         </ul>
         <p className="faint co-cap-note">
-          A source orbit pulses only if that source ingested within 20 minutes{recents.length ? ` (${recents.length} now)` : ' (none now)'}.
-          {' '}Agent roles light only while a run&rsquo;s events show them active{activeRun ? `: run ${activeRun.id.slice(0, 12)} is ${activeRun.state}` : '; no run is active, so they stay dark'}.
+          A source pulses only if it ingested in the last 20 minutes{recents.length ? ` (${recents.length} now)` : ' (none now)'}.
+          {' '}Agent roles light up only while a run reports them active{activeRun ? `: run ${activeRun.id.slice(0, 12)} is ${activeRun.state}` : '; no run is active'}.
           {stats?.linkFail ? ` ${stats.linkFail} opportunity link request(s) failed; some links are missing.` : ''}
           {calm ? ' Motion is off (reduced-motion).' : ''}
         </p>
@@ -50,8 +50,8 @@ export function ConstellationPanel({ status, opps, evidenceCount, full = false, 
       <div className="co-stagewrap" ref={wrap}>
         <div className={`co-poster ${ready ? 'gone' : ''}`} aria-hidden="true"><i /></div>
         <header className="co-title" data-reserve>
-          <p className="eyebrow">Evidence constellation · from the stored API data</p>
-          <h2 id={hid}>Every stored record, <em>fingerprinted</em>.</h2>
+          <p className="eyebrow">Evidence</p>
+          <h2 id={hid}>Everything the agent has <em>read</em>.</h2>
           <p className="co-title-s mono">{typeof total === 'number' ? `${total} records` : '…'} · {src.length || '…'} sources · {oppN ?? '…'} opportunities</p>
         </header>
         {mount && (
@@ -62,7 +62,7 @@ export function ConstellationPanel({ status, opps, evidenceCount, full = false, 
       </div>
       {full ? (
         <footer className="co-full-foot">
-          <p className="co-cap-main"><b>Computed from {loaded ?? '…'} stored evidence records; not a simulation.</b> Ribbons, pop-up cards and relation lines come from stored data (the card tour is not a live feed); the nebula, dust, turning rings, shockwaves, sweep and comets are decorative.</p>
+          <p className="co-cap-main"><b>{loaded ?? '…'} stored records.</b> Ribbons, cards and relation lines come from stored data. The nebula, dust, rings, sweep and comets are decoration only.</p>
           <details className="co-full-more"><summary>Details</summary>
             <div className="co-full-more-in">{detail}</div>
           </details>
@@ -70,7 +70,7 @@ export function ConstellationPanel({ status, opps, evidenceCount, full = false, 
         </footer>
       ) : (
       <div className="co-caption">
-        <p className="co-cap-main"><b>Layout is computed from {loaded ?? '…'} stored evidence records{typeof total === 'number' && loaded < total ? ` (of ${total})` : ''}; not a simulation.</b> Each glyph is a fingerprint of one record&rsquo;s stored content hash; ribbons show how many stored records each source contributed to each topic, and the pop-up cards step through real stored records (a tour, not a live feed). The nebula, dust arms, turning rings, shockwaves, radar sweep, comets and glow are decorative and carry no data. No swarm or prediction engine is running.</p>
+        <p className="co-cap-main"><b>{loaded ?? '…'} stored records{typeof total === 'number' && loaded < total ? ` (of ${total})` : ''}.</b> Each glyph is one record, drawn from its content hash. Ribbons count the records each source gave each topic. The pop-up cards cycle through stored records and are not live events. The nebula, dust, rings, sweep and comets are decoration only.</p>
         {detail}
       </div>
       )}

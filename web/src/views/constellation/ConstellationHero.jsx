@@ -301,7 +301,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   if (!model) return <div className="co-hero-msg" role="status"><span className="eyebrow">Computing layout from stored evidence…</span></div>;
   if (!N) return <div className="co-hero-msg"><b>No evidence stored yet</b><span className="dim">The constellation draws real stored evidence only. It appears after the first collection.</span></div>;
 
-  const modeLabel = replay.mode === 'ingest' ? 'observed_at (ingest order)' : 'published_at (publication order)';
+  const modeLabel = replay.mode === 'ingest' ? 'ingest order (observed_at)' : 'publication order (published_at)';
   return (
     <div className="co-hero" data-view={view}>
       <div className="co-tools" data-ui data-reserve>
@@ -332,7 +332,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
         <div className={`co-stage ${view}`} ref={stage} tabIndex={0} role="group" aria-roledescription={view === 'disc' ? 'glyph disc' : '3D evidence graph'} aria-label={`Evidence constellation, ${N} stored records. Drag to ${view === 'disc' ? 'pan' : 'rotate'}, Ctrl and wheel or pinch to zoom, arrow keys move, plus and minus zoom, Home resets, Escape releases a pinned node. The list view shows the same data as a table.`}>
           <canvas key={rk} ref={glCv} className="co-cv" role="img" aria-label={`Evidence constellation: ${N} stored evidence records from ${model.sources.length} sources, grouped by ${model.wells.filter((w) => w.linked).length} topics and linked to ${model.wells.filter((w) => w.opp).length} opportunities.`} />
           <canvas ref={ovCv} className="co-cv co-ov" aria-hidden="true" />
-          <ul className="co-kb" aria-label="Most relevant nodes. Tab steps through them, Enter pins one, Escape releases it.">
+          <ul className="co-kb" aria-label="Most relevant nodes. Tab moves through them, Enter pins one, Escape releases it.">
             {proxies.map((p) => (
               <li key={keyStr(p.k)}>
                 <button type="button" tabIndex={0} aria-label={p.label}
@@ -359,7 +359,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
                 <button type="button" aria-pressed={replay.mode === 'ingest'} onClick={() => { const sc = sceneRef.current; sc.setReplayMode('ingest'); setReplay((r) => ({ ...r, mode: 'ingest' })); }}>Ingest order</button>
                 <button type="button" aria-pressed={replay.mode === 'published'} onClick={() => { const sc = sceneRef.current; sc.setReplayMode('published'); setReplay((r) => ({ ...r, mode: 'published' })); }}>Publication order</button>
               </div>
-              <p className="co-replay-t faint">Replay of the stored records ordered by {modeLabel}; time between records is compressed.{replay.cur ? <> Now: <b>{replay.cur.src}</b> · {fmt.date(replay.cur.t)}</> : null}</p>
+              <p className="co-replay-t faint">Replays the stored records in {modeLabel} order. Gaps between records are shortened.{replay.cur ? <> Now: <b>{replay.cur.src}</b> · {fmt.date(replay.cur.t)}</> : null}</p>
             </div>
           )}
         </div>
@@ -382,17 +382,20 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
           <summary>How to read this</summary>
           {view === 'disc' ? (
             <ul>
-              <li><b>Glyph</b> = one stored record; its 9x9 pixel pattern is derived from the record&rsquo;s content hash, so it is unique and traceable. Colour = source, brightness = NEAR relevance, red pixel ring = bot, duplicate or injection flag.</li>
-              <li><b>Sectors</b> = primary topic; the rim arc fills to that opportunity&rsquo;s stored score. Newer records sit nearer the rim.</li>
-              <li><b>Orbits</b> = sources. The satellite&rsquo;s angle is the UTC time of day of that source&rsquo;s last real ingest; it pulses only if that was under 20 minutes ago. Light shafts fade with the age of that ingest.</li>
-              <li><b>Gauges</b> = stored aggregates: top opportunity score (solid) and confidence (dashed), share of records per source, share with relevance of 0.95 or more.</li>
-              <li><b>Ribbons</b> run from each source to the topic it fed; width = stored record count, dots flow source to topic. <b>Pop-up cards</b> tour real stored records (round-robin over sources, most relevant first): a tour of stored data, not a live feed. Hover or pin a glyph for its source and every stored opportunity link (colour = relation); hover a source or topic chip for its records and counts.</li>
-              <li><b>Agent roles</b> orbit dark and light only from real run events. The nebula, dust arms, turning and hash rings, shockwaves, radar sweep, comets, pointer sparks and glow are decorative and carry no data (the hash ring shows real hash prefixes, but its motion means nothing).</li>
+              <li><b>Glyph:</b> one stored record. The pixel pattern comes from its content hash. Colour is the source, brightness is NEAR relevance, a red ring marks a bot, duplicate or injection flag.</li>
+              <li><b>Sectors:</b> primary topic. The arc on the rim fills to that opportunity&rsquo;s score. Newer records sit closer to the rim.</li>
+              <li><b>Orbits:</b> sources. The satellite&rsquo;s angle is the UTC time of day of that source&rsquo;s last ingest, and it pulses if that was under 20 minutes ago.</li>
+              <li><b>Ribbons:</b> from each source to the topics it fed. Width is the record count.</li>
+              <li><b>Pop-up cards:</b> cycle through stored records, most relevant first, one source after another. They are not live events.</li>
+              <li><b>Hover or pin a glyph</b> to see its source and every stored opportunity link (colour is the relation). Hover a source or topic chip to see its records and counts.</li>
+              <li><b>Gauges:</b> top opportunity score (solid) and confidence (dashed), records per source, share of records with relevance 0.95 or higher.</li>
+              <li><b>Agent roles</b> light up only while a run reports them active.</li>
+              <li><b>Decoration only:</b> nebula, dust arms, turning rings, hash ring, shockwaves, sweep, comets and cursor sparks carry no data.</li>
             </ul>
           ) : (
             <ul>
-              <li><b>Node</b> = one stored record; size = NEAR relevance, colour = source, red ring = flag. <b>Hub</b> rings: outer arc = opportunity score, inner arc = confidence.</li>
-              <li><b>Edges</b> = stored opportunity links (red = contradicts, amber = competitor, lime = usage) and source provenance. Positions are computed by a force layout; dust is decorative.</li>
+              <li><b>Node:</b> one stored record. Size is NEAR relevance, colour is the source, a red ring is a flag. <b>Hub</b> rings: outer arc is the opportunity score, inner arc is confidence.</li>
+              <li><b>Edges:</b> stored opportunity links (red contradicts, amber competitor, lime usage) and the source of each record. Positions come from a force layout. The dust is decoration.</li>
             </ul>
           )}
         </details>

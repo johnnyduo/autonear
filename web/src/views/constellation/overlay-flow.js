@@ -1,6 +1,6 @@
-// 2D overlay for the spectacle layers.
-//  drawHudRings: decorative turning instrument rings + a ring of REAL content-hash prefixes (the newest stored records' sha256 fingerprints) scrolling round the clock ring. Ornament only; the hashes are real, the motion is not data.
-//  drawFlowOverlay: data-bearing pop cards (ambient provenance tour: source -> topic of a REAL stored record) and relation tags (hover/pin web, source/topic focus counts).
+// 2D overlay for the effect and relation layers.
+//  drawHudRings: decorative rings, plus a ring of real content-hash prefixes from the newest stored records. The motion carries no data.
+//  drawFlowOverlay: pop-up cards (source and topic of a stored record, from the provenance tour) and relation tags (hover, pin and focus counts).
 import { srcShort } from '../_evidence-parts.jsx';
 
 const TAU = Math.PI * 2;
@@ -27,18 +27,18 @@ export function drawHudRings(ctx, sc, { cx, cy, R, narrow, calm }) {
   const ring = (r, dash, lw, col, a, om) => { const c = TAU * r; ctx.setLineDash(dash); ctx.lineDashOffset = -(T * om * r); ctx.lineWidth = lw; ctx.strokeStyle = rgb(col, a); ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke(); void c; };
   ring(R * 1.46, [18, 10], 1, CYAN, 0.2, 0.05); ring(R * 1.52, [2, 5], 2.2, GOLD, 0.28, -0.07); ring(R * 1.9, [60, 22, 6, 22], 1, VIOLET, 0.2, 0.03); ring(R * 2.12, [1, 3], 1, ICE, 0.16, -0.02); ring(R * 1.0 + 3, [3, 9], 1, LIMEC, 0.18, 0.06);
   ctx.setLineDash([]);
-  // HUD brackets: four arcs that slowly circle the disc
+  // four arcs that slowly circle the disc
   ctx.lineWidth = 2.6; ctx.lineCap = 'round'; ctx.strokeStyle = rgb(LIMEC, 0.5);
   for (let i = 0; i < 4; i++) { const a = (i / 4) * TAU + T * 0.1; ctx.beginPath(); ctx.arc(cx, cy, R * 1.585, a, a + 0.34); ctx.stroke(); }
   ctx.strokeStyle = rgb(CYAN, 0.38); ctx.lineWidth = 1.6;
   for (let i = 0; i < 3; i++) { const a = (i / 3) * TAU - T * 0.07 + 0.5; ctx.beginPath(); ctx.arc(cx, cy, R * 1.995, a, a + 0.22); ctx.stroke(); }
   ctx.lineCap = 'butt';
   if (!narrow) {
-    // graduated ring: 180 ticks, every 10th long
+    // 180 ticks, every 10th longer
     ctx.beginPath(); const r1 = R * 1.7; const rot = -T * 0.02;
     for (let i = 0; i < 180; i++) { const a = (i / 180) * TAU + rot; const L = i % 10 === 0 ? 8 : i % 5 === 0 ? 5 : 2.5; ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); ctx.lineTo(cx + Math.cos(a) * (r1 + L), cy + Math.sin(a) * (r1 + L)); }
     ctx.strokeStyle = rgb(ICE, 0.26); ctx.lineWidth = 1; ctx.stroke();
-    // ring of real content-hash prefixes, scrolling slowly (decorative motion, real strings)
+    // real content-hash prefixes, scrolling slowly
     if (!sc.hashText && sc.fp) { const nodes = sc.model.nodes; const ids = nodes.map((n, i) => i).filter((i) => sc.fp[i]?.real).sort((a, b) => nodes[b].t - nodes[a].t).slice(0, 44); sc.hashText = ids.map((i) => Array.from(sc.fp[i].bytes.slice(0, 5), (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase()).join('  ·  '); }
     const txt = sc.hashText; if (txt && z < 2.6) {
       ctx.font = MONO(7.8, 500); ctx.fillStyle = rgb(GOLD, 0.34); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const rt = R * 1.29; const step = 4; const cw = 4.7; const circ = TAU * rt; const total = Math.floor(circ / (cw * step)) * step; const off = Math.floor(T * 1.4) % txt.length;
@@ -51,7 +51,7 @@ export function drawHudRings(ctx, sc, { cx, cy, R, narrow, calm }) {
 /** Pop cards for the provenance tour + relation tags for the focus web. */
 export function drawFlowOverlay(ctx, sc, { W, H, reserved = [], narrow, calm }) {
   const ov = sc.ov; const m = sc.model; const { cx, cy } = ov; ctx.textBaseline = 'middle'; ctx.lineCap = 'round';
-  // tags first (small pills), then cards on top
+  // tags first, then cards on top
   for (const tg of ov.tags ?? []) {
     const s = calm ? 1 : clamp(back(tg.pop), 0, 1.15); if (s <= 0.02) continue; ctx.save(); ctx.font = MONO(narrow ? 9 : 10, 600); const text = tg.text.toUpperCase(); const w = ctx.measureText(text).width + 16; const h = 20;
     let px; let py; if (tg.head) { px = tg.x; py = tg.y - 24; } else { const a = tg.ang ?? 0; px = tg.x + Math.cos(a) * 22; py = tg.y + Math.sin(a) * 22; }
@@ -69,7 +69,7 @@ export function drawFlowOverlay(ctx, sc, { W, H, reserved = [], narrow, calm }) 
     let kx = p.gx + ux * reach; let ky = p.gy + uy * reach; kx = clamp(kx, w / 2 + 8, W - w / 2 - 8); ky = clamp(ky, 60 + h / 2, H - 58 - h / 2);
     for (const r of reserved) if (kx + w / 2 > r.x && kx - w / 2 < r.x + r.w && ky + h / 2 > r.y && ky - h / 2 < r.y + r.h) { ky = r.y > H / 2 ? r.y - h / 2 - 6 : r.y + r.h + h / 2 + 6; }
     const col = p.col; ctx.globalAlpha = alpha;
-    // leader from the glyph to the card
+    // line from the glyph to the card
     ctx.strokeStyle = rgb(col, 0.85); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(p.gx, p.gy); ctx.lineTo(kx - Math.sign(kx - p.gx) * 0, ky); ctx.stroke(); ctx.fillStyle = rgb(col, 1); ctx.beginPath(); ctx.arc(p.gx, p.gy, 3, 0, TAU); ctx.fill();
     ctx.translate(kx, ky); ctx.scale(s, s); ctx.translate(-w / 2, -h / 2);
     ctx.shadowColor = rgb(col, 0.5); ctx.shadowBlur = 18; ctx.fillStyle = 'rgba(8,10,13,0.9)'; roundRect(ctx, 0, 0, w, h, 9); ctx.fill(); ctx.shadowBlur = 0; ctx.lineWidth = 1.4; ctx.strokeStyle = rgb(col, 0.95); ctx.stroke();

@@ -27,7 +27,8 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
   };
 
   const u = vault ? unitOf(vault) : null;
-  const gasFrac = vault ? ratio(vault.agentBalance, data.autonomy?.topUp?.evm?.target ?? '10000000000000000') : 0;
+  const isNear = String(vault?.chainId ?? '').startsWith('near'); const tu = isNear ? data.autonomy?.topUp?.near : data.autonomy?.topUp?.evm;
+  const gasFrac = vault ? ratio(vault.agentBalance, tu?.target ?? (isNear ? '2000000000000000000000000' : '10000000000000000')) : 0;
   const lowGas = model.gas?.low;
   const finds = [...data.opps].sort((a, b) => b.score - a.score).slice(0, 3);
   const watching = !demo && owner.address && !owner.isOwner;

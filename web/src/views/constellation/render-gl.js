@@ -50,20 +50,20 @@ precision highp float; in vec2 v_uv; uniform sampler2D u_s; uniform sampler2D u_
 float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main(){
   vec2 q = v_uv - 0.5; float r2 = dot(q, q);
-  vec2 ca = q * (0.0035 + 0.011 * r2);                       // chromatic aberration, stronger toward the edges
+  vec2 ca = q * (0.0035 + 0.011 * r2);                       // colour fringing, stronger toward the edges
   vec3 c = vec3(texture(u_s, v_uv + ca).r, texture(u_s, v_uv).g, texture(u_s, v_uv - ca).b);
   vec3 bl = texture(u_b1, v_uv).rgb * u_w.x + texture(u_b2, v_uv).rgb * u_w.y + texture(u_b3, v_uv).rgb * u_w.z;
   c += bl * mix(vec3(1.0), vec3(1.0, 0.8, 0.55), 0.4);
-  if (u_w.y > 0.0) { // anamorphic streak: a horizontal smear of the half-resolution bloom, cool-tinted
+  if (u_w.y > 0.0) { // horizontal streak from the half-resolution bloom, cool-tinted
     vec3 st = vec3(0.0); for (int i = -6; i <= 6; i++) { float w = exp(-float(i * i) / 14.0); st += texture(u_b2, v_uv + vec2(float(i) * 0.011, 0.0)).rgb * w; }
     c += st * 0.05 * vec3(0.55, 0.8, 1.0);
   }
   c = 1.0 - exp(-c * u_exp);
   float vig = 1.0 - smoothstep(0.35, 0.95, length(q * vec2(1.0, 1.15)));
   c *= mix(0.55, 1.0, vig);
-  vec3 aur = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + u_t * 0.015 + q.x * 0.5));   // slow colour-shifting aurora in the margins
+  vec3 aur = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + u_t * 0.015 + q.x * 0.5));   // slow colour shift at the edges
   c += aur * aur * 0.055 * smoothstep(0.18, 0.85, length(q));
-  float g = hash(gl_FragCoord.xy + floor(u_t * 24.0) * 17.0) - 0.5; c += g * 0.016 * (1.0 - min(1.0, max(c.r, max(c.g, c.b))) * 0.6);   // fine film grain
+  float g = hash(gl_FragCoord.xy + floor(u_t * 24.0) * 17.0) - 0.5; c += g * 0.016 * (1.0 - min(1.0, max(c.r, max(c.g, c.b))) * 0.6);   // film grain
   float a = max(c.r, max(c.g, c.b));
   o = vec4(c, a);
 }`;
