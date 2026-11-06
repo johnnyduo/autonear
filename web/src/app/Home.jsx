@@ -1,16 +1,15 @@
-// Home: one sentence of truth, the live scene, three cards (who decides, fuel, what needs you), then what the agent found.
+// Home = the evidence constellation (real stored data) as the stage, with a command bar for the human in the loop; details below.
 import { useMemo, useState } from 'react';
 import { api, fmt } from '../api.js';
-import { Icon, Meter, useCalm } from '../ui.jsx';
+import { Icon, Meter } from '../ui.jsx';
 import { fmtAmount, ratio, unitOf } from '../views/vault/format.js';
-import LeashScene from './LeashScene.jsx';
+import { ConstellationPanel } from '../views/_overview-parts.jsx';
 import { T, homeLine } from './copy.js';
 import { mainVault, pendingOf } from './data.js';
 import { href } from './nav.js';
 import { buildScene } from './scene-model.js';
 
 export default function Home({ data, owner, canWrite, demo, opts, toast }) {
-  const calm = useCalm();
   const s = data.status.data; const sources = s?.sources ?? [];
   const vault = mainVault(data.vault); const pending = pendingOf(data.decisions);
   const mode = data.autonomy?.mode ?? 'manual'; const paused = Boolean(s?.paused);
@@ -31,16 +30,24 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
   const gasFrac = vault ? ratio(vault.agentBalance, data.autonomy?.topUp?.evm?.target ?? '10000000000000000') : 0;
   const lowGas = model.gas?.low;
   const finds = [...data.opps].sort((a, b) => b.score - a.score).slice(0, 3);
+  const watching = !demo && owner.address && !owner.isOwner;
   return (
-    <div className="ap-wrap hm">
-      <section className="hm-head">
+    <div className="hm hm-first">
+      {/* Command bar: the human in the loop. What is happening, what waits for the owner, who decides. */}
+      <div className="hm-bar" role="region" aria-label="Owner controls">
         <span className={`chip ${paused ? 'bad' : demo ? 'mineral' : 'ok'}`}>{paused ? 'Stopped' : demo ? T.demoBadge : 'Live'}</span>
-        <h1>{l1} <span>{l2}</span></h1>
-      </section>
-      <div className="hm-stage"><LeashScene model={model} reducedMotion={calm} className="hm-scene" />
-        <a className="btn sm hm-const" href={href('constellation', opts)}>Explore the evidence constellation</a>
-        <ul className="hm-legend" aria-hidden="true" style={{ '--tone': paused ? 'var(--risk)' : demo ? 'var(--mineral-hi)' : 'var(--signal)' }}><li><i className="d1" />Sources it reads</li><li><i className="d2" />Your limits, used so far</li><li><i className="d3" />Agent fuel</li></ul>
+        <p className="hm-bar-t"><b>{l1}</b> <span>{l2}</span></p>
+        {watching && <span className="chip" title={T.readOnly}><Icon name="lock" size={12} />Watching only</span>}
+        <a className={`btn sm ${pending.length ? 'primary' : 'ghost'}`} href={href('approvals', opts)}>{pending.length ? `${pending.length} waiting for you · Review` : 'Nothing needs you'}</a>
+        <div className="hm-bar-mode" role="radiogroup" aria-label="Who decides">
+          {[['manual', 'I approve'], ['auto', 'Auto']].map(([k, t]) => (
+            <button key={k} type="button" role="radio" aria-checked={mode === k} className={mode === k ? 'on' : ''} disabled={busy} aria-disabled={!canWrite} onClick={() => setMode(k)} title={!canWrite ? why : k === 'auto' ? T.modeAutoBody : T.modeManualBody}>{t}</button>
+          ))}
+        </div>
+        {vault && <span className="hm-bar-fuel" title="Agent fuel">Fuel <b>{fmtAmount(vault.agentBalance, u.decimals, 4)?.text ?? '–'}</b> {u.symbol}</span>}
       </div>
+      <ConstellationPanel stage status={data.status} opps={data.opps} evidenceCount={s?.counts?.evidence} />
+      <div className="ap-wrap hm-rest">
       <section className="hm-cards">
         <article className="card" aria-labelledby="c-mode">
           <h2 id="c-mode">Who decides?</h2>
@@ -79,6 +86,7 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
           ))}</ol>
         ) : <p className="faint">Nothing scored yet. The agent is still reading; this fills in as it learns.</p>}
       </section>
+      </div>
     </div>
   );
 }

@@ -14,10 +14,10 @@ const Hero = lazy(() => import('./constellation/ConstellationHero.jsx'));
 const idle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 1800 }) : setTimeout(fn, 250));
 const cancelIdle = (h) => (typeof cancelIdleCallback === 'function' ? cancelIdleCallback(h) : clearTimeout(h));
 
-export function ConstellationPanel({ status, opps, evidenceCount, full = false }) {
+export function ConstellationPanel({ status, opps, evidenceCount, full = false, stage = false }) {
   const s = status.data; const src = s?.sources ?? []; const activeRun = s?.activeRun ?? null;
   const calm = useCalm(); const hid = useId(); const wrap = useRef(null);
-  const [mount, setMount] = useState(full); const [ready, setReady] = useState(false); const [stats, setStats] = useState(null);
+  const [mount, setMount] = useState(full || stage); const [ready, setReady] = useState(false); const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const el = wrap.current; if (!el || mount) return undefined; let h = 0;
@@ -46,7 +46,7 @@ export function ConstellationPanel({ status, opps, evidenceCount, full = false }
     </>
   );
   return (
-    <section className={`panel co-panel${full ? ' co-fullpage' : ''}`} aria-labelledby={hid}>
+    <section className={`panel co-panel${full ? ' co-fullpage' : ''}${stage ? ' co-stagepage' : ''}`} aria-labelledby={hid}>
       <div className="co-stagewrap" ref={wrap}>
         <div className={`co-poster ${ready ? 'gone' : ''}`} aria-hidden="true"><i /></div>
         <header className="co-title" data-reserve>

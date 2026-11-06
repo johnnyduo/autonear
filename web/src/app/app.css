@@ -88,3 +88,13 @@
 .wt-field form { display: flex; gap: 8px; } .wt-field form .input { flex: 1; min-width: 0; }
 
 .hm-const { position: absolute; right: 0; top: 4px; z-index: 2; }
+
+/* Home command bar (owner = human in the loop) above the full-bleed constellation stage */
+.hm-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 16px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--ink-0) 92%, transparent); }
+.hm-bar-t { flex: 1 1 260px; min-width: 0; margin: 0; font-size: 14px; color: var(--chalk-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .hm-bar-t b { color: var(--chalk); font-weight: 500; }
+.hm-bar-mode { display: inline-flex; border: 1px solid var(--line-hi); border-radius: 99px; padding: 2px; }
+.hm-bar-mode button { min-height: 30px; padding: 0 12px; border: 0; background: none; border-radius: 99px; color: var(--chalk-2); font: 500 12px var(--f-mono); letter-spacing: .04em; }
+.hm-bar-mode button.on { background: var(--signal); color: var(--signal-ink); } .hm-bar-mode button[aria-disabled='true'] { cursor: not-allowed; opacity: .8; }
+.hm-bar-fuel { font: 500 12px var(--f-mono); color: var(--chalk-2); } .hm-bar-fuel b { color: var(--chalk); font-weight: 500; }
+.hm-rest { padding-top: 24px; }
+@media (max-width: 760px) { .hm-bar-t { flex-basis: 100%; white-space: normal; } }

@@ -60,7 +60,7 @@ export function buildFlow(sc, o) {
     const per = m.sources.map(() => []); nodes.forEach((n, i) => { if (n.slot) per[n.src]?.push(i); }); per.forEach((l) => l.sort((a, b) => nodes[b].rel - nodes[a].rel || nodes[b].p - nodes[a].p)); const order = []; for (let r = 0; r < 40; r++) for (const l of per) if (l[r] !== undefined) order.push(l[r]); F.order = order; F.model = m; F.tours.length = 0;
   }
   const focusing = Boolean(fk); const calmTour = calm && !F.tours.length;
-  if (!calm && sc.auto && !focusing && fx >= 0.4 && F.order.length && T >= F.next && F.tours.length < 2) {
+  if (!calm && sc.auto && !focusing && fx >= 0.4 && F.order.length && T >= F.next && F.tours.length < (sc.W < 640 ? 1 : 2)) {
     for (let tries = 0; tries < 12; tries++) { const ni = F.order[F.seq++ % F.order.length]; if (sc.app[ni] > 0.9 && sc.vis[ni] > 0.5 && !F.tours.some((x) => x.ni === ni)) { F.tours.push({ ni, t0: T }); break; } }
     F.next = T + TOUR_GAP;
   }
