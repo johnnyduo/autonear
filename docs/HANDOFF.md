@@ -44,7 +44,7 @@ The vault's `pending_owner` is the user's `0x…9988`. It becomes the owner only
 
 ## Open work, in order
 1. The user clicks Accept ownership with the 9988 wallet and reports what MetaMask shows; fix whatever breaks. Then try a real `grant_mandate` through `NearSteps`.
-2. A pending request the owner can really approve in Approvals: run a pipeline run that creates a `deploy_testnet` decision on `near-testnet` (needs an LLM key on the host that runs it; check whether production has one).
+2. A pending request the owner can really approve in Approvals: run a pipeline run that creates a `deploy_testnet` decision on `near-testnet`. LLM: the user uses Gemini only. A `gemini` provider exists (`LLM_PROVIDER=gemini`, `GEMINI_API_KEY`, `GEMINI_MODEL`, default `gemini-3.1-flash-lite`; `gemini-3.8-flash` answered 503 "high demand" on 2026-11-06; `gemini-2.5-*` is closed to new keys). A Gemini key is in `video/.env` (gitignored). Production still has `LLM_PROVIDER=none`: the user must set `LLM_PROVIDER` and `GEMINI_API_KEY` in Vercel (the operator token cannot read project env).
 3. Put the real testnet deployment into the app's history (the 14 transactions are only in `docs/testnet`).
 4. More independent non-social demand sources (every opportunity still says `LOW CONFIDENCE: only 2 independent non-social sources`); `data_indexing` and `ai_agents` have no on-chain corroboration.
 5. Bluesky credentials; optional MiroFish (needs LLM and Zep keys).

@@ -60,6 +60,8 @@ export const config = {
     provider: env('LLM_PROVIDER', 'none'),
     anthropicKey: env('ANTHROPIC_API_KEY'),
     anthropicModel: env('ANTHROPIC_MODEL', 'claude-sonnet-5-5'),
+    geminiKey: env('GEMINI_API_KEY'),
+    geminiModel: env('GEMINI_MODEL', 'gemini-3.1-flash-lite'),
     gatewayKey: env('AI_GATEWAY_API_KEY'),
     gatewayUrl: env('AI_GATEWAY_URL', 'https://ai-gateway.vercel.sh/v1/chat/completions'),
     gatewayModel: env('AI_GATEWAY_MODEL', 'anthropic/claude-sonnet-5-5'),

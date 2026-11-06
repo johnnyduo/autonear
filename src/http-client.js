@@ -23,7 +23,7 @@ export const ALLOWED_HOSTS = {
   credentialed: new Set(['bsky.social']),
   monitor: new Set(RPC_HOSTS),
   launch: new Set([...RPC_HOSTS, '1click.chaindefuser.com']),
-  llm: new Set(['api.anthropic.com', 'ai-gateway.vercel.sh']),
+  llm: new Set(['api.anthropic.com', 'ai-gateway.vercel.sh', 'generativelanguage.googleapis.com']),
 };
 
 async function readCapped(res, max) {
