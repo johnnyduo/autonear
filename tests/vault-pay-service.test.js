@@ -339,6 +339,15 @@ describe('vault report with payouts', { skip: skipNoBuilds }, () => {
     assert.equal(v.payouts.tokens[0].balance, null); assert.match(v.payouts.tokens[0].balanceError, /boom|ft_balance_of/);
     assert.equal(v.payouts.tokens[0].perPayCap, '40000000');
   });
+  test('concurrent public reports share ONE in-flight token balance read (no RPC fan-out)', async () => {
+    const world = await makeWorld();
+    const count = () => world.w.calls.filter((c) => c.params?.method_name === 'ft_balance_of').length;
+    await vaultReport(world.db, { fetchImpl: world.fetchImpl, balanceMaxAgeMs: 0 }); const n = count(); // also warms everything else
+    const reports = await Promise.all(Array.from({ length: 8 }, () => vaultReport(world.db, { fetchImpl: world.fetchImpl, balanceMaxAgeMs: 60_000 })));
+    const tokens = reports[0].vaults[0].payouts.tokens.length;
+    assert.ok(count() - n <= tokens, `at most one read per token for 8 concurrent reports, got ${count() - n}`);
+    assert.ok(reports.every((r) => r.vaults[0].payouts.tokens[0].balance === reports[0].vaults[0].payouts.tokens[0].balance));
+  });
   test('balance reads are cached per database for a few seconds (a polling UI is not one RPC per poll)', async () => {
     const world = await makeWorld();
     const count = () => world.w.calls.filter((c) => c.params?.method_name === 'ft_balance_of').length;

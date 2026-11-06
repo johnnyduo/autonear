@@ -95,7 +95,7 @@ export function createApp(deps) {
   // The sign-in message is bound to a domain. Behind a proxy the Host header is client-influenced, so a configured allowlist (PUBLIC_HOSTS) decides which domains can be signed for.
   const signInHost = (url) => { const h = url.host.toLowerCase(); if (publicHosts.length && !publicHosts.includes(h)) throw new PolicyError('sign-in is not available on this domain', 'input'); return url.host; };
   /** For receipt/deploy-data: an owner session may touch only requests bound to its own wallet; the operator token may touch any. */
-  const ownsDecision = async (who, id) => { if (!who.address) return; const d = await db.get('SELECT bound_signer FROM decisions WHERE id=?', [id]); if (!d || String(d.bound_signer ?? '').toLowerCase() !== who.address) throw new PolicyError('this request is bound to a different signer', 'signer'); };
+  const ownsDecision = async (who, id) => { if (!who.address) return; const d = await db.get('SELECT bound_signer, approver FROM decisions WHERE id=?', [id]); const mine = d && (String(d.bound_signer ?? '').toLowerCase() === who.address || String(d.approver ?? '').toLowerCase().endsWith(`+owner:${who.address}`)); if (!mine) throw new PolicyError('this request is bound to a different signer', 'signer'); }; // after the agent claims an owner-approved request the bound signer is the vault, so the approving owner is recognised by the approver record
   const sessionOf = async (req) => {
     const s = readSession(bearer(req), { secret: sessionSecret });
     if (!s) return null;

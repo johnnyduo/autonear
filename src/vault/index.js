@@ -584,8 +584,13 @@ async function vaultTokenBalance(db, vault, token, adapter, net, deps) {
   const ttl = deps.balanceMaxAgeMs ?? 10_000;
   let cache = balanceCaches.get(db); if (!cache) { cache = new Map(); balanceCaches.set(db, cache); }
   const key = `${vault.id}|${token}`; const hit = cache.get(key);
-  if (hit && now() - hit.at < ttl) return { balance: hit.balance };
-  try { const balance = await adapter.ftBalance({ net, token, account: vault.address, fetchImpl: deps.fetchImpl }); cache.set(key, { at: now(), balance }); return { balance }; } catch (e) { return { balance: hit?.balance ?? null, balanceError: safeMsg(e, deps.redact) }; }
+  if (hit?.value && now() - hit.at < ttl) return hit.value;
+  if (hit?.p) return hit.p; // concurrent readers share ONE in-flight RPC (public report: no fan-out)
+  const p = (async () => {
+    try { const balance = await adapter.ftBalance({ net, token, account: vault.address, fetchImpl: deps.fetchImpl }); return { balance }; } catch (e) { return { balance: hit?.value?.balance ?? null, balanceError: safeMsg(e, deps.redact) }; }
+  })();
+  cache.set(key, { p });
+  const value = await p; cache.set(key, { at: now(), value }); return value;
 }
 /** Token payouts block of a vault (payouts build only): the on-chain tokens with caps, this epoch's usage, what is left, the vault's own token balance, and the payees. */
 async function payoutsView(db, vault, s, grant, adapter, net, deps) {

@@ -190,3 +190,16 @@ test('POST /api/vault/activate: owner or operator only, scoped to the owner\'s o
   const noVault = await post('dec_grant', h); assert.equal(noVault.status, 404); assert.match(JSON.stringify(noVault.body), /not attached/);
   assert.equal((await post('nope', h)).status, 400);
 });
+
+test('the approving owner can reach the receipt route of a request the agent has since claimed (bound signer is then the vault)', async () => {
+  const app = await mk(); const db = app.__db;
+  const { body } = await signIn(app, owner); const h = { authorization: `Bearer ${body.token}` };
+  const ins = (id, approver) => db.run("INSERT INTO decisions(id,run_id,artifact_hash,action,chain_id,target,method,max_spend,expiry,nonce,payload,payload_hash,status,created_at,bound_signer,approver) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [id, null, 'h', 'pay_testnet', 'near-testnet', 'vault.testnet', 'pay', '1', Date.now() + 1e6, `n_${id}`, '{}', 'ph', 'approved', Date.now(), 'vault.testnet', approver]);
+  await ins('dec_mine_claimed', `mandate:vlt_1:1+owner:${owner.address.toLowerCase()}`);
+  await ins('dec_other_claimed', `mandate:vlt_1:1+owner:${other.address.toLowerCase()}`);
+  await ins('dec_auto_claimed', 'mandate:vlt_1:1');
+  const rc = (id) => call(app, `/api/decisions/${id}/receipt`, { method: 'POST', headers: h, body: JSON.stringify({ txHash: '1'.repeat(44) }) });
+  assert.notEqual((await rc('dec_mine_claimed')).status, 400, 'own approval passes the scope check');
+  assert.equal((await rc('dec_other_claimed')).status, 400);
+  assert.equal((await rc('dec_auto_claimed')).status, 400, 'an Auto payment nobody approved is operator-only');
+});
