@@ -5,6 +5,7 @@ import { fmtAmount, unitOf } from '../views/vault/format.js';
 import { historyLine, T } from './copy.js';
 import { mainVault } from './data.js';
 import { goto, href } from './nav.js';
+import run from './testnetRun.json';
 
 const word = (s) => (s.status === 'ok' ? (s.stale ? 'slow' : 'working') : s.status === 'disabled_by_owner' ? 'off' : s.status === 'not_configured' ? 'needs a key' : 'paused, retrying');
 
@@ -30,6 +31,17 @@ export default function Activity({ data, opts, base }) {
               <dl><dt>Kind</dt><dd>{e.kind} · {e.status}</dd><dt>Note</dt><dd>{e.detail}</dd>{e.txHash && <><dt>Transaction</dt><dd className="mono-v">{e.explorerUrl ? <a href={e.explorerUrl} target="_blank" rel="noreferrer noopener">{e.txHash}</a> : e.txHash}</dd></>}{e.hash && <><dt>Record</dt><dd className="mono-v">{e.hash}</dd></>}</dl>
             </details>
           </li>))}</ol> : <p className="faint">Nothing has happened yet.</p>}
+        <h3>Recorded run on NEAR testnet</h3>
+        <p className="faint">{run.scope} Run on {new Date(run.startedAt).toISOString().slice(0, 10)}. Steps marked "refused" were meant to be refused by the contract; the chain did refuse them.</p>
+        <ol className="tl">{run.txs.map((t) => {
+          const refused = !t.ok && /^NEGATIVE/.test(t.label);
+          return (
+            <li key={t.hash}>
+              <div><b>{t.label.replace(/^NEGATIVE\s*/, '')}</b><span className={`chip ${refused || t.ok ? 'ok' : ''}`}>{refused ? 'refused, as intended' : t.ok ? 'done' : 'failed'}</span></div>
+              <small className="mono-v"><a href={t.explorer} target="_blank" rel="noreferrer noopener">{t.hash.slice(0, 10)}…{t.hash.slice(-6)}</a> · signed by {t.signer.split('.')[0].slice(0, 22)}</small>
+            </li>
+          );
+        })}</ol>
         <h3>Where it reads</h3>
         <ul className="srcs compact">{sources.map((s) => <li key={s.id}><b>{s.name}</b><span>{word(s)}</span><small>{s.lastSuccess ? fmt.ago(s.lastSuccess) : 'never'}</small></li>)}</ul>
         <h3>Technical screens</h3>
