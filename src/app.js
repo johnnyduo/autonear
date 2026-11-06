@@ -17,7 +17,7 @@ import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant, activateVault, getVault } from './vault/index.js';
 import { createPayment, listPayments, recordPayment } from './payments.js';
 import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
-import { currentCouncil, journeyFor } from './council.js';
+import { currentCouncil, journeyFor, pickFocus, queueFor } from './council.js';
 import { getWatch, setWatch } from './watch.js';
 import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 import { buildSite, listView, view as siteView, pageResponse } from './sites/service.js';
@@ -160,9 +160,10 @@ export function createApp(deps) {
       return out(await setWatch(db, await body(req), who.actor, { sourceIds: CONNECTORS.map((c) => c.id) }));
     }
     if (p === '/api/council' && m === 'GET') {
-      const council = await currentCouncil(db); const focusId = (council.opportunities.find((o) => o.oppId === council.winner) ?? council.opportunities.find((o) => o.buildable) ?? council.opportunities[0])?.oppId;
+      const council = await currentCouncil(db); const queue = await queueFor(db, council);
+      const focusId = pickFocus(council.opportunities, { focus: url.searchParams.get('focus'), published: new Set(queue.filter((x) => x.page === 'published').map((x) => x.oppId)) });
       const mode = await getMode(db); const fe = council.opportunities.find((o) => o.oppId === focusId);
-      return out({ council, journey: focusId ? await journeyFor(db, focusId, { verdict: fe?.verdict, mode }) : null, mode });
+      return out({ council, journey: focusId ? await journeyFor(db, focusId, { verdict: fe?.verdict, pageReady: fe?.pageReady, mode }) : null, queue, mode });
     }
     if (p === '/api/sites' && m === 'GET') return out({ items: await listView(db, await currentCouncil(db)), thresholds: { go: 62, watch: 48 } });
     if ((g = p.match(/^\/api\/sites\/([\w-]{1,64})\/build$/)) && m === 'POST') { // owner only: one model call per product, then the page is stored

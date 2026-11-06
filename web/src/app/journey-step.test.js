@@ -110,3 +110,36 @@ test('Contract row for later states quotes the stored outcome; a declined reques
   assert.equal(row(statusRows({ journey: J('failed', 'done', 'The deployment did not verify') }, W), 'contract').tone, 'bad');
   const ok = row(statusRows({ journey: J('shipped', 'done', 'Shipped and healthy') }, W), 'contract'); assert.equal(ok.text, 'Shipped and healthy'); assert.equal(ok.tone, 'ok');
 });
+
+test('watch and page ready, owner session: "Approve and build the page", override off, no warning, the no-contract head', () => {
+  const s = step({ verdict: 'watch', pageReady: true });
+  assert.equal(s.kind, 'approve'); assert.equal(s.actions.build.label, 'Approve and build the page'); assert.equal(s.actions.build.override, false); assert.equal(s.actions.build.warn, false);
+  assert.equal(s.warn, ''); assert.equal(s.head, 'The score clears 62. No contract exists for this product yet, so only the page is built.');
+  assert.equal(step({ verdict: 'watch', pageReady: true, goAt: 0.7 }).head, T.journey.headPageReady(70));
+  assert.equal(step({ verdict: 'watch', pageReady: false }).actions.build.override, true, 'watch that is not page ready keeps the owner-call button');
+  assert.equal(step({ verdict: 'go', pageReady: true }).head, T.journey.headApprove);
+});
+
+test('watch and page ready, nobody may write: no button, the reason, still no warning', () => {
+  for (const [owner, why] of [[NONE, T.journey.connect], [GUEST, T.readOnly]]) {
+    const s = step({ verdict: 'watch', pageReady: true, owner, canWrite: false });
+    assert.equal(s.kind, 'locked'); assert.equal(s.actions.build, null); assert.equal(s.reason, why); assert.equal(s.warn, ''); assert.equal(s.head, T.journey.headPageReady(62));
+  }
+  assert.equal(step({ verdict: 'watch', pageReady: true, demo: true }).actions.build, null);
+});
+
+test('drop stays refused even if a stale flag says page ready; a built page still wins over the flag', () => {
+  assert.equal(step({ verdict: 'drop', pageReady: true }).kind, 'drop');
+  assert.equal(step({ verdict: 'watch', pageReady: true, page: BUILT }).kind, 'built');
+});
+
+test('contract row: a product without a template says so, in every outcome state; a product with one keeps the host text', () => {
+  const J = (contractTemplate, state, buildState = 'todo') => ({ contractTemplate, outcome: { state, headline: 'h' }, stages: [{ id: 'build', state: buildState }] });
+  const contract = (journey) => statusRows({ journey, page: null }, W).find((r) => r.key === 'contract');
+  for (const state of ['not_started', 'ready', 'held', 'in_progress', 'waiting']) {
+    const r = contract(J(false, state)); assert.equal(r.text, 'No contract exists for this product yet'); assert.equal(r.tone, 'idle');
+  }
+  assert.equal(contract(J(true, 'held')).text, T.journey.contractHost);
+  assert.equal(contract(J(true, 'ready')).text, T.journey.contractIdle);
+  assert.equal(contract({ outcome: { state: 'held', headline: 'h' }, stages: [{ id: 'build', state: 'todo' }] }).text, T.journey.contractHost, 'an older server without the flag behaves as before');
+});

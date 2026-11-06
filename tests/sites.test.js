@@ -273,7 +273,7 @@ async function seeded() {
   const conns = [mk('s1', 6), mk('s2', 6)];
   await registerSources(db, conns); for (const c of conns) await ingestSource(db, c); await refreshOpportunities(db);
   // a fixed, fresh council result so verdicts are known: treasury GO, signing WATCH, intents DROP
-  const e = (oppId, topic, verdict, support) => ({ oppId, topic, title: oppId, verdict, support, score: 0.6, confidence: 0.6, reason: `fixture reason for ${verdict}`, buildable: verdict === 'go', votes: [] });
+  const e = (oppId, topic, verdict, support) => ({ oppId, topic, title: oppId, verdict, support, score: 0.6, confidence: 0.6, reason: `fixture reason for ${verdict}`, buildable: verdict === 'go', contractTemplate: topic === 'treasury', pageReady: verdict === 'go', votes: [] });
   for (const [id, topic] of [['opp_signing', 'signing'], ['opp_intents', 'intents']]) await db.run("INSERT OR IGNORE INTO opportunities(id,title,thesis,problem,audience,topic,score_breakdown,score,confidence,warnings,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'{}',0.5,0.5,'[]','open',?,?)", [id, `Fixture ${topic}`, 'A hypothesis.', 'p', 'a', topic, Date.now(), Date.now()]);
   const council = { at: Date.now(), rules: {}, opportunities: [e('opp_treasury', 'treasury', 'go', 0.71), e('opp_signing', 'signing', 'watch', 0.55), e('opp_intents', 'intents', 'drop', 0.2)], winner: 'opp_treasury' };
   await db.run("INSERT INTO kv(k,v) VALUES('council:last',?)", [JSON.stringify(council)]);
@@ -319,6 +319,23 @@ test('endpoints: WATCH without override is 409, with override it builds and the 
   const audit = await app.db.all("SELECT detail FROM audit WHERE action='site.build'"); assert.equal(audit.length, 1); assert.equal(JSON.parse(audit[0].detail).override, true);
 }));
 
+test('endpoints: a page-ready WATCH product builds without override and is not marked as an owner override; a WATCH that is not page ready still needs it', () => withGemini([good(), good()], async (calls) => {
+  const app = await mkApp();
+  const c = JSON.parse((await app.db.get("SELECT v FROM kv WHERE k='council:last'")).v);
+  c.opportunities.find((x) => x.oppId === 'opp_signing').pageReady = true; c.opportunities.find((x) => x.oppId === 'opp_signing').support = 0.69;
+  await app.db.run("UPDATE kv SET v=? WHERE k='council:last'", [JSON.stringify(c)]);
+  const list = (await call(app, '/api/sites')).body.items; const sg = list.find((x) => x.slug === 'signing');
+  assert.deepEqual([sg.buildable, sg.can_override, sg.page_ready, sg.contract_template, sg.verdict], [true, false, true, false, 'watch']);
+  const tr = list.find((x) => x.slug === 'treasury'); assert.deepEqual([tr.buildable, tr.can_override, tr.page_ready, tr.contract_template], [true, false, true, true]);
+  const ok = await post(app, '/api/sites/opp_signing/build', {}); assert.equal(ok.status, 201, JSON.stringify(ok.body));
+  assert.equal(ok.body.site.override, false); assert.equal(ok.body.site.verdict, 'watch'); assert.equal(calls.length, 1);
+  assert.equal(JSON.parse((await app.db.all("SELECT detail FROM audit WHERE action='site.build'"))[0].detail).override, false);
+  assert.equal((await post(app, '/api/sites/opp_intents/build', {})).status, 409); // DROP is still refused
+  assert.equal((await post(app, '/api/sites/opp_intents/build', { override: true })).status, 409);
+  const plain = (await call(app, '/api/sites')).body.items.find((x) => x.slug === 'intents');
+  assert.deepEqual([plain.buildable, plain.can_override, plain.page_ready], [false, false, false]);
+}));
+
 test('endpoints: build is idempotent (no second model call); regenerate asks again', () => withGemini([good(), { ...good(), cta: 'Another' }], async (calls) => {
   const app = await mkApp();
   const a = await post(app, '/api/sites/opp_treasury/build'); const b = await post(app, '/api/sites/opp_treasury/build');
@@ -338,6 +355,7 @@ test('endpoints: GET /api/sites is public and lists the council products', () =>
   const before = await call(app, '/api/sites'); assert.equal(before.status, 200);
   const t = before.body.items.find((x) => x.slug === 'treasury'); assert.deepEqual([t.opp_id, t.verdict, t.buildable, t.hash, t.published], ['opp_treasury', 'go', true, null, false]);
   assert.equal(before.body.items.find((x) => x.slug === 'signing').buildable, false);
+  assert.equal(before.body.items.find((x) => x.slug === 'signing').can_override, true);
   const built = await post(app, '/api/sites/opp_treasury/build');
   await post(app, '/api/sites/treasury/publish', { hash: built.body.site.hash });
   const after = (await call(app, '/api/sites')).body.items.find((x) => x.slug === 'treasury');

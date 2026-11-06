@@ -81,6 +81,7 @@ export const T = {
     connect: 'Connect the owner wallet to approve.',
     headApprove: 'The council backs it. Approve and the agents write the product page.',
     headApproveLocked: 'The owner approves, then the agents write the product page.',
+    headPageReady: (goAt) => `The score clears ${goAt}. No contract exists for this product yet, so only the page is built.`,
     headWatch: 'This product is on watch. The owner can still build the page.',
     headDrop: 'The council says drop. No page is built for this product.',
     headBuilding: 'The agents are writing the page.',
@@ -93,12 +94,15 @@ export const T = {
     approveNote: 'Your approval is saved in the audit log. It is not a transaction on chain.',
     rowPage: 'Page', rowContract: 'Contract',
     pageNone: 'Not built yet', pageBuilding: 'Being written now', pageBuilt: 'Built, not published', pageNewer: 'Newer version not published',
+    contractNone: 'No contract exists for this product yet',
     contractHost: 'Waiting for the agent host: it needs the Rust build host',
     contractIdle: 'Not started', contractResearch: 'Research in progress',
     theaterLabel: 'Replay of a stored build. The page was written once by Gemini from stored evidence.',
     theaterClose: 'Close', theaterReplay: 'Replay',
     theaterFail: 'The page could not be built.',
     link: 'Public link', copyLink: 'Copy link',
+    queue: 'Up next', queueAll: (n) => `Show all (${n})`, queueFewer: 'Show fewer',
+    tagPublished: 'Published', tagBuilt: 'Page built', tagReady: 'Page ready', tagNeeds: (n) => `Needs ${n} to qualify`, tagNoContract: 'no contract yet',
   },
 };
 

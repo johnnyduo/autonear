@@ -120,6 +120,17 @@
 .co-sc-rows { display: grid; gap: .3em; margin: .1em 0 0; padding-top: .55em; border-top: 1px solid var(--line); }
 .co-sc-row { display: grid; grid-template-columns: 5.2em 1fr; gap: .6em; align-items: baseline; font-size: .92em; } .co-sc-row dt { font: 600 .9em var(--f-mono); color: var(--chalk-3); text-transform: uppercase; letter-spacing: .06em; } .co-sc-row dd { margin: 0; color: var(--tone, var(--chalk)); }
 .co-sc-row.ok { --tone: #59ffd1; } .co-sc-row.warn { --tone: #f2b84b; } .co-sc-row.bad { --tone: #ff6b8b; } .co-sc-row.idle { --tone: #8c8b82; }
+.co-sc-queue { list-style: none; margin: 0; padding: 0; display: grid; gap: .3em; }
+.co-sc-q { display: grid; grid-template-columns: 1fr 2.2em; gap: .15em .6em; align-items: baseline; width: 100%; padding: .45em .65em; border-radius: .8em; border: 1px solid var(--line); background: transparent; color: var(--chalk); text-align: left; font: inherit; cursor: pointer; }
+.co-sc-q:hover { border-color: #7ee9ff; } .co-sc-q:focus-visible { outline: 2px solid #7ee9ff; outline-offset: 2px; }
+.co-sc-q[aria-current='true'] { border-color: #c6f432; background: color-mix(in srgb, #c6f432 6%, transparent); }
+.co-sc-q-t { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; } .co-sc-q-n { font: 600 1em var(--f-mono); text-align: right; color: var(--chalk-2); }
+.co-sc-q-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .3em; }
+.co-sc-tag { font: 600 .78em var(--f-mono); letter-spacing: .04em; padding: .12em .55em; border-radius: 999px; border: 1px solid var(--tone, #8c8b82); color: var(--tone, #8c8b82); }
+.co-sc-tag.published { --tone: #59ffd1; } .co-sc-tag.built { --tone: #80d9ff; } .co-sc-tag.ready { --tone: #c6f432; } .co-sc-tag.needs, .co-sc-tag.none { --tone: #8c8b82; }
+.co-sc-qmore { margin-top: .4em; padding: .3em .2em; border: 0; background: none; color: #7ee9ff; font: 500 .95em var(--f-mono); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.co-sc-qmore:focus-visible { outline: 2px solid #7ee9ff; outline-offset: 2px; }
+@media (pointer: coarse) { .co-sc-q { min-height: 44px; } .co-sc-qmore { min-height: 44px; } }
 @media (pointer: coarse) { .co-sc-btn, .co-dv-btn { min-height: 44px; } }
 /* Develop theater: the stored page and the replay of its build, over the constellation */
 .co-dv { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 16px; background: color-mix(in srgb, #05070a 88%, transparent); backdrop-filter: blur(6px); font-size: 14px; }

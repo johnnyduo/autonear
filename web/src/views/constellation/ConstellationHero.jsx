@@ -13,6 +13,7 @@ import { Scene } from './scene.js';
 import { ListView } from './ListView.jsx';
 import { focusEntry } from './council-star.js';
 import ScoreBox from './ScoreBox.jsx';
+import { queueHead } from '../../app/queue-model.js';
 import AgentFeed, { Typed } from './AgentFeed.jsx';
 import { ROLES, isRecent, lastIngest, roleStates, CountUp, useTyped } from './shared.js';
 import { chipState, eventMeta, excerptOf, tickNumbers, shortReason } from '../../app/live-text.js';
@@ -197,8 +198,11 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   const [star, setStar] = useState('evidence');
   useEffect(() => { onStar?.(star); }, [star, onStar]);
   useEffect(() => { const sc = sceneRef.current; if (sc) { const sw = stage.current?.clientWidth ?? 0; sc.rightInset = star === 'council' && sw > 900 ? (demo ? Math.round(sw * 0.06) : Math.min(380, Math.max(300, sw * 0.24)) + 28) : 0; } }); // landing: the card floats over the right edge, so the star keeps most of the width and sits further right
-  const councilApi = useApi('/api/council', { poll: 30000, enabled: !demo });
-  const councilData = demo ? demoCouncil : councilApi.data; // the landing passes example council data; nothing is fetched then
+  const [focusId, setFocusId] = useState(null); // an Up next row the owner picked; null lets the server choose the queue head
+  const councilApi = useApi(focusId ? `/api/council?focus=${encodeURIComponent(focusId)}` : '/api/council', { poll: 30000, enabled: !demo });
+  const lastCouncil = useRef(null); if (councilApi.data) lastCouncil.current = councilApi.data; // kept while the next product loads, so the box and the star do not blank
+  const councilData = demo ? demoCouncil : councilApi.data ?? lastCouncil.current; // the landing passes an illustrated council; nothing is fetched then
+  const advance = useCallback((fresh) => setFocusId(queueHead(fresh?.queue) ?? fresh?.journey?.oppId ?? null), []);
   const [hoverK, setHoverK] = useState(null); const [pinnedK, setPinnedK] = useState(null); const [focusK, setFocusK] = useState(null);
   const [filter, setFilter] = useState({ srcOff: new Set(), topicOff: new Set() });
   const [replay, setReplay] = useState({ active: false, playing: false, pos: 0, mode: 'ingest', cur: null });
@@ -462,7 +466,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
               </li>
             ))}
           </ul>
-          {star === 'council' && view === 'sphere' && !demo && councilData && <ScoreBox data={councilData} sceneRef={sceneRef} reload={councilApi.reload} wide={(stage.current?.clientWidth ?? 0) > 900} />}
+          {star === 'council' && view === 'sphere' && !demo && councilData && <ScoreBox data={councilData} sceneRef={sceneRef} reload={councilApi.reload} onFocus={setFocusId} onAdvance={advance} wide={(stage.current?.clientWidth ?? 0) > 900} />}
           {shown && (
             <aside ref={tip} className={`co-card ${pinnedK ? 'pinned' : ''} ${kbFocus ? 'kb' : ''}`} data-ui aria-label={pinnedK ? 'Pinned node details' : 'Node details'}>
               <Card k={shown} councilData={councilData} model={model} srcInfo={srcInfo} run={shownRun} live={live} runEvents={runEvents} evLoading={Boolean(shownRun) && runEvents === null} calm={calm} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ingestSource, registerSources } from '../src/ingest.js';
 import { refreshOpportunities } from '../src/scoring.js';
-import { RULES, SEATS, rulesHash, seatId, evaluate, convene, currentCouncil, councilGate, journeyFor, verdictOf, votesFor } from '../src/council.js';
+import { RULES, SEATS, rulesHash, seatId, evaluate, convene, currentCouncil, councilGate, journeyFor, verdictOf, votesFor, pageFields, pickFocus, queueFor, BUILDABLE_TOPICS } from '../src/council.js';
 import { createApp } from '../src/app.js';
 import { getOpp } from '../src/store.js';
 import { slugOf } from '../src/sites/schema.js';
@@ -143,4 +143,65 @@ test('journey: the Product page stage and the page object follow the sites table
   assert.equal(stage(j).state, 'done'); assert.equal(stage(j).detail, `published at /develop/${slug}`);
   assert.deepEqual(j.page, { slug, hash: 'bbbbbbbbbb', published: true, publishedHash: 'aaaaaaaaaa', built: true });
   assert.equal(j.outcome.progress.total, j.stages.length);
+});
+
+test('pageReady repeats the three go conditions without the template; the verdict and the rules hash are untouched', async () => {
+  const hash = rulesHash();
+  assert.deepEqual(pageFields({ topic: 'signing', support: 0.69, confidence: 0.6, vetoes: [] }), { contractTemplate: false, pageReady: true });
+  assert.deepEqual(pageFields({ topic: 'treasury', support: 0.78, confidence: 0.6, vetoes: [] }), { contractTemplate: true, pageReady: true });
+  assert.equal(pageFields({ topic: 'signing', support: RULES.goAt, confidence: RULES.minConfidence, vetoes: [] }).pageReady, true, 'the thresholds are inclusive, like goGrade');
+  assert.equal(pageFields({ topic: 'signing', support: 0.619, confidence: 0.9, vetoes: [] }).pageReady, false);
+  assert.equal(pageFields({ topic: 'signing', support: 0.7, confidence: 0.44, vetoes: [] }).pageReady, false);
+  assert.equal(pageFields({ topic: 'signing', support: 0.7, confidence: 0.9, vetoes: ['Skeptic'] }).pageReady, false);
+  assert.equal(pageFields({ topic: 'x', support: 0.7, confidence: null, vetoes: [] }).pageReady, false);
+  const db = await seeded(); const c = await evaluate(db);
+  for (const o of c.opportunities) {
+    assert.equal(o.contractTemplate, BUILDABLE_TOPICS.includes(o.topic));
+    if (o.verdict === 'go') assert.equal(o.pageReady, true);
+    if (o.pageReady && !o.contractTemplate) assert.equal(o.verdict, 'watch');
+    if (o.verdict === 'drop') assert.equal(o.pageReady, false);
+  }
+  assert.equal(rulesHash(), hash);
+});
+
+test('a council stored before the page fields existed gets them from its stored numbers', async () => {
+  const db = await seeded();
+  const old = { at: Date.now(), opportunities: [{ oppId: 'a', topic: 'signing', verdict: 'watch', support: 0.69, confidence: 0.6, vetoes: [] }, { oppId: 'b', topic: 'treasury', verdict: 'watch', support: 0.5, confidence: 0.6, vetoes: [] }] };
+  await db.run("INSERT INTO kv(k,v) VALUES('council:last',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v", [JSON.stringify(old)]);
+  const c = await currentCouncil(db); assert.deepEqual(c.opportunities.map((o) => [o.pageReady, o.contractTemplate]), [[true, false], [false, true]]);
+});
+
+test('pickFocus: a valid focus wins, else the first page-ready product without a published page, else the winner', () => {
+  const o = (oppId, verdict, pageReady, buildable = false) => ({ oppId, verdict, pageReady, buildable });
+  const list = [o('t', 'go', true, true), o('s', 'watch', true), o('i', 'watch', true), o('w', 'watch', false)];
+  assert.equal(pickFocus(list), 't');
+  assert.equal(pickFocus(list, { published: new Set(['t']) }), 's');
+  assert.equal(pickFocus(list, { published: new Set(['t', 's']) }), 'i');
+  assert.equal(pickFocus(list, { published: new Set(['t', 's', 'i']) }), 't', 'every page-ready product published: back to the winner');
+  assert.equal(pickFocus(list, { focus: 'w', published: new Set(['t']) }), 'w');
+  assert.equal(pickFocus(list, { focus: 'nope', published: new Set(['t']) }), 's', 'an unknown focus is ignored');
+  assert.equal(pickFocus([o('w', 'watch', false)]), 'w'); assert.equal(pickFocus([]), null);
+});
+
+test('GET /api/council: queue for every product in rank order, the default focus is the queue head and ?focus= overrides it', async () => {
+  const db = await seeded(); const c = await currentCouncil(db); const tid = c.opportunities[0].oppId;
+  for (const [id, topic] of [['opp_signing', 'signing'], ['opp_wallet', 'wallet']]) await db.run("INSERT INTO opportunities(id,title,thesis,problem,audience,topic,score_breakdown,score,confidence,warnings,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'{}',0.7,0.6,'[]','open',?,?)", [id, `Fixture ${topic}`, 'x', 'x', 'x', topic, 1, 1]);
+  const e = (oppId, topic, title, verdict, support, pageReady) => ({ oppId, topic, title, verdict, support, buildable: topic === 'treasury', pageReady, contractTemplate: topic === 'treasury', votes: [] });
+  const fixture = { at: Date.now(), winner: tid, opportunities: [e(tid, 'treasury', 'Treasury', 'go', 0.78, true), e('opp_signing', 'signing', 'Signing', 'watch', 0.69, true), e('opp_wallet', 'wallet', 'Wallet', 'watch', 0.5, false)] };
+  await db.run("INSERT INTO kv(k,v) VALUES('council:last',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v", [JSON.stringify(fixture)]);
+  const app = createApp({ db, fetchImpl: async () => { throw new Error('offline'); } });
+  const get = async (q = '') => (await app(new Request(`http://x/api/council${q}`))).json();
+  let b = await get();
+  assert.equal(b.journey.oppId, tid); assert.equal(b.journey.contractTemplate, true);
+  assert.deepEqual(b.queue.map((x) => [x.oppId, x.page, x.pageReady, x.contractTemplate, x.verdict]), [[tid, 'none', true, true, 'go'], ['opp_signing', 'none', true, false, 'watch'], ['opp_wallet', 'none', false, false, 'watch']]);
+  assert.ok(b.queue.every((x) => x.slug && x.title && typeof x.support === 'number'));
+  const slug = slugOf(await getOpp(db, tid));
+  await saveSite(db, { slug, oppId: tid, hash: 'aaaaaaaaaa', content: {}, meta: {}, createdAt: 1000 });
+  b = await get(); assert.equal(b.journey.oppId, tid, 'a built page that is not published keeps the head'); assert.equal(b.queue[0].page, 'built');
+  await publish(db, slug, 'aaaaaaaaaa');
+  b = await get(); assert.equal(b.journey.oppId, 'opp_signing', 'the head moves on after publish'); assert.equal(b.queue[0].page, 'published');
+  assert.equal(b.journey.contractTemplate, false); assert.equal(b.journey.stages.find((x) => x.id === 'develop').state, 'active');
+  b = await get('?focus=opp_wallet'); assert.equal(b.journey.oppId, 'opp_wallet'); assert.equal(b.queue.length, 3);
+  b = await get('?focus=opp_missing'); assert.equal(b.journey.oppId, 'opp_signing');
+  assert.equal((await queueFor(db, fixture)).length, 3);
 });

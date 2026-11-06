@@ -1,7 +1,7 @@
 // Pure logic for the "Next step" block under the council score (no React, no DOM), so it runs in plain Node tests.
 // Inputs are stored facts from GET /api/council: the verdict, journey.page ({ slug, hash, published, publishedHash } or null),
 // journey.stages and journey.outcome. Nothing here starts a build; the owner's click does, through POST /api/sites/<opp>/build.
-import { approveAction } from './build-model.js';
+import { approveAction, GO_AT, score } from './build-model.js';
 
 const lower = (v) => String(v ?? '').toLowerCase();
 
@@ -18,11 +18,12 @@ export function writeBlock({ owner, canWrite, demo }, words) {
 
 /**
  * What the block shows and which buttons it has.
+ * `pageReady` (the score clears the build threshold, no veto) lets a WATCH product be built without the owner's override: only the page is built, no contract exists.
  * kind: building | approve | locked | drop | built | published
  * actions: build ({label, override, warn} or null), watch (the stored page can be replayed by anyone), publish (owner only)
  * `reason` explains a missing owner button in words, `link` is the public path once the page is public.
  */
-export function nextStep({ verdict, owner, canWrite, demo, page, building }, words) {
+export function nextStep({ verdict, pageReady = false, goAt = GO_AT, owner, canWrite, demo, page, building }, words) {
   const v = lower(verdict);
   const reason = writeBlock({ owner, canWrite, demo }, words);
   const may = !reason;
@@ -35,9 +36,9 @@ export function nextStep({ verdict, owner, canWrite, demo, page, building }, wor
     return { kind: 'built', head: page.published ? words.headNewer : words.headBuilt, actions: { ...none, watch: true, publish: may }, reason: may ? '' : reason, link, warn: '' };
   }
   if (v !== 'go' && v !== 'watch') return { kind: 'drop', head: words.headDrop, actions: none, reason: '', link: null, warn: '' };
-  const a = approveAction({ verdict: v });
+  const a = approveAction({ verdict: v, pageReady });
   const build = { label: a.warn ? a.label : words.approve, override: a.override, warn: a.warn };
-  const head = a.warn ? words.headWatch : may ? words.headApprove : words.headApproveLocked;
+  const head = a.warn ? words.headWatch : v === 'watch' ? words.headPageReady(score(goAt)) : may ? words.headApprove : words.headApproveLocked;
   if (!may) return { kind: 'locked', head, actions: none, reason, link: null, warn: a.warn ? words.watchWarn : '' };
   return { kind: 'approve', head, actions: { ...none, build }, reason: '', link: null, warn: a.warn ? words.watchWarn : '' };
 }
@@ -53,7 +54,8 @@ export function statusRows({ journey, page, building }, words) {
         : { text: words.pageNone, tone: 'idle' };
   const oc = journey?.outcome; const build = stageOf(journey, 'build');
   let contract;
-  if (!oc) contract = { text: words.contractIdle, tone: 'idle' };
+  if (journey?.contractTemplate === false) contract = { text: words.contractNone, tone: 'idle' };
+  else if (!oc) contract = { text: words.contractIdle, tone: 'idle' };
   else if (oc.state === 'held' && build?.state !== 'done') contract = { text: words.contractHost, tone: 'warn' };
   else if (oc.state === 'not_started' || oc.state === 'ready') contract = { text: words.contractIdle, tone: 'idle' };
   else if (oc.state === 'in_progress') contract = { text: words.contractResearch, tone: 'warn' };

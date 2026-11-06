@@ -72,6 +72,14 @@ export function verdictOf(S, confidence, votes, buildable) {
   return { verdict: 'drop', vetoes, reason: `The score of ${q(S)} out of 100 is under the ${q(RULES.watchAt)} needed to keep watching.` };
 }
 
+/** Pure: the two fields added after the verdict. pageReady repeats the three go conditions of verdictOf without the contract-template one, so a product can be page ready and still WATCH. */
+export const pageFields = (e, S = e.support) => ({
+  contractTemplate: BUILDABLE_TOPICS.includes(e.topic),
+  pageReady: (S ?? 0) >= RULES.goAt && (e.confidence ?? 0) >= RULES.minConfidence && !(e.vetoes ?? []).length,
+});
+/** A result stored before these fields existed gets them from its stored numbers. */
+const withPageFields = (c) => ({ ...c, opportunities: (c.opportunities ?? []).map((e) => ('pageReady' in e ? e : { ...e, ...pageFields(e) })) });
+
 /** Pure over the database: every opportunity, ranked. Does not write. */
 export async function evaluate(db, { nowMs = Date.now() } = {}) {
   const opps = await db.all('SELECT * FROM opportunities');
@@ -84,6 +92,7 @@ export async function evaluate(db, { nowMs = Date.now() } = {}) {
     const S = votes.reduce((a, x) => a + x.weight * x.support, 0); const v = verdictOf(S, o.confidence ?? 0, votes, buildable);
     for (const x of votes) x.digest = sha(canon({ seat: seatId(x.role), opp: o.id, weight: x.weight, support: x.support, reason: x.reason }));
     const entry = { oppId: o.id, topic: o.topic, title: o.title, score: o.score, confidence: o.confidence, support: Number(S.toFixed(3)), momentum, recent, prior, buildable, ...v, votes };
+    Object.assign(entry, pageFields(entry, S));
     entry.digest = sha(canon({ opp: o.id, support: entry.support, verdict: entry.verdict, vetoes: entry.vetoes, votes: votes.map((x) => x.digest) }));
     out.push(entry);
   }
@@ -105,7 +114,7 @@ export async function convene(db, { trigger = 'scheduler', nowMs = Date.now() } 
 /** The stored session if it is fresh, else a new one. */
 export async function currentCouncil(db, { maxAgeMs = RULES.freshMs } = {}) {
   const last = parse((await db.get("SELECT v FROM kv WHERE k='council:last'"))?.v, null);
-  if (last && Date.now() - last.at <= maxAgeMs) return last;
+  if (last && Date.now() - last.at <= maxAgeMs) return withPageFields(last);
   return convene(db, { trigger: 'on-demand' });
 }
 
@@ -119,8 +128,26 @@ export async function councilGate(db, decision, env = process.env) {
   return { ok: e.verdict === 'go', reason: `council verdict is ${e.verdict}: ${e.reason}`, entry: e };
 }
 
+/** Pure: which product the Next step block shows. A valid `focus` wins; otherwise the first page-ready product by rank whose page is not published; otherwise the winner, the first with a template, the first. */
+export function pickFocus(opportunities, { focus = null, published = new Set() } = {}) {
+  const ids = new Set(opportunities.map((o) => o.oppId));
+  if (focus && ids.has(focus)) return focus;
+  return (opportunities.find((o) => o.pageReady && !published.has(o.oppId)) ?? opportunities.find((o) => o.verdict === 'go') ?? opportunities.find((o) => o.buildable) ?? opportunities[0])?.oppId ?? null;
+}
+
+/** One small row per product in rank order, with the state of its stored page. */
+export async function queueFor(db, council) {
+  const rows = [];
+  for (const o of council.opportunities) {
+    const opp = await getOpp(db, o.oppId); const slug = opp ? slugOf(opp) : null;
+    const page = !slug ? 'none' : (await latestPublished(db, slug)) ? 'published' : (await latestBuilt(db, slug)) ? 'built' : 'none';
+    rows.push({ oppId: o.oppId, title: o.title, slug, support: o.support, verdict: o.verdict, pageReady: Boolean(o.pageReady), contractTemplate: Boolean(o.contractTemplate), page });
+  }
+  return rows;
+}
+
 /** Real state of the journey from verdict to a monitored deployment, and the FINAL JUDGEMENT of where that product stands. Every field is read from stored runs, decisions, deployments and monitor results. */
-export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } = {}) {
+export async function journeyFor(db, oppId, { verdict = null, mode = 'manual', pageReady = false } = {}) {
   const run = await db.get('SELECT * FROM runs WHERE opportunity_id=? ORDER BY started_at DESC LIMIT 1', [oppId]);
   const roles = {}; let artifacts = [];
   if (run) {
@@ -143,7 +170,7 @@ export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } 
   const page = newest ? { slug, hash: newest.hash, published: Boolean(pub), publishedHash: pub?.hash ?? null, built: true } : null;
   const stages = [
     { id: 'research', label: 'Research', state: !run ? 'todo' : run.state === 'running' || run.state === 'queued' ? 'active' : failedRun ? 'blocked' : 'done', detail: run ? `run ${run.state}` : 'no run yet' },
-    { id: 'develop', label: 'Product page', state: page ? 'done' : verdict === 'go' ? 'active' : 'todo', detail: page ? (page.published ? `published at /develop/${slug}` : 'page stored, not published') : 'no page yet' },
+    { id: 'develop', label: 'Product page', state: page ? 'done' : verdict === 'go' || pageReady ? 'active' : 'todo', detail: page ? (page.published ? `published at /develop/${slug}` : 'page stored, not published') : 'no page yet' },
     { id: 'build', label: 'Build and check', state: st(built, run && !built && run.state === 'running', researchDone && !built), detail: built ? 'checked contract build stored' : researchDone ? 'no checked build yet (needs a build host)' : 'waiting' },
     { id: 'decision', label: 'Decision', state: st(Boolean(decision) && !declined, built && !decision, declined), detail: decision ? `decision ${expired ? 'expired' : decision.status}` : 'not created yet' },
     { id: 'approve', label: byAgent ? 'Agent executes in the limits' : 'Owner approves and signs', state: st(Boolean(decision?.approver) || Boolean(deployment), decision?.status === 'pending' && !expired, declined), detail: decision?.approver ? `approved by ${byAgent ? 'the agent inside the owner limits' : 'the owner'}` : declined ? 'not approved' : 'waiting' },
@@ -164,5 +191,5 @@ export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } 
   else if (run && ['running', 'queued'].includes(run.state)) outcome = { state: 'in_progress', headline: 'Research in progress', detail: `Run ${run.state}.`, next: 'The seven roles run one after another.' };
   else if (verdict === 'go') outcome = { state: 'ready', headline: 'Backed by the council', detail: 'No run has started for this product yet.', next: 'The next scheduled check starts the research.' };
   else outcome = { state: 'not_started', headline: verdict ? `Council says ${verdict}` : 'Not started', detail: 'Nothing is being built for this product.', next: 'The council votes again on the next check.' };
-  return { oppId, run: run ? { id: run.id, state: run.state, startedAt: run.started_at, endedAt: run.ended_at, roles } : null, decision: decision ? { id: decision.id, status: expired ? 'expired' : decision.status, byAgent } : null, deployment: deployment ? { id: deployment.id, status: deployment.status, explorer: deployment.explorer_url, account: deployment.account, network: deployment.network } : null, page, stages, outcome: { ...outcome, progress: { done, total: stages.length } } };
+  return { oppId, contractTemplate: Boolean(opp && BUILDABLE_TOPICS.includes(opp.topic)), run: run ? { id: run.id, state: run.state, startedAt: run.started_at, endedAt: run.ended_at, roles } : null, decision: decision ? { id: decision.id, status: expired ? 'expired' : decision.status, byAgent } : null, deployment: deployment ? { id: deployment.id, status: deployment.status, explorer: deployment.explorer_url, account: deployment.account, network: deployment.network } : null, page, stages, outcome: { ...outcome, progress: { done, total: stages.length } } };
 }

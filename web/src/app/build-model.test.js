@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { approveAction, approveBlock, buildingLine, councilEntry, currentStep, defaultSelection, elapsedText, goAtOf, hasSite, needsText, publishedIsCurrent, rankSites, score, seatBars, siteFromReply, siteLinks, stepState, swarmView, verdictLabel, verdictTone, visibleRows } from './build-model.js';
+import { isPageReady, approveAction, approveBlock, buildingLine, councilEntry, currentStep, defaultSelection, elapsedText, goAtOf, hasSite, needsText, publishedIsCurrent, rankSites, score, seatBars, siteFromReply, siteLinks, stepState, swarmView, verdictLabel, verdictTone, visibleRows } from './build-model.js';
 
 const S = (o) => ({ opp_id: o.id, slug: o.id, title: o.title ?? o.id, verdict: o.v ?? 'go', support: o.s, buildable: true, hash: o.h ?? null, published: o.p ?? false, ...o.x });
 const sites = [S({ id: 'b', s: 0.55, v: 'watch' }), S({ id: 'a', s: 0.81 }), S({ id: 'c', s: 0.55, v: 'watch' }), S({ id: 'd', s: 0.7 }), S({ id: 'e', s: 0.5, v: 'watch' })];
@@ -83,4 +83,12 @@ test('swarmView accepts only well-formed state and clamps it', () => {
   const v = swarmView({ type: 'swarm-state', phase: 'running', progress: 4, agents: [{ name: 'Copy', color: '#5fb8ff', doing: 'typing' }, { name: 'X', color: 'url(javascript:1)' }] });
   assert.equal(v.progress, 1); assert.equal(v.agents[0].color, '#5fb8ff'); assert.equal(v.agents[1].color, '#888888'); assert.equal(v.agents[1].doing, '');
   assert.equal(swarmView({ type: 'swarm-state', phase: 'done', progress: 'x' }).progress, 0);
+});
+
+test('a page-ready WATCH product is approved like a GO one, with no override and no "needs" text; plain WATCH keeps both', () => {
+  assert.equal(isPageReady({ page_ready: true }), true); assert.equal(isPageReady({ pageReady: true }), true); assert.equal(isPageReady({ page_ready: false, pageReady: true }), false); assert.equal(isPageReady(null), false);
+  assert.deepEqual(approveAction({ verdict: 'watch', page_ready: true }), { label: 'Approve build', override: false, warn: false });
+  assert.deepEqual(approveAction({ verdict: 'watch', pageReady: true }), { label: 'Approve build', override: false, warn: false });
+  assert.deepEqual(approveAction({ verdict: 'watch', page_ready: false }), { label: 'Build on my call', override: true, warn: true });
+  assert.equal(needsText({ verdict: 'watch', page_ready: true }), ''); assert.equal(needsText({ verdict: 'watch', page_ready: false }), 'needs 62 to build');
 });

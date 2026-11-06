@@ -43,14 +43,16 @@ export async function api(path, { method = 'GET', body, idem, signal } = {}) {
 const cache = new Map();
 export function useApi(path, { poll = 0, enabled = true } = {}) {
   const [state, set] = useState(() => ({ data: cache.get(path)?.data ?? null, error: null, loading: enabled && !cache.has(path), at: cache.get(path)?.at ?? 0 }));
-  const alive = useRef(true);
+  const alive = useRef(true); const pathRef = useRef(path); pathRef.current = path; // an answer for an older path is cached but not shown
   const load = useCallback(async () => {
     if (!enabled || !path) return;
     try {
       const data = await api(path);
       cache.set(path, { data, at: Date.now() });
-      if (alive.current) set({ data, error: null, loading: false, at: Date.now() });
-    } catch (e) { if (alive.current && e.name !== 'AbortError') set((s) => ({ ...s, error: e, loading: false })); }
+      if (alive.current && pathRef.current === path) set({ data, error: null, loading: false, at: Date.now() });
+      return data;
+    } catch (e) { if (alive.current && pathRef.current === path && e.name !== 'AbortError') set((s) => ({ ...s, error: e, loading: false })); }
+    return null;
   }, [path, enabled]);
   useEffect(() => {
     alive.current = true;

@@ -7,12 +7,13 @@ import { useOwner } from '../../app/session.js';
 import { T } from '../../app/copy.js';
 import { siteFromReply } from '../../app/build-model.js';
 import { nextStep, statusRows } from '../../app/journey-step.js';
+import { queueHead } from '../../app/queue-model.js';
 import DevelopTheater from './DevelopTheater.jsx';
 
 const J = T.journey;
 const WORDS = { ...J, readOnly: T.readOnly, demo: T.demoNote, watchWarn: T.build.watchWarn };
 
-export default function NextStep({ entry, journey, reload }) {
+export default function NextStep({ entry, journey, queue, goAt, reload, onPin, onAdvance }) {
   const owner = useOwner(); const toast = useToast();
   const [building, setBuilding] = useState(null); // { at } while the build request runs
   const [theater, setTheater] = useState(null); // { opener } while the theater is open
@@ -20,6 +21,11 @@ export default function NextStep({ entry, journey, reload }) {
   const [buildErr, setBuildErr] = useState(''); const [pubErr, setPubErr] = useState('');
   const [pub, setPub] = useState(false);
   const region = useRef(null); const alive = useRef(true);
+  const theaterOpen = useRef(false); const advanceTo = useRef(null); // after publishing the queue head, the box moves on once the theater is closed
+  theaterOpen.current = Boolean(theater);
+  // an action pins the focus to this product first, so the default head moving on a reload cannot swap the product under an open request or theater
+  const reloadRef = useRef(reload); reloadRef.current = reload;
+  const pin = () => onPin?.(entry.oppId);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const jp = journey?.oppId === entry.oppId ? journey.page ?? null : null;
@@ -28,16 +34,16 @@ export default function NextStep({ entry, journey, reload }) {
 
   const page = fresh && jp?.hash !== fresh.hash ? fresh : jp;
   const canWrite = owner.isOwner && !isFixtureMode();
-  const step = nextStep({ verdict: entry.verdict, owner, canWrite, demo: isFixtureMode(), page, building: Boolean(building) }, WORDS);
+  const step = nextStep({ verdict: entry.verdict, pageReady: entry.pageReady, goAt, owner, canWrite, demo: isFixtureMode(), page, building: Boolean(building) }, WORDS);
   const rows = statusRows({ journey, page, building: Boolean(building) }, WORDS);
 
   const build = async (e) => {
     const b = step.actions.build; if (!b || building) return;
-    const opener = e.currentTarget; setBuildErr(''); setBuilding({ at: Date.now() }); setTheater({ opener });
+    const opener = e.currentTarget; pin(); setBuildErr(''); setBuilding({ at: Date.now() }); setTheater({ opener });
     try {
       const made = siteFromReply(await api(`/api/sites/${encodeURIComponent(entry.oppId)}/build`, { method: 'POST', body: { override: b.override } }));
       if (alive.current && made?.hash) setFresh({ slug: made.slug, hash: made.hash, published: Boolean(made.published), publishedHash: made.published ? made.hash : null, built: true });
-      await reload();
+      await reloadRef.current();
       if (alive.current) toast(`The page for ${entry.title} is built.`);
     } catch (x) { if (alive.current) { setBuildErr(x.message); toast(x.message, 'bad'); } } finally { if (alive.current) setBuilding(null); }
   };
@@ -45,14 +51,17 @@ export default function NextStep({ entry, journey, reload }) {
   const publish = async () => {
     if (!page || pub) return;
     setPub(true); setPubErr('');
+    const wasHead = queueHead(queue) === entry.oppId; pin();
     try {
       await api(`/api/sites/${encodeURIComponent(page.slug)}/publish`, { method: 'POST', body: { hash: page.hash } });
-      await reload();
+      const fresh = await reloadRef.current();
+      if (wasHead && fresh) { if (theaterOpen.current) advanceTo.current = fresh; else onAdvance?.(fresh); }
       if (alive.current) toast('Published.');
     } catch (x) { if (alive.current) { setPubErr(x.message); toast(x.message, 'bad'); } } finally { if (alive.current) setPub(false); }
   };
 
-  const watch = (e) => { setBuildErr(''); setPubErr(''); setTheater({ opener: e.currentTarget }); };
+  const close = () => { setTheater(null); if (advanceTo.current) { const f = advanceTo.current; advanceTo.current = null; onAdvance?.(f); } };
+  const watch = (e) => { pin(); setBuildErr(''); setPubErr(''); setTheater({ opener: e.currentTarget }); };
   const status = building ? 'building' : buildErr || !page ? 'error' : 'ready';
 
   return (
@@ -79,7 +88,7 @@ export default function NextStep({ entry, journey, reload }) {
       {theater && (
         <DevelopTheater
           title={entry.title} page={page} status={status} startedAt={building?.at} error={buildErr} notice={pubErr}
-          step={step} publishing={pub} onPublish={publish} onClose={() => setTheater(null)}
+          step={step} publishing={pub} onPublish={publish} onClose={close}
           opener={theater.opener} fallback={region.current} toast={toast}
         />
       )}

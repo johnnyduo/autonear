@@ -1,5 +1,5 @@
 // Pure helpers for the Build page (no React, no DOM), so they run in plain Node tests.
-// Site rows come from GET /api/sites: { opp_id, slug, title, verdict, support, buildable, hash, built_at, published, published_hash, override, model, tokens, cost }.
+// Site rows come from GET /api/sites: { opp_id, slug, title, verdict, support, buildable, page_ready, contract_template, hash, built_at, published, published_hash, override, model, tokens, cost }.
 // Council entries come from GET /api/council: council.opportunities[] = { oppId, title, support, verdict, votes: [{ role, label, weight, support, stance }] }.
 
 export const GO_AT = 0.62; // the council's build threshold; the live value comes from /api/council rules when present
@@ -11,7 +11,9 @@ export const score = (x) => { const n = Number(x); if (!Number.isFinite(n)) retu
 
 export const verdictLabel = (v) => ({ go: 'GO', watch: 'WATCH' }[String(v ?? '').toLowerCase()] ?? 'DROP');
 export const verdictTone = (v) => ({ go: 'ok', watch: 'warn' }[String(v ?? '').toLowerCase()] ?? '');
-export const needsText = (site, goAt = GO_AT) => (String(site?.verdict ?? '').toLowerCase() === 'watch' ? `needs ${score(goAt)} to build` : '');
+/** The score clears the build threshold and nobody vetoed. A /api/sites row says page_ready, a council entry says pageReady. */
+export const isPageReady = (x) => Boolean(x?.page_ready ?? x?.pageReady);
+export const needsText = (site, goAt = GO_AT) => (String(site?.verdict ?? '').toLowerCase() === 'watch' && !isPageReady(site) ? `needs ${score(goAt)} to build` : '');
 
 /** Highest support first; ties keep alphabetical order so the list does not jump around between refreshes. */
 export const rankSites = (sites) => [...(Array.isArray(sites) ? sites : Array.isArray(sites?.items) ? sites.items : [])].sort((a, b) => (Number(b.support) || 0) - (Number(a.support) || 0) || String(a.title).localeCompare(String(b.title)));
@@ -39,7 +41,7 @@ export const goAtOf = (councilData) => councilData?.council?.rules?.goAt ?? GO_A
 export const seatBars = (entry) => (entry?.votes ?? []).map((v) => ({ role: v.role, label: v.label ?? String(v.role).replace(/_/g, ' '), weight: Math.round((v.weight ?? 0) * 100), pct: score(v.support), stance: v.stance }));
 
 /** What the owner button says, and whether the council's verdict needs a warning. */
-export const approveAction = (site) => (String(site?.verdict ?? '').toLowerCase() === 'watch' ? { label: 'Build on my call', override: true, warn: true } : { label: 'Approve build', override: false, warn: false });
+export const approveAction = (site) => (String(site?.verdict ?? '').toLowerCase() === 'watch' && !isPageReady(site) ? { label: 'Build on my call', override: true, warn: true } : { label: 'Approve build', override: false, warn: false });
 
 /** Why the owner button is off, in plain words, or '' when it is on. `words` carries the shared texts. */
 export function approveBlock({ owner, canWrite, demo, site, building }, words) {

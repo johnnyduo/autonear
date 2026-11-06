@@ -44,7 +44,7 @@ export async function listView(db, council) {
     const slug = slugOf(o); const mine = all.filter((s) => s.slug === slug);
     const built = mine[0] ?? null; const pub = mine.find((s) => s.published_at != null) ?? null;
     return {
-      opp_id: o.oppId, slug, title: o.title, verdict: o.verdict, support: o.support, buildable: o.verdict === 'go', can_override: o.verdict === 'watch',
+      opp_id: o.oppId, slug, title: o.title, verdict: o.verdict, support: o.support, buildable: o.verdict === 'go' || Boolean(o.pageReady), can_override: o.verdict === 'watch' && !o.pageReady, page_ready: Boolean(o.pageReady), contract_template: Boolean(o.contractTemplate),
       hash: built?.hash ?? null, built_at: built?.created_at ?? null, published: Boolean(pub), published_hash: pub?.hash ?? null,
       override: Boolean(built?.meta.override), model: built?.meta.model ?? null, tokens: built?.meta.tokens ?? 0, cost: built?.meta.cost ?? 0,
       ...(built && stale.has(`${slug}/${built.hash}`) ? { stale: true } : {}),
@@ -56,7 +56,7 @@ export async function listView(db, council) {
 export async function buildSite(db, { oppId, entry, override = false, regenerate = false, actor }) {
   if (!entry) throw new PolicyError('the council has no entry for this product', 'not_found');
   if (entry.verdict === 'drop') throw new PolicyError('The council dropped this product. A page can be built only for GO, or for WATCH on the owner\'s call.', 'state');
-  if (entry.verdict !== 'go' && override !== true) throw new PolicyError(`The council says ${String(entry.verdict).toUpperCase()}, not GO. Send override: true to build on the owner's call.`, 'state');
+  if (entry.verdict !== 'go' && !entry.pageReady && override !== true) throw new PolicyError(`The council says ${String(entry.verdict).toUpperCase()}, not GO. Send override: true to build on the owner's call.`, 'state');
   const opp = await getOpp(db, oppId); if (!opp) throw new PolicyError('unknown product', 'not_found');
   const slug = slugOf(opp);
   if (!regenerate) { const have = await latestBuilt(db, slug); if (have && validateContent(have.content).ok) return { site: have, created: false }; } // a stored page that no longer passes the schema is written again
@@ -65,7 +65,7 @@ export async function buildSite(db, { oppId, entry, override = false, regenerate
   const evidence = await evidenceFor(db, oppId);
   const gen = await generateContent({ opportunity: opp, entry, evidenceTitles: evidence.map((e) => e.title), budget: new Budget({ tokens: Math.max(1, dailyTokenCap() - used) }) });
   const hash = shortHash(gen.content);
-  const meta = { title: opp.title, verdict: entry.verdict, support: entry.support, override: entry.verdict !== 'go', model: gen.model, tokens: gen.tokens, cost: gen.cost, evidence, template: TEMPLATE_VERSION };
+  const meta = { title: opp.title, verdict: entry.verdict, support: entry.support, override: entry.verdict !== 'go' && !entry.pageReady, model: gen.model, tokens: gen.tokens, cost: gen.cost, evidence, template: TEMPLATE_VERSION };
   const site = await saveSite(db, { slug, oppId, hash, content: gen.content, meta, createdAt: now() });
   await audit(db, actor, 'site.build', { opp: oppId, slug, hash, override: meta.override });
   return { site, created: true };
