@@ -90,6 +90,20 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
       </div>
     );
   }
+  if (k.t === 'outcome') {
+    const oc = councilData?.journey?.outcome; const stages = councilData?.journey?.stages ?? []; const dep = councilData?.journey?.deployment;
+    return (
+      <div className="co-card-in">
+        <div className="co-card-h"><span className="co-sw ring" style={{ borderColor: '#c6f432' }} aria-hidden="true" /><b>Final judgement</b>{oc && <span className="faint">{oc.progress.done} of {oc.progress.total} stages done</span>}</div>
+        <p className="co-card-t">{oc ? oc.headline : 'No product in flight.'}</p>
+        {oc && <p className="co-card-t dim">{oc.detail}</p>}
+        {oc && <p className="co-card-hint">Next: {oc.next}</p>}
+        <div className="co-card-l">{stages.map((x) => <span key={x.id} className="chip">{x.label} · {x.state}</span>)}</div>
+        {pinned && <div className="co-card-a">{dep?.explorer && <a className="btn sm" href={dep.explorer} target="_blank" rel="noopener noreferrer">Explorer<Icon name="external" size={13} /></a>}<a className="btn sm primary" href="#/council">Open Council</a><button type="button" className="btn sm ghost" onClick={onClose}>Release<kbd>Esc</kbd></button></div>}
+        {!pinned && <p className="co-card-hint faint">Read from stored runs, decisions, deployments and checks. Click to pin.</p>}
+      </div>
+    );
+  }
   if (k.t === 'seat' || k.t === 'prod') {
     const c = councilData?.council; const e = focusEntry(councilData);
     if (k.t === 'seat') {

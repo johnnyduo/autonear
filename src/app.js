@@ -151,7 +151,8 @@ export function createApp(deps) {
     }
     if (p === '/api/council' && m === 'GET') {
       const council = await currentCouncil(db); const focusId = (council.opportunities.find((o) => o.oppId === council.winner) ?? council.opportunities.find((o) => o.buildable) ?? council.opportunities[0])?.oppId;
-      return out({ council, journey: focusId ? await journeyFor(db, focusId) : null, mode: await getMode(db) });
+      const mode = await getMode(db); const fe = council.opportunities.find((o) => o.oppId === focusId);
+      return out({ council, journey: focusId ? await journeyFor(db, focusId, { verdict: fe?.verdict, mode }) : null, mode });
     }
     if (p === '/api/autonomy' && m === 'GET') {
       const evm = topUpConfig(process.env, 'evm'); const near = topUpConfig(process.env, 'near');

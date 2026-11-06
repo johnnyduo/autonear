@@ -385,7 +385,7 @@ export class SphereScene extends DiscScene {
     return null;
   }
   drawOverlay(ctx, o) { drawSphereOverlay(ctx, this, o); }
-  fxExtra() { return 0; }
+  fxExtra() { return 2600; } // headroom for the council star's dots, rings and lane
 }
 
 export { WELLS };
