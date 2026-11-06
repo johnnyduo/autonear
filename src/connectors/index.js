@@ -7,5 +7,9 @@ import { mastodonConnector } from './mastodon.js';
 import { farcasterConnector } from './farcaster.js';
 import { devtoConnector } from './devto.js';
 import { blueskyConnector } from './bluesky.js';
-// Order matters for tick latency only: the four established sources first, then social/news (lower weight in scoring, see source-weights.js).
-export const CONNECTORS = [githubConnector, govNearConnector, hnConnector, nearRpcConnector, nearSocialConnector, mastodonConnector, farcasterConnector, devtoConnector, blueskyConnector];
+import { defillamaConnector } from './defillama.js';
+import { nearblocksConnector } from './nearblocks.js';
+import { sputnikConnector } from './sputnik.js';
+import { nearFeedConnector } from './nearfeed.js';
+// Order matters for tick latency only: the four established sources first, then on-chain usage and the official feed, then social (lower weight in scoring, see source-weights.js).
+export const CONNECTORS = [githubConnector, govNearConnector, hnConnector, nearRpcConnector, defillamaConnector, nearblocksConnector, sputnikConnector, nearFeedConnector, nearSocialConnector, mastodonConnector, farcasterConnector, devtoConnector, blueskyConnector];

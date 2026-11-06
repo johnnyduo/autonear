@@ -1,0 +1,29 @@
+[
+ {
+  "gecko_id": "ethereum",
+  "gasTokenGeckoId": "ethereum",
+  "tvl": 43402276491.128586,
+  "tokenSymbol": "ETH",
+  "cmcId": "1027",
+  "name": "Ethereum",
+  "chainId": 1
+ },
+ {
+  "gecko_id": "solana",
+  "gasTokenGeckoId": "solana",
+  "tvl": 5283990629.770675,
+  "tokenSymbol": "SOL",
+  "cmcId": "5426",
+  "name": "Solana",
+  "chainId": null
+ },
+ {
+  "gecko_id": "near",
+  "gasTokenGeckoId": "near",
+  "tvl": 174898242.9223197,
+  "tokenSymbol": "NEAR",
+  "cmcId": "6535",
+  "name": "Near",
+  "chainId": null
+ }
+]

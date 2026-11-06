@@ -271,7 +271,7 @@ function nsRouter(over = {}) {
       const b = JSON.parse(init.body); const key = `${b.keys[0]}@${b.blockHeight}`;
       return over.get ? over.get(key, b) : json(get[key] ?? {});
     }],
-    ['https://rpc.mainnet.near.org', (u, init) => { const p = JSON.parse(init.body).params; return json({ jsonrpc: '2.0', id: 1, result: p.finality ? blk.tip.result : blk.old.result }); }],
+    ['https://rpc.mainnet.fastnear.com', (u, init) => { const p = JSON.parse(init.body).params; return json({ jsonrpc: '2.0', id: 1, result: p.finality ? blk.tip.result : blk.old.result }); }],
     ...(over.extra ?? []),
   ]);
 }
@@ -290,7 +290,7 @@ test('near-social: index + block-height reads -> posts and comments with author,
   assert.ok(Math.abs(meta.secPerBlock - 0.5773) < 0.005 && meta.secPerBlockMeasured === true && meta.timeEstimated === true);
   const comment = items.find((i) => i.signals.type === 'comment'); assert.ok(comment, 'comments are read'); assert.match(comment.signals.parent, /post\/main@/);
   assert.ok(items.some((i) => i.flags.includes('low-signal:repeated-text')), 'templated devhub.near notifications are flagged');
-  assert.ok(f.calls.every((c) => ['https://api.near.social/', 'https://rpc.mainnet.near.org'].some((p) => c.url.startsWith(p))));
+  assert.ok(f.calls.every((c) => ['https://api.near.social/', 'https://rpc.mainnet.fastnear.com'].some((p) => c.url.startsWith(p))));
   assert.ok(items.every((i) => i.relevanceUrl === ''), 'our own link (which contains the account id) must not count as a NEAR marker');
 });
 
@@ -301,7 +301,7 @@ test('near-social: account ids are validated before they reach a key pattern; ma
   const routes = router([
     ['https://api.near.social/index', (u, init) => json(JSON.parse(init.body).action === 'post' ? evil : [])],
     ['https://api.near.social/get', (u, init) => { const b = JSON.parse(init.body); return json(nsFx().get[`${b.keys[0]}@${b.blockHeight}`] ?? {}); }],
-    ['https://rpc.mainnet.near.org', (u, init) => { const p = JSON.parse(init.body).params; return json({ result: p.finality ? nsFx().blk.tip.result : nsFx().blk.old.result }); }],
+    ['https://rpc.mainnet.fastnear.com', (u, init) => { const p = JSON.parse(init.body).params; return json({ result: p.finality ? nsFx().blk.tip.result : nsFx().blk.old.result }); }],
   ]);
   const { meta } = await nearSocialConnector.fetch({ fetchImpl: routes });
   assert.equal(meta.malformed, 5);
@@ -317,17 +317,17 @@ test('near-social: bodies at a block height are immutable, so a second tick re-r
 });
 
 test('near-social: unexpected index shape, failing bodies and RPC failure are source errors; plain-text and empty bodies are handled', async () => {
-  const badShape = router([['https://api.near.social/index', () => json({ error: 'x' })], ['https://rpc.mainnet.near.org', () => json({ result: nsFx().blk.tip.result })]]);
+  const badShape = router([['https://api.near.social/index', () => json({ error: 'x' })], ['https://rpc.mainnet.fastnear.com', () => json({ result: nsFx().blk.tip.result })]]);
   await assert.rejects(nearSocialConnector.fetch({ fetchImpl: badShape }), /unexpected \/index response shape/);
   await assert.rejects(nearSocialConnector.fetch({ fetchImpl: nsRouter({ get: () => json('boom', 500) }) }), /every body fetch failed.*500/);
-  const rpcDown = router([['https://api.near.social/index', () => json([])], ['https://rpc.mainnet.near.org', () => json('no', 503)]]);
+  const rpcDown = router([['https://api.near.social/index', () => json([])], ['https://rpc.mainnet.fastnear.com', () => json('no', 503)]]);
   await assert.rejects(nearSocialConnector.fetch({ fetchImpl: rpcDown }), /NEAR RPC calibration failed/);
   // plain-text body is kept; empty body is skipped and counted; calibration fallback is labelled when the second block call fails
   const idx = [{ accountId: 'alice.near', blockHeight: 223000000 }, { accountId: 'bob.near', blockHeight: 222999000 }, { accountId: 'carol.near', blockHeight: 222998000 }];
   const f = router([
     ['https://api.near.social/index', (u, init) => json(JSON.parse(init.body).action === 'post' ? idx : [])],
     ['https://api.near.social/get', (u, init) => { const b = JSON.parse(init.body); const a = b.keys[0].split('/')[0]; return json({ [a]: { post: { main: a === 'alice.near' ? 'just plain text about NEAR Protocol wallets' : a === 'bob.near' ? '' : '{"type":"md","text":"json NEAR Protocol post"}' } } }); }],
-    ['https://rpc.mainnet.near.org', (u, init) => { const p = JSON.parse(init.body).params; return p.finality ? json({ result: nsFx().blk.tip.result }) : json({ error: { data: 'UNKNOWN_BLOCK' } }); }],
+    ['https://rpc.mainnet.fastnear.com', (u, init) => { const p = JSON.parse(init.body).params; return p.finality ? json({ result: nsFx().blk.tip.result }) : json({ error: { data: 'UNKNOWN_BLOCK' } }); }],
   ]);
   const r = await nearSocialConnector.fetch({ fetchImpl: f });
   assert.deepEqual(r.items.map((i) => i.author).sort(), ['alice.near', 'carol.near']); assert.equal(r.meta.skippedEmpty, 1);
@@ -348,7 +348,7 @@ test('ingest (near-social): stored with estimated-time signal; rerun is idempote
   const g = router([
     ['https://api.near.social/index', (u, init) => json(JSON.parse(init.body).action === 'post' ? idx : [])],
     ['https://api.near.social/get', () => json({ 'foodie.near': { post: { main: '{"type":"md","text":"Best wallet-friendly pizza near me, nearly perfect token of love"}' } } })],
-    ['https://rpc.mainnet.near.org', (u, init) => json({ result: JSON.parse(init.body).params.finality ? nsFx().blk.tip.result : nsFx().blk.old.result })],
+    ['https://rpc.mainnet.fastnear.com', (u, init) => json({ result: JSON.parse(init.body).params.finality ? nsFx().blk.tip.result : nsFx().blk.old.result })],
   ]);
   const db2 = await memDb(); const r = await ingestSource(db2, nearSocialConnector, { fetchImpl: g });
   assert.equal(r.filtered, 1); assert.equal(r.inserted, 0);

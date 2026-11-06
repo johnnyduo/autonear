@@ -1,0 +1,21 @@
+{
+ "total24h": 140177877.4,
+ "total7d": 972608215.3299999,
+ "total30d": 4440580375.059999,
+ "change_1d": -7.1,
+ "chain": "Near",
+ "protocols": [
+  {
+   "name": "Rhea Dex",
+   "total24h": 10664770
+  },
+  {
+   "name": "Allbridge Classic",
+   "total24h": null
+  },
+  {
+   "name": "Veax CLMM",
+   "total24h": 568
+  }
+ ]
+}

@@ -17,7 +17,7 @@ export const FORMULA = 'score = ' + Object.entries(WEIGHTS).map(([k, w]) => `${w
 export const SOCIAL_BREADTH_CAP = { authors: 3, sources: 1 }; // max "effective" authors / sources social can add (of 10 / 3 needed for a full independent_demand)
 export const SCORING_NOTES = {
   sourceClasses: {
-    core: { weight: 1, note: 'GitHub issues (near org), gov.near.org, Hacker News, on-chain usage. Count toward the 3-independent-source rule.' },
+    core: { weight: 1, note: 'GitHub issues (near org), gov.near.org and Hacker News are demand and count toward the 3-independent-source rule. On-chain usage (NEAR RPC, DefiLlama, NearBlocks, Sputnik DAO treasuries) corroborates a topic only when the number measures that topic; it is not demand.' },
     social: {
       weight: SOCIAL_WEIGHT, sources: SOCIAL_SOURCE_IDS, breadthCap: SOCIAL_BREADTH_CAP,
       aggregateFraction: SOCIAL_AGGREGATE_FRACTION,
@@ -33,6 +33,7 @@ export const SCORING_NOTES = {
     'A demand record is "clean" unless it is flagged bot-author, duplicate-content, low-signal:* (new account, link-only, repeated text, market ticker, ...) or prompt-injection; non-clean records are kept and listed but de-weighted.',
     'LOW CONFIDENCE is raised when fewer than 3 independent NON-social demand sources contribute clean records. The warning also reports social sources and the distinct-author count.',
     'Distinct authors are an unverified breadth signal: one actor can run several accounts across sources.',
+    'Official NEAR announcements (kind news, near.org feed) are shown as competitor context for the topics they mention. They never count as demand or as on-chain usage.',
   ],
 };
 
@@ -57,6 +58,7 @@ const clamp = (x) => Math.max(0, Math.min(1, x));
 export function scoreTopic(topic, evidence, competitorHits) {
   const demand = evidence.filter((e) => e.kind === 'demand');
   const usage = evidence.filter((e) => e.kind === 'usage');
+  const news = evidence.filter((e) => e.kind === 'news');
   const isClean = (e) => !e.flags.includes('bot-author') && !e.flags.some((f) => f.startsWith('duplicate-content-of') || f.startsWith('prompt-injection') || f.startsWith('low-signal:'));
   const clean = demand.filter(isClean);
   const core = clean.filter((e) => !isSocialSource(e.source_id));
@@ -101,6 +103,7 @@ export function scoreTopic(topic, evidence, competitorHits) {
     warnings.push(`LOW CONFIDENCE: only ${coreSources.size} independent non-social demand source(s)${socialSources.size ? ` (plus ${socialSources.size} social source(s), which are corroboration only)` : ''} and ${authors.size} distinct author(s) in total; at least 3 non-social sources are required.`);
   }
   if (!usage.length) warnings.push('No on-chain usage corroboration for this topic.');
+  if (news.length) warnings.push(`${news.length} official NEAR announcement(s) mention this topic (see the competitor links): they point to existing or planned NEAR products and are not counted as demand.`);
   if (clean.length < demand.length) warnings.push(`${demand.length - clean.length} of ${demand.length} demand records de-weighted (bot, duplicate content, low-signal or injection-flagged).`);
   if (social.length) warnings.push(`${social.length} clean social record(s) from ${socialSources.size} source(s) are weighted ${SOCIAL_WEIGHT}× and capped (all social together at most ${SOCIAL_AGGREGATE_FRACTION}× the core weight, 0 without core records); social posts are unverified and are never presented as fact.`);
   if (authEff < 5) warnings.push(`Only ${authors.size} distinct authors (${coreAuthors.size} non-social, ${socialAuthors.size} social; effective ${authEff.toFixed(1)}): single-voice campaigns cannot be ruled out.`);
@@ -141,8 +144,8 @@ export async function refreshOpportunities(db) {
       [id, copy.title, copy.thesis, copy.problem, copy.audience, topic, j(s), s.score, s.confidence, j(s.warnings), t, t]);
     await db.run('DELETE FROM evidence_links WHERE opportunity_id=?', [id]);
     for (const e of ev) {
-      let rel = e.kind === 'usage' ? 'usage' : SOLVED.test(`${e.title} ${e.body_excerpt}`) ? 'contradicts' : 'supports';
-      let note = rel === 'contradicts' ? 'text suggests the need is already addressed' : rel === 'usage' ? 'on-chain observation' : 'friction/demand signal';
+      let rel = e.kind === 'usage' ? 'usage' : e.kind === 'news' ? 'competitor' : SOLVED.test(`${e.title} ${e.body_excerpt}`) ? 'contradicts' : 'supports';
+      let note = rel === 'contradicts' ? 'text suggests the need is already addressed' : rel === 'usage' ? 'on-chain observation' : e.kind === 'news' ? 'official NEAR announcement of an existing or planned product' : 'friction/demand signal';
       if (compHits.includes(e)) { await db.run('INSERT OR IGNORE INTO evidence_links VALUES(?,?,?,?)', [id, e.id, 'competitor', 'mentions an existing product']); }
       if (e.flags.some((f) => f.startsWith('bot') || f.startsWith('duplicate') || f.startsWith('low-signal'))) note += ' (de-weighted)';
       if (isSocialSource(e.source_id)) note += ' (social, low weight, unverified)';

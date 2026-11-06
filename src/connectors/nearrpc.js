@@ -23,8 +23,8 @@ export const nearRpcConnector = {
   id: 'near-rpc-mainnet',
   name: 'NEAR mainnet RPC · Intents usage',
   kind: 'usage',
-  endpoint: 'https://rpc.mainnet.near.org',
-  terms: 'Public NEAR JSON-RPC (docs.near.org/api/rpc). Public node, best-effort; production use needs a provider key.',
+  endpoint: 'https://rpc.mainnet.fastnear.com',
+  terms: 'FastNEAR public NEAR JSON-RPC (docs.near.org/api/rpc). Public node, best-effort and rate limited; production use needs a provider key. rpc.mainnet.near.org is deprecated.',
   rateLimit: 'Public endpoint is rate limited and may throttle; we issue 4 calls per run',
   docsUrl: 'https://docs.near.org/api/rpc/introduction',
   async fetch(ctx = {}) {

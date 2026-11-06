@@ -1,0 +1,14 @@
+{
+ "txns": [
+  {
+   "id": "24915949392",
+   "receiver_account_id": "v1.signer",
+   "receipt_block": {
+    "block_hash": "BWEEeTiqSFkrWXfwgVyGQKsYURo6o3L4ZvQUjuvh3oU5",
+    "block_height": 223266380,
+    "block_timestamp": 1793939500393116400
+   },
+   "transaction_hash": "JByyCrubeioPyrLqqq19hRevpuH3HQFXb9M2VEUpbLDK"
+  }
+ ]
+}

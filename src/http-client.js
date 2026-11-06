@@ -9,13 +9,16 @@ export class HttpError extends Error {
 }
 
 const EVM_RPC_HOSTS = ['ethereum-sepolia-rpc.publicnode.com', 'sepolia.base.org', 'sepolia-rollup.arbitrum.io', 'sepolia.optimism.io', 'testnet-rpc.monad.xyz', 'bsc-testnet-rpc.publicnode.com'];
-const RPC_HOSTS = ['rpc.mainnet.near.org', 'rpc.testnet.near.org', ...(evmEnabled() ? EVM_RPC_HOSTS : [])];
+// rpc.mainnet.near.org answers HTTP 429 "endpoint is deprecated" to every request (checked 2026-11-06); FastNEAR's public RPC is the replacement and is listed first.
+const RPC_HOSTS = ['rpc.mainnet.fastnear.com', 'rpc.testnet.fastnear.com', 'rpc.mainnet.near.org', 'rpc.testnet.near.org', ...(evmEnabled() ? EVM_RPC_HOSTS : [])];
 export const ALLOWED_HOSTS = {
   // Public, unauthenticated evidence reads. Social hosts (each verified by a live request 2026-11-05, see PROGRESS.md):
   //   api.near.social (SocialDB index/get API) · mastodon.social, mastodon.online (public hashtag timelines) · haatz.quilibrium.com (community Farcaster hub)
   //   dev.to (Forem articles API). api.bsky.app is deliberately NOT allowed: Bluesky search goes through the credentialed role below.
-  collector: new Set(['api.github.com', 'hn.algolia.com', 'gov.near.org', 'rpc.mainnet.near.org', 'rpc.testnet.near.org', '1click.chaindefuser.com',
-    'api.near.social', 'mastodon.social', 'mastodon.online', 'haatz.quilibrium.com', 'dev.to']),
+  //   On-chain and official sources (each verified by a live request 2026-11-06, see PROGRESS.md): api.llama.fi (DefiLlama) · api.nearblocks.io (NearBlocks) ·
+  //   rpc.mainnet.fastnear.com (NEAR mainnet RPC) · near.org (official NEAR RSS feed, /feed.xml).
+  collector: new Set(['api.github.com', 'hn.algolia.com', 'gov.near.org', 'rpc.mainnet.fastnear.com', 'rpc.mainnet.near.org', 'rpc.testnet.near.org', '1click.chaindefuser.com',
+    'api.near.social', 'mastodon.social', 'mastodon.online', 'haatz.quilibrium.com', 'dev.to', 'api.llama.fi', 'api.nearblocks.io', 'near.org']),
   // Credentialed reads: the ONLY role that may carry a login (Bluesky app password -> session token) and only to the PDS host.
   credentialed: new Set(['bsky.social']),
   monitor: new Set(RPC_HOSTS),

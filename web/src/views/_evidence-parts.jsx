@@ -11,6 +11,8 @@ export const TOPIC_LABEL = {
 };
 const SRC = {
   'github-near': ['GitHub', '#5fa3c2'], 'gov-near': ['Gov forum', '#d9a6e8'], 'hn-algolia': ['Hacker News', '#f0c27b'], 'near-rpc-mainnet': ['NEAR RPC', '#7fd6c4'],
+  // on-chain usage and official feed
+  'defillama-near': ['DefiLlama', '#e8a0c9'], nearblocks: ['NearBlocks', '#e0b86a'], 'sputnik-dao': ['DAO treasuries', '#a0d8e8'], 'near-official': ['near.org blog', '#b8e08a'],
   // social / news sources (lower scoring weight; see /api/scoring)
   'near-social': ['NEAR Social', '#9bd36b'], mastodon: ['Mastodon', '#8f9cf5'], farcaster: ['Farcaster', '#c79bf0'], devto: ['Dev.to', '#e8d36b'], bluesky: ['Bluesky', '#6bb7ff'],
 };

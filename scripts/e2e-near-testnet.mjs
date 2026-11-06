@@ -23,7 +23,7 @@ const NEAR = 10n ** 24n; const TGAS = 10n ** 12n; const sleep = (ms) => new Prom
 const nearStr = (y) => `${(Number(BigInt(y) / 10n ** 20n) / 1e4).toFixed(4)} NEAR`;
 if (process.env.NEAR_TESTNET_RUN !== 'yes') { console.error('Refusing: this script spends public-testnet NEAR. Re-run with NEAR_TESTNET_RUN=yes.'); process.exit(2); }
 
-const RPC = process.env.NEAR_TESTNET_RPC ?? 'https://rpc.testnet.near.org';
+const RPC = process.env.NEAR_TESTNET_RPC ?? 'https://rpc.testnet.fastnear.com';
 // The public testnet RPC rate-limits (HTTP 429). Retry those with backoff for every request this script makes (its own and the library's), never anything else.
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init) => { for (let i = 0; ; i++) { const r = await realFetch(url, init); if (r.status !== 429 || i >= 7 || !String(url).includes('rpc.testnet.near.org')) return r; await new Promise((ok) => setTimeout(ok, 1500 * 2 ** Math.min(i, 4))); } };

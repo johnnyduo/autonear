@@ -1,0 +1,92 @@
+{
+ "ref-finance.sputnik-dao.near": {
+  "account": {
+   "jsonrpc": "2.0",
+   "result": {
+    "amount": "1046240326272294095441492094",
+    "block_hash": "BHXtGresLjcy1VnccYYxprxTKzHEGiWnyrFPRCU13XdP",
+    "block_height": 223266384,
+    "code_hash": "4zSoHkLjJWZm34Psd4Eq2WUXHELt6LxtKmUXpsZWAECp",
+    "locked": "0",
+    "storage_paid_at": 0,
+    "storage_usage": 4200809
+   },
+   "id": 1
+  },
+  "lastProposal": {
+   "jsonrpc": "2.0",
+   "result": {
+    "block_hash": "BHXtGresLjcy1VnccYYxprxTKzHEGiWnyrFPRCU13XdP",
+    "block_height": 223266384,
+    "logs": [],
+    "result": [
+     49,
+     48,
+     54,
+     48
+    ]
+   },
+   "id": 1
+  }
+ },
+ "news.sputnik-dao.near": {
+  "account": {
+   "jsonrpc": "2.0",
+   "result": {
+    "amount": "69917847886190810386353675",
+    "block_hash": "BHXtGresLjcy1VnccYYxprxTKzHEGiWnyrFPRCU13XdP",
+    "block_height": 223266384,
+    "code_hash": "2Zof1Tyy4pMeJM48mDSi5ww2QQhTz97b9S8h6W6r4HnK",
+    "locked": "0",
+    "storage_paid_at": 0,
+    "storage_usage": 2245347
+   },
+   "id": 1
+  },
+  "lastProposal": {
+   "jsonrpc": "2.0",
+   "result": {
+    "block_hash": "2tg63husfgWe6GtecNNggNwouVCJWtZ4pX2TYKfAfLia",
+    "block_height": 223266385,
+    "logs": [],
+    "result": [
+     53,
+     52,
+     50,
+     49
+    ]
+   },
+   "id": 1
+  }
+ },
+ "marmaj.sputnik-dao.near": {
+  "account": {
+   "jsonrpc": "2.0",
+   "result": {
+    "amount": "30108810828504251286672623",
+    "block_hash": "2tg63husfgWe6GtecNNggNwouVCJWtZ4pX2TYKfAfLia",
+    "block_height": 223266385,
+    "code_hash": "2Zof1Tyy4pMeJM48mDSi5ww2QQhTz97b9S8h6W6r4HnK",
+    "locked": "0",
+    "storage_paid_at": 0,
+    "storage_usage": 1314889
+   },
+   "id": 1
+  },
+  "lastProposal": {
+   "jsonrpc": "2.0",
+   "result": {
+    "block_hash": "2tg63husfgWe6GtecNNggNwouVCJWtZ4pX2TYKfAfLia",
+    "block_height": 223266385,
+    "logs": [],
+    "result": [
+     49,
+     54,
+     52,
+     57
+    ]
+   },
+   "id": 1
+  }
+ }
+}

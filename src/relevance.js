@@ -17,7 +17,8 @@ const WEAK = [ // supporting: need blockchain context or another marker to count
   [/\b(?:NEP-\d{2,4})\b/, 'cites a NEP'],
   [/\$NEAR\b|\bNEAR\/USD\b/, 'ticker $NEAR'],
 ];
-const NEAR_ORGS = new Set(['near', 'near-gov']);
+const NEAR_ORGS = new Set(['near', 'near-gov', 'near-official']);
+const ORG_REASON = { near: 'published inside the github.com/near organization', 'near-gov': 'published on the NEAR governance forum (gov.near.org)', 'near-official': 'published on the official NEAR feed (near.org)' };
 const BLOCKCHAIN_CONTEXT = /\b(blockchain|smart contract|wallet|validator|shard|sharding|rpc|onchain|on-chain|dapp|token|defi|web3|crypto|account abstraction|multisig)\b/i;
 
 // Phrases that mean the ordinary word.
@@ -57,7 +58,7 @@ export function assessRelevance({ title = '', body = '', url = '', org = null, a
   const flags = injectionFlags(text);
 
   const inNearHome = NEAR_ORGS.has(org);
-  if (inNearHome) { score += 0.6; reasons.push(org === 'near' ? 'published inside the github.com/near organization' : 'published on the NEAR governance forum (gov.near.org)'); }
+  if (inNearHome) { score += 0.6; reasons.push(ORG_REASON[org]); }
   const strong = STRONG.filter(([r]) => r.test(text));
   const weak = WEAK.filter(([r]) => r.test(text));
   for (const [, why] of [...strong, ...weak]) reasons.push(why);

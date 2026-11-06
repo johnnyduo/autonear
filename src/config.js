@@ -67,8 +67,8 @@ export const config = {
   budget: { usd: num('RUN_BUDGET_USD', 0.5), tokens: num('RUN_BUDGET_TOKENS', 60000) },
   near: {
     network: env('NEAR_NETWORK', 'testnet'),
-    testnetRpc: env('NEAR_TESTNET_RPC', 'https://rpc.testnet.near.org'),
-    mainnetRpc: env('NEAR_MAINNET_RPC', 'https://rpc.mainnet.near.org'),
+    testnetRpc: env('NEAR_TESTNET_RPC', 'https://rpc.testnet.fastnear.com'),
+    mainnetRpc: env('NEAR_MAINNET_RPC', 'https://rpc.mainnet.fastnear.com'), // rpc.mainnet.near.org is deprecated and returns 429 to every call (2026-11-06)
     deployAccount: env('NEAR_DEPLOY_ACCOUNT'),
   },
   // Mandate Vault / agent wallet. Secrets are NEVER read here (src/agent/keystore.js owns AGENT_*_PRIVATE_KEY and the key file).

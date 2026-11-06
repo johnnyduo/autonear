@@ -5,7 +5,7 @@ export const PROTOCOLS = {
     label: 'NEAR (Rust · near-sdk)', status: 'implemented', dir: 'contracts/near-registry',
     toolchain: 'rustc (pinned in rust-toolchain.toml) · wasm32-unknown-unknown · near-sdk 5',
     networks: [
-      { id: 'near-testnet', label: 'NEAR testnet', rpc: 'https://rpc.testnet.near.org', explorer: 'https://testnet.nearblocks.io/txns/', mainnet: false },
+      { id: 'near-testnet', label: 'NEAR testnet', rpc: 'https://rpc.testnet.fastnear.com', explorer: 'https://testnet.nearblocks.io/txns/', mainnet: false },
       { id: 'near-mainnet', label: 'NEAR mainnet', rpc: 'https://rpc.mainnet.near.org', explorer: 'https://nearblocks.io/txns/', mainnet: true },
     ],
     commands: { build: 'npm run contract:near:build', test: 'npm run contract:near:test' },

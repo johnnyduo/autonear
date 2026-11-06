@@ -40,6 +40,10 @@ export async function ingestSource(db, connector, { trigger = 'manual', fetchImp
     const r = await db.run('INSERT INTO ingest_runs(source_id,trigger,started_at,ended_at,status,error) VALUES(?,?,?,?,?,?)', [connector.id, trigger, t0, t0, 'skipped', String(avail.reason ?? avail.status).slice(0, 300)]);
     return { sourceId: connector.id, status: avail.status, reason: avail.reason, runId: r.lastInsertRowid };
   }
+  // Sources with a published call quota (NearBlocks free tier) or slowly changing numbers (TVL, DAO balances) declare minIntervalMs. Scheduled ticks skip them until it has
+  // passed, with no run row and no status change; a manual or CLI run always goes through.
+  const every = Number(connector.minIntervalMs) || 0;
+  if (every && trigger !== 'manual' && src?.last_success && t0 - src.last_success < every) return { sourceId: connector.id, status: 'fresh', nextInMs: every - (t0 - src.last_success) };
   const run = await db.run('INSERT INTO ingest_runs(source_id,trigger,started_at,status) VALUES(?,?,?,?)', [connector.id, trigger, t0, 'running']);
   const runId = run.lastInsertRowid;
   const stats = { fetched: 0, inserted: 0, updated: 0, duplicates: 0, filtered: 0 };
@@ -54,7 +58,7 @@ export async function ingestSource(db, connector, { trigger = 'manual', fetchImp
       if (seen.has(it.externalId)) { stats.duplicates++; continue; }
       seen.add(it.externalId);
       let rel = it.forceTags
-        ? { score: 1, isNear: true, reasons: ['official NEAR RPC observation'], tags: it.forceTags, flags: [] }
+        ? { score: 1, isNear: true, reasons: [it.forceReason ?? 'official NEAR RPC observation'], tags: it.forceTags, flags: [] }
         : assessRelevance({ title: it.title, body: it.body, url: it.relevanceUrl ?? it.url, org: it.org, author: it.author, authorType: it.authorType });
       if (!it.forceTags) { const w = applyWatch(rel, `${it.title}\n${it.body}`, watch); if (w.drop) { stats.filtered++; continue; } rel = w.rel; }
       if (!rel.isNear || rel.score < RELEVANCE_THRESHOLD) { stats.filtered++; continue; }
