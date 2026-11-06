@@ -1,6 +1,6 @@
 # AutoNEAR
 
-**An evidence-to-product operating system for NEAR and EVM.** It watches public demand and on-chain usage, scores opportunities with a published formula, has a skeptic try to break the thesis, assembles a cited product brief, verifies an *attested* contract build, and then asks one human for one scoped decision at a time. After the human signs a testnet deployment in their own wallet, it verifies the receipt on-chain and monitors the result.
+**An evidence-to-product operating system for NEAR.** It watches public demand and on-chain usage, scores opportunities with a published formula, has a skeptic try to break the thesis, assembles a cited product brief, verifies an *attested* contract build, and then asks one human for one scoped decision at a time. After the human signs a testnet deployment in their own wallet, it verifies the receipt on-chain and monitors the result.
 
 > Hackathon: NEAR Hackathon 2026 · Track: AI Security & Defense (also Autonomous Business, AI Swarms) · Status of every claim below is tracked, with proof, in [PROGRESS.md](PROGRESS.md).
 
@@ -11,7 +11,8 @@
 | **Live sources** | GitHub issues in the `near` org, the NEAR governance forum (gov.near.org), Hacker News (strict NEAR-Protocol relevance filter), NEAR mainnet RPC (Intents escrow holdings). Plus five FREE social/news sources, all low-weight and unverified: NEAR Social (on-chain `social.near`), Mastodon public hashtag timelines, Farcaster (community hub, currently returns nothing recent), Dev.to articles, and Bluesky (opt-in, needs your app password, untested). X/Twitter and Reddit are intentionally absent (no free API tier / not self-serve). Source errors are shown, never papered over. |
 | **Runs unattended** | An in-process scheduler (local) or Cloudflare Cron Trigger (deployed) ingests, dedupes, re-scores, recovers stalled runs, and may start a research run when something material changed. No browser needed. |
 | **Agents** | Signal Collector · Evidence Analyst · Skeptic · Product Architect · Builder · Security Reviewer · Launch Planner (+ Monitor for deployments). Deterministic baseline by default; an LLM (Anthropic, Vercel AI Gateway, or local Codex CLI) can be enabled and its output is schema- and citation-checked or discarded. |
-| **Contracts** | One state machine, two native implementations: NEAR (Rust, near-sdk) and EVM (Solidity, Foundry). Attestation registries: no funds, no external calls. |
+| **Network** | NEAR testnet only. Owners sign with an EVM wallet such as MetaMask through NEAR's Ethereum-wallet standard (NEP-518), so no separate EVM chain is used. The Solidity contracts and EVM adapter stay in the repo but are off by default (`ENABLE_EVM=1` for development). |
+| **Contracts** | NEAR (Rust, near-sdk): the attestation registry (no funds, no external calls) and the Mandate Vault. |
 | **Human gate** | One decision = one approval = exact scope, nonce, expiry. Approval is not execution; the human signs the deploy. The server records it only after verifying the chain receipt against the attested artifact and the signer bound at approval. |
 | **Not done** | Mainnet, upgrades, treasury spend, liquidity, outreach (all blocked in code). No independent audit. No MiroFish/Kronos/Pythia runtime (adapters report `not_installed` and why). Live swap quotes were unavailable in our environment, so the treasury rehearsal uses **labelled synthetic fixtures**. Public-testnet deployment needs your funded wallet; until you sign one, the repo contains **no** public-testnet transaction. |
 

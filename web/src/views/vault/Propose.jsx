@@ -35,7 +35,7 @@ export function Teach({ onPropose, canOperate, fixture, signingSupported }) {
 
 function Field({ k, label, children, hint, msg }) { return (<div className="field"><label htmlFor={`pf-${k}`}>{label}</label>{children}{hint && <span className="help">{hint}</span>}{msg}</div>); }
 
-function blank() { return { chainId: 'evm:84532', vault: '', owner: '', hours: '24', perDraw: '', periodN: '1', periodU: 'hour', periodCap: '', totalCap: '', maxDeploys: '3', fund: '', maxPerDay: '3', tpl: {} }; }
+function blank() { return { chainId: 'near-testnet', vault: '', owner: '', hours: '24', perDraw: '', periodN: '1', periodU: 'hour', periodCap: '', totalCap: '', maxDeploys: '3', fund: '', maxPerDay: '3', tpl: {} }; }
 
 /** Pure validation: returns { errors, payload|null }. Client rules mirror the contract (docs/agent-vault-spec.md); the server stays the authority. */
 export function validate(f, agent, artifacts) {
@@ -94,7 +94,7 @@ export function ProposeDialog({ onClose, agent, artifacts, fixture, canOperate }
         {fixture && <div className="banner warn" role="note"><Icon name="alert" /><div><b>Fixture mode:</b> submitting is disabled; no request can be sent.</div></div>}
         <div className="vt-form-g">
           <Field msg={show('chainId')} k="chainId" label="Network (testnets only)">
-            <select id="pf-chainId" className="select" value={f.chainId} onChange={(e) => setF({ ...blank(), chainId: e.target.value })}>{Object.entries(CHAIN_META).map(([id, m]) => <option key={id} value={id}>{m.label}</option>)}</select>
+            <select id="pf-chainId" className="select" value={f.chainId} onChange={(e) => setF({ ...blank(), chainId: e.target.value })}>{Object.entries(CHAIN_META).filter(([, m]) => m.kind === 'near').map(([id, m]) => <option key={id} value={id}>{m.label}</option>)}</select>
           </Field>
           <Field msg={show('agent')} k="agent" label="Agent (bound, read from the API)">
             <div className="mono-v vt-ro" id="pf-agent">{agentId?.address ?? agentId?.account ?? 'none on this network'}</div>

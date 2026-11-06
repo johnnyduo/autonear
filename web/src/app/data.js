@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isFixtureMode, useApi } from '../api.js';
 
+// The product is NEAR testnet only. Anything on another chain (old rows, the design fixture's EVM vaults) is left out of the owner app.
+const isNear = (c) => String(c ?? '').startsWith('near');
+const nearVaults = (v) => (v && Array.isArray(v.vaults) ? { ...v, vaults: v.vaults.filter((x) => isNear(x.chainId)) } : v);
+const nearFx = (fx) => {
+  if (!fx || fx.mode !== 'ok') return fx;
+  const vault = nearVaults(fx.vault); const ids = new Set((vault?.vaults ?? []).map((x) => x.id));
+  return { ...fx, vault, decisions: (fx.decisions ?? []).filter((d) => isNear(d.chain_id)), ledger: { ...fx.ledger, items: (fx.ledger?.items ?? []).filter((e) => !e.vaultId || ids.has(e.vaultId)) } };
+};
+
 export function useAppData() {
   const forced = isFixtureMode();
   const status = useApi('/api/status', { poll: 15000 });
@@ -18,7 +27,7 @@ export function useAppData() {
   useEffect(() => {
     if (!demo || fx) return undefined;
     let on = true;
-    import('../mock/vaultFixture.js').then((m) => on && setFx(m.buildFixture('default', Date.now()))).catch(() => {});
+    import('../mock/vaultFixture.js').then((m) => on && setFx(nearFx(m.buildFixture('default', Date.now())))).catch(() => {});
     return () => { on = false; };
   }, [demo, fx]);
   const liveDecisions = decLive.data?.items ?? [];
@@ -30,7 +39,7 @@ export function useAppData() {
     demo, demoDecisions,
     demoReason: forced ? 'preview' : 'no-vault',
     status,
-    vault: demo ? (fx?.vault ?? null) : (vaultLive.data ?? null),
+    vault: demo ? (fx?.vault ?? null) : (nearVaults(vaultLive.data) ?? null),
     vaultError: demo ? null : vaultLive.error,
     decisions: demoDecisions ? (fx?.decisions ?? []) : liveDecisions,
     ledger: demoLedger ? (fx?.ledger?.items ?? []) : liveLedger,

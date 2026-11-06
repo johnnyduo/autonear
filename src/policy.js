@@ -1,5 +1,6 @@
 // Policy engine. Lives OUTSIDE the LLM: roles cannot widen their own permissions, and model output is untrusted input.
 import { config, AUTONOMY_HARD_MAX_PER_DAY } from './config.js';
+import { evmEnabled } from './features.js';
 import { LIMITS as VAULT_LIMITS } from './vault-model.js';
 import { UNITS, parseUnits } from './vault/units.js';
 import { findNetwork } from './protocols.js';
@@ -99,7 +100,7 @@ export function promptSafeEvidence(evidence, { maxItems = 40, maxChars = 360, in
 /** Constraints on any consequential decision this system may propose. Checked in code, never by prompt. */
 export const DECISION_LIMITS = {
   allowedActions: ['deploy_testnet', 'grant_mandate'],       // upgrade / spend / liquidity / outreach are separate, not yet enabled
-  allowedNetworks: ['near-testnet', 'evm:11155111', 'evm:84532', 'evm:421614', 'evm:11155420', 'evm:10143', 'evm:97', 'evm:31337'],
+  allowedNetworks: evmEnabled() ? ['near-testnet', 'evm:11155111', 'evm:84532', 'evm:421614', 'evm:11155420', 'evm:10143', 'evm:97', 'evm:31337'] : ['near-testnet'],
   maxExpiryMs: 7 * 864e5,
   maxSpendCeiling: '0',                     // the registry itself never moves funds: spend ceiling is zero for deployments
 };

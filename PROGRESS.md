@@ -3,6 +3,8 @@
 Status vocabulary: **tested** = automated test or scripted run passes now · **working** = run by hand and observed, no automated test · **blocked** = needs something only the human can provide · **planned** = no code yet.
 "Proof" is a command you can re-run. Nothing here is marked done without a run.
 
+> Scope (2026-11-06): NEAR testnet only. Regular EVM chains are switched off by default (`ENABLE_EVM=1` re-enables them for development, and `npm test` sets it so the EVM tests keep running). Rows below that mention EVM describe code that is kept but not part of the product. Wallets are EVM-style (MetaMask) through NEAR's Ethereum-wallet standard.
+
 ## Gate A: foundation
 
 | Requirement | Status | Proof | Next |

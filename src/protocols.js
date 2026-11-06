@@ -1,3 +1,4 @@
+import { evmEnabled } from './features.js';
 // Protocol/target registry. `status` is honest: only entries marked "implemented" have code + tests in this repo.
 export const PROTOCOLS = {
   near: {
@@ -35,6 +36,9 @@ export const PROTOCOLS = {
   starknet: { label: 'Starknet (Cairo)', status: 'planned', toolchain: 'scarb + snforge', networks: [] },
   ton: { label: 'TON (Tolk/FunC)', status: 'planned', toolchain: 'blueprint', networks: [] },
 };
+
+// Regular EVM chains are off unless ENABLE_EVM=1 (see features.js): no network is registered, so nothing can target them.
+if (!evmEnabled()) { PROTOCOLS.evm.networks = []; PROTOCOLS.evm.status = 'disabled'; }
 
 export function findNetwork(chainId) {
   for (const [protocol, p] of Object.entries(PROTOCOLS)) for (const n of p.networks) if (n.id === chainId) return { protocol, ...n };

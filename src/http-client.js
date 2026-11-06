@@ -1,12 +1,15 @@
 // Single outbound HTTP path. Enforces per-role host allowlist, timeout, response-size cap.
 // redirect: 'manual' (not 'error'): Workers rejects 'error'. A 3xx is non-ok, so it still fails closed below and is never followed.
+import { evmEnabled } from './features.js';
+
 const MAX_BYTES = 4_000_000;
 
 export class HttpError extends Error {
   constructor(msg, { status = 0, retryAfter = null, headers = null } = {}) { super(msg); this.status = status; this.retryAfter = retryAfter; this.headers = headers; }
 }
 
-const RPC_HOSTS = ['rpc.mainnet.near.org', 'rpc.testnet.near.org', 'ethereum-sepolia-rpc.publicnode.com', 'sepolia.base.org', 'sepolia-rollup.arbitrum.io', 'sepolia.optimism.io', 'testnet-rpc.monad.xyz', 'bsc-testnet-rpc.publicnode.com'];
+const EVM_RPC_HOSTS = ['ethereum-sepolia-rpc.publicnode.com', 'sepolia.base.org', 'sepolia-rollup.arbitrum.io', 'sepolia.optimism.io', 'testnet-rpc.monad.xyz', 'bsc-testnet-rpc.publicnode.com'];
+const RPC_HOSTS = ['rpc.mainnet.near.org', 'rpc.testnet.near.org', ...(evmEnabled() ? EVM_RPC_HOSTS : [])];
 export const ALLOWED_HOSTS = {
   // Public, unauthenticated evidence reads. Social hosts (each verified by a live request 2026-11-05, see PROGRESS.md):
   //   api.near.social (SocialDB index/get API) · mastodon.social, mastodon.online (public hashtag timelines) · haatz.quilibrium.com (community Farcaster hub)
