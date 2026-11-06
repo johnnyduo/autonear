@@ -1,9 +1,10 @@
 // The council's scoring box (HTML, right side of the council star view). Big readable numbers instead of canvas text.
-// Everything shown is stored data from GET /api/council: the seven seat votes (0 to 100), their weights, the weighted council score, the verdict and the final judgement.
+// The Next step block is the owner's way on to the product page (NextStep.jsx). Everything else shown is stored data from GET /api/council: the seven seat votes (0 to 100), their weights, the weighted council score, the verdict and the final judgement.
 // The seat rows light up in step with the replay on the star (the replay itself is an illustration of the stored votes, not a live vote).
 import { useEffect, useState } from 'react';
 import { CountUp } from './shared.js';
 import { focusEntry } from './council-star.js';
+import NextStep from './NextStep.jsx';
 
 const q = (x) => Math.round(x * 100);
 const NAMES = ['Collector', 'Analyst', 'Skeptic', 'Architect', 'Builder', 'Security', 'Planner'];
@@ -12,7 +13,7 @@ const STANCE = { back: ['backs it', '#59ffd1'], abstain: ['unsure', '#f2b84b'], 
 const VERDICT = { go: ['GO', 'The council backs building this', '#c6f432'], watch: ['WATCH', 'Not strong enough to build yet', '#f2b84b'], drop: ['DROP', 'Not now', '#8c8b82'] };
 const OUT = { shipped: '#c6f432', live: '#66ffcc', failed: '#ff4080', held: '#f2b84b', waiting: '#80d9ff', in_progress: '#f2b84b', ready: '#c6f432', not_started: '#8c8b82' };
 
-export default function ScoreBox({ data, sceneRef, wide }) {
+export default function ScoreBox({ data, sceneRef, wide, reload }) {
   const e = focusEntry(data); const oc = data?.journey?.outcome; const rules = data?.council?.rules ?? { goAt: 0.62, watchAt: 0.48 };
   const [cyc, setCyc] = useState(14);
   useEffect(() => { const id = setInterval(() => { const c = sceneRef.current?.council?.cycle; if (typeof c === 'number') setCyc(Math.round(c * 6) / 6); }, 160); return () => clearInterval(id); }, [sceneRef]);
@@ -50,6 +51,7 @@ export default function ScoreBox({ data, sceneRef, wide }) {
           {oc && <p className="co-sc-next">{oc.next}</p>}
           {oc && <span className="co-sc-prog" aria-label={`${oc.progress.done} of ${oc.progress.total} steps done`}>{Array.from({ length: oc.progress.total }, (_, k) => <i key={k} className={k < oc.progress.done ? 'on' : ''} />)}</span>}
         </div>
+        <NextStep entry={e} journey={data?.journey} reload={reload} />
         <a className="co-sc-more" href="#/council">Open the full story ›</a>
         {!done && <span className="co-sc-replay">replaying the stored votes</span>}
       </details>

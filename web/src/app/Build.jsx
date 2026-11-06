@@ -8,12 +8,12 @@ import { T } from './copy.js';
 import { href } from './nav.js';
 import {
   approveAction, approveBlock, buildingLine, councilEntry, currentStep, defaultSelection, goAtOf, hasSite, needsText, publishedIsCurrent,
-  rankSites, score, seatBars, siteFromReply, siteLinks, stepState, swarmView, swarmWord, verdictLabel, verdictTone, visibleRows,
+  rankSites, score, seatBars, siteFromReply, siteLinks, stepState, swarmWord, verdictLabel, verdictTone, visibleRows,
 } from './build-model.js';
+import { SwarmFrame, lessMotion, useSwarmFrame } from './SwarmFrame.jsx';
 
 const B = T.build;
 const STANCE_COL = { back: '#c6f432', abstain: '#f2b84b', object: '#ff6a3d' };
-const lessMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function Queue({ ranked, selected, onPick, goAt }) {
   const [all, setAll] = useState(false);
@@ -73,28 +73,15 @@ function CopyLink({ label, url, path, toast }) {
 }
 
 function Preview({ site, motionOff, frameKey }) {
-  const frame = useRef(null);
-  const [view, setView] = useState(null);
   const links = siteLinks(site, '');
-  useEffect(() => {
-    setView(null);
-    // Only messages from our own origin and from this exact frame are used.
-    const onMsg = (e) => { if (e.origin !== location.origin || e.source !== frame.current?.contentWindow) return; const v = swarmView(e.data); if (v) setView(v); };
-    addEventListener('message', onMsg);
-    return () => removeEventListener('message', onMsg);
-  }, [links?.previewPath, frameKey]);
-  const send = (cmd) => { try { frame.current?.contentWindow?.postMessage({ type: 'swarm', cmd }, location.origin); } catch { /* frame not ready */ } };
+  const { frame, view, send } = useSwarmFrame(links?.previewPath, frameKey);
   return (
     <section className="bd-sec" aria-labelledby="bd-p">
       <h2 id="bd-p" className="bd-h">{B.preview}</h2>
       {!links?.previewPath ? <div className="bd-empty"><Empty title="No page yet">{B.emptyPreview}</Empty></div> : (
         <>
           <div className="bd-frame">
-            {/* sandbox="allow-scripts allow-same-origin": the replay script needs to run and to postMessage with a real origin (a sandbox without
-                allow-same-origin gives the frame the origin "null", and we check origins on both sides). This is acceptable because the framed page is
-                served by us under Content-Security-Policy default-src 'none'; script-src 'self' (only our own /swarm.js, no inline script), it holds
-                escaped text only, and no model-written code runs. It also has no cookies, no wallet code and no way to reach this app's session. */}
-            <iframe key={`${links.previewPath}|${frameKey}`} ref={frame} title={`Preview of the page for ${site.title}`} src={links.previewPath} sandbox="allow-scripts allow-same-origin" loading="lazy" referrerPolicy="no-referrer" />
+            <SwarmFrame frame={frame} src={links.previewPath} title={`Preview of the page for ${site.title}`} frameKey={frameKey} />
           </div>
           <div className="bd-ctl">
             <button type="button" className="btn sm" onClick={() => send('play')} disabled={motionOff}><Icon name="play" size={14} />{B.replay}</button>

@@ -4,6 +4,9 @@ import { ingestSource, registerSources } from '../src/ingest.js';
 import { refreshOpportunities } from '../src/scoring.js';
 import { RULES, SEATS, rulesHash, seatId, evaluate, convene, currentCouncil, councilGate, journeyFor, verdictOf, votesFor } from '../src/council.js';
 import { createApp } from '../src/app.js';
+import { getOpp } from '../src/store.js';
+import { slugOf } from '../src/sites/schema.js';
+import { saveSite, publish } from '../src/sites/store.js';
 import { memDb, fakeConnector, gh } from './helpers.js';
 
 async function seeded() {
@@ -74,7 +77,7 @@ test('journey reads real run / decision / deployment state and API serves it pub
   j0 = await journeyFor(db, oid); assert.equal(j0.stages[0].state, 'active');
   const app = createApp({ db, fetchImpl: async () => { throw new Error('offline'); } });
   const res = await app.handle?.(new Request('http://x/api/council')) ?? await app(new Request('http://x/api/council'));
-  assert.equal(res.status, 200); const body = await res.json(); assert.equal(body.council.opportunities[0].votes.length, 7); assert.ok(body.journey.stages.length >= 5);
+  assert.equal(res.status, 200); const body = await res.json(); assert.equal(body.council.opportunities[0].votes.length, 7); assert.deepEqual(body.journey.stages.map((x) => x.id).slice(0, 3), ['research', 'develop', 'build']); assert.ok('page' in body.journey);
   const post = await (app.handle?.bind(app) ?? app)(new Request('http://x/api/council', { method: 'POST' })); assert.equal(post.status, 405);
 });
 
@@ -121,4 +124,23 @@ test('every seat and verdict has a recomputable digest and a stable AutoNEAR id;
     assert.equal(o.digest, b.opportunities.find((x) => x.oppId === o.oppId).digest, 'same stored data gives the same digest');
   }
   assert.equal(new Set(a.opportunities[0].votes.map((v) => v.digest)).size, 7, 'each seat has its own digest');
+});
+
+test('journey: the Product page stage and the page object follow the sites table (none, built, published) and a read never builds', async () => {
+  const db = await seeded(); const c = await currentCouncil(db); const oid = c.opportunities[0].oppId; const slug = slugOf(await getOpp(db, oid));
+  const stage = (j) => j.stages.find((x) => x.id === 'develop');
+  assert.equal(stage(await journeyFor(db, oid)).state, 'todo'); assert.equal(stage(await journeyFor(db, oid, { verdict: 'drop' })).state, 'todo');
+  let j = await journeyFor(db, oid, { verdict: 'go' });
+  assert.equal(stage(j).state, 'active'); assert.equal(stage(j).detail, 'no page yet'); assert.equal(j.page, null); assert.equal(j.stages[1].id, 'develop');
+  assert.equal((await db.all('SELECT 1 FROM sites')).length, 0, 'reading the journey stores no page');
+  await saveSite(db, { slug, oppId: oid, hash: 'aaaaaaaaaa', content: {}, meta: {}, createdAt: 1000 });
+  j = await journeyFor(db, oid, { verdict: 'watch' });
+  assert.equal(stage(j).state, 'done'); assert.equal(stage(j).detail, 'page stored, not published');
+  assert.deepEqual(j.page, { slug, hash: 'aaaaaaaaaa', published: false, publishedHash: null, built: true });
+  await saveSite(db, { slug, oppId: oid, hash: 'bbbbbbbbbb', content: {}, meta: {}, createdAt: 2000 });
+  await publish(db, slug, 'aaaaaaaaaa');
+  j = await journeyFor(db, oid, { verdict: 'go' });
+  assert.equal(stage(j).state, 'done'); assert.equal(stage(j).detail, `published at /develop/${slug}`);
+  assert.deepEqual(j.page, { slug, hash: 'bbbbbbbbbb', published: true, publishedHash: 'aaaaaaaaaa', built: true });
+  assert.equal(j.outcome.progress.total, j.stages.length);
 });

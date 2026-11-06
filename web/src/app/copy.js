@@ -75,6 +75,31 @@ export const T = {
     reduced: 'Your system asks for less motion, so the replay is off and the page is shown as it is.',
     loadFail: 'Could not load the list of products.',
   },
+  // The "Next step" block under the council score and the theater that replays the page build.
+  journey: {
+    next: 'Next step',
+    connect: 'Connect the owner wallet to approve.',
+    headApprove: 'The council backs it. Approve and the agents write the product page.',
+    headApproveLocked: 'The owner approves, then the agents write the product page.',
+    headWatch: 'This product is on watch. The owner can still build the page.',
+    headDrop: 'The council says drop. No page is built for this product.',
+    headBuilding: 'The agents are writing the page.',
+    headBuilt: 'The page is built and stored. It is not public yet.',
+    headNewer: 'A newer page is stored. The public page is still the older version.',
+    headPublished: 'The page is public.',
+    approve: 'Approve and build the page',
+    watchAgain: 'Watch the build again',
+    publish: 'Publish', publishing: 'Publishing…',
+    approveNote: 'Your approval is saved in the audit log. It is not a transaction on chain.',
+    rowPage: 'Page', rowContract: 'Contract',
+    pageNone: 'Not built yet', pageBuilding: 'Being written now', pageBuilt: 'Built, not published', pageNewer: 'Newer version not published',
+    contractHost: 'Waiting for the agent host: it needs the Rust build host',
+    contractIdle: 'Not started', contractResearch: 'Research in progress',
+    theaterLabel: 'Replay of a stored build. The page was written once by Gemini from stored evidence.',
+    theaterClose: 'Close', theaterReplay: 'Replay',
+    theaterFail: 'The page could not be built.',
+    link: 'Public link', copyLink: 'Copy link',
+  },
 };
 
 export const CHAIN_NAMES = { 'evm:84532': 'Base Sepolia', 'evm:11155111': 'Sepolia', 'evm:421614': 'Arbitrum Sepolia', 'evm:11155420': 'OP Sepolia', 'evm:10143': 'Monad testnet', 'evm:97': 'BNB testnet', 'evm:31337': 'local test chain', 'near-testnet': 'NEAR testnet' };

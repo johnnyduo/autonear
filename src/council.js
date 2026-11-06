@@ -8,6 +8,9 @@
 // (src/autonomy.js); in Manual mode the council is advice shown next to the decision.
 import { createHash } from 'node:crypto';
 import { now, j, parse, audit } from './db.js';
+import { getOpp } from './store.js';
+import { slugOf } from './sites/schema.js';
+import { latestBuilt, latestPublished } from './sites/store.js';
 
 export const RULES = Object.freeze({
   weights: { signal_collector: 0.16, evidence_analyst: 0.22, skeptic: 0.18, product_architect: 0.10, builder: 0.12, security_reviewer: 0.10, launch_planner: 0.12 },
@@ -134,8 +137,13 @@ export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } 
   const st = (done, active, blocked) => (blocked ? 'blocked' : done ? 'done' : active ? 'active' : 'todo');
   const researchDone = Boolean(run && ['awaiting_approval', 'succeeded', 'blocked'].includes(run.state));
   const failedRun = Boolean(run && ['failed', 'budget_exceeded', 'cancelled'].includes(run.state));
+  // the product page: stored by the owner's build request, never by this read
+  const opp = await getOpp(db, oppId); const slug = opp ? slugOf(opp) : null;
+  const pub = slug ? await latestPublished(db, slug) : null; const newest = slug ? await latestBuilt(db, slug) : null;
+  const page = newest ? { slug, hash: newest.hash, published: Boolean(pub), publishedHash: pub?.hash ?? null, built: true } : null;
   const stages = [
     { id: 'research', label: 'Research', state: !run ? 'todo' : run.state === 'running' || run.state === 'queued' ? 'active' : failedRun ? 'blocked' : 'done', detail: run ? `run ${run.state}` : 'no run yet' },
+    { id: 'develop', label: 'Product page', state: page ? 'done' : verdict === 'go' ? 'active' : 'todo', detail: page ? (page.published ? `published at /develop/${slug}` : 'page stored, not published') : 'no page yet' },
     { id: 'build', label: 'Build and check', state: st(built, run && !built && run.state === 'running', researchDone && !built), detail: built ? 'checked contract build stored' : researchDone ? 'no checked build yet (needs a build host)' : 'waiting' },
     { id: 'decision', label: 'Decision', state: st(Boolean(decision) && !declined, built && !decision, declined), detail: decision ? `decision ${expired ? 'expired' : decision.status}` : 'not created yet' },
     { id: 'approve', label: byAgent ? 'Agent executes in the limits' : 'Owner approves and signs', state: st(Boolean(decision?.approver) || Boolean(deployment), decision?.status === 'pending' && !expired, declined), detail: decision?.approver ? `approved by ${byAgent ? 'the agent inside the owner limits' : 'the owner'}` : declined ? 'not approved' : 'waiting' },
@@ -156,5 +164,5 @@ export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } 
   else if (run && ['running', 'queued'].includes(run.state)) outcome = { state: 'in_progress', headline: 'Research in progress', detail: `Run ${run.state}.`, next: 'The seven roles run one after another.' };
   else if (verdict === 'go') outcome = { state: 'ready', headline: 'Backed by the council', detail: 'No run has started for this product yet.', next: 'The next scheduled check starts the research.' };
   else outcome = { state: 'not_started', headline: verdict ? `Council says ${verdict}` : 'Not started', detail: 'Nothing is being built for this product.', next: 'The council votes again on the next check.' };
-  return { oppId, run: run ? { id: run.id, state: run.state, startedAt: run.started_at, endedAt: run.ended_at, roles } : null, decision: decision ? { id: decision.id, status: expired ? 'expired' : decision.status, byAgent } : null, deployment: deployment ? { id: deployment.id, status: deployment.status, explorer: deployment.explorer_url, account: deployment.account, network: deployment.network } : null, stages, outcome: { ...outcome, progress: { done, total: stages.length } } };
+  return { oppId, run: run ? { id: run.id, state: run.state, startedAt: run.started_at, endedAt: run.ended_at, roles } : null, decision: decision ? { id: decision.id, status: expired ? 'expired' : decision.status, byAgent } : null, deployment: deployment ? { id: deployment.id, status: deployment.status, explorer: deployment.explorer_url, account: deployment.account, network: deployment.network } : null, page, stages, outcome: { ...outcome, progress: { done, total: stages.length } } };
 }

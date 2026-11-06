@@ -462,7 +462,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
               </li>
             ))}
           </ul>
-          {star === 'council' && view === 'sphere' && !demo && councilData && <ScoreBox data={councilData} sceneRef={sceneRef} wide={(stage.current?.clientWidth ?? 0) > 900} />}
+          {star === 'council' && view === 'sphere' && !demo && councilData && <ScoreBox data={councilData} sceneRef={sceneRef} reload={councilApi.reload} wide={(stage.current?.clientWidth ?? 0) > 900} />}
           {shown && (
             <aside ref={tip} className={`co-card ${pinnedK ? 'pinned' : ''} ${kbFocus ? 'kb' : ''}`} data-ui aria-label={pinnedK ? 'Pinned node details' : 'Node details'}>
               <Card k={shown} councilData={councilData} model={model} srcInfo={srcInfo} run={shownRun} live={live} runEvents={runEvents} evLoading={Boolean(shownRun) && runEvents === null} calm={calm} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}
