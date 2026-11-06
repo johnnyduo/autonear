@@ -13,6 +13,7 @@ import './app.css';
 const Home = lazy(() => import('./Home.jsx'));
 const Approvals = lazy(() => import('./Approvals.jsx'));
 const Watch = lazy(() => import('./Watch.jsx'));
+const Council = lazy(() => import('./Council.jsx'));
 const VaultPage = lazy(() => import('./VaultPage.jsx'));
 const Activity = lazy(() => import('./Activity.jsx'));
 // Technical screens kept as deep links (reachable from Activity), not in the menu.
@@ -24,7 +25,7 @@ const LEGACY = {
   dashboard: lazy(() => import('../views/Overview.jsx')), constellation: lazy(() => import('../views/ConstellationFull.jsx')),
 };
 const LegacyVault = lazy(() => import('../views/vault/Vault.jsx'));
-const PAGES = { home: Home, approvals: Approvals, watch: Watch, vault: VaultPage };
+const PAGES = { home: Home, council: Council, approvals: Approvals, watch: Watch, vault: VaultPage };
 
 export default function Shell() {
   const [route, setRoute] = useState(parseRoute());

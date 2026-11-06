@@ -1,5 +1,7 @@
 // HUD overlay for the glyph sphere: satellite markers + labels, topic labels, agent roles, hover/pin brackets, and the stored-aggregate readouts
 // (record count, top opportunity score + confidence, relevance stripes, flagged share). Rings, orbits, arcs and beams are drawn as glowing lines by sphere.js.
+import { fmt } from '../../api.js';
+import { srcShort } from '../_evidence-parts.jsx';
 import { srcLines, COL, placeLabels } from './overlay.js';
 
 const TAU = Math.PI * 2;
@@ -67,6 +69,24 @@ export function drawSphereOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, nar
     }
   }
 
+  // ---- pipeline panel: the four stage bars are an ILLUSTRATION (a looping animation, not live events); the countdown and last-ingest lines are real
+  if (W >= 900 && z < 2.2 && !narrow) {
+    const x0 = 28; let y = cy + R * 0.3; const stages = ['FETCH', 'DEDUPE', 'SCORE', 'LINK']; const ph = calm ? 0 : ((t % 6) / 6) * 4; const bw = 112;
+    ctx.textAlign = 'left'; ctx.font = MONO(fs - 1.5, 600); ctx.fillStyle = COL.chalk2; ctx.fillText('PIPELINE', x0, y); ctx.font = MONO(fs - 2.5); ctx.fillStyle = COL.chalk3; ctx.fillText('ILLUSTRATION · NOT LIVE EVENTS', x0 + 62, y);
+    stages.forEach((nm, i) => {
+      const yy = y + 18 + i * 17; const act = !calm && Math.floor(ph) === i; const prog = calm ? 1 : act ? ph - i : i < ph ? 1 : 0; const glow = act ? 1 : Math.max(0.28, 1 - (((ph - i - 1) % 4) + 4) % 4 * 0.3);
+      ctx.fillStyle = act ? COL.lime : COL.chalk2; ctx.font = MONO(fs - 1, act ? 600 : 500); ctx.fillText(nm, x0, yy);
+      ctx.fillStyle = 'rgba(180,178,168,0.16)'; ctx.fillRect(x0 + 62, yy - 2, bw, 3);
+      ctx.save(); ctx.globalAlpha = sc.intro * glow; ctx.fillStyle = rgb(LIMEC, 0.9); ctx.fillRect(x0 + 62, yy - 2, bw * prog, 3);
+      if (act) { ctx.shadowColor = 'rgba(198,244,50,0.9)'; ctx.shadowBlur = 8; ctx.fillStyle = '#f4ffc8'; ctx.fillRect(x0 + 62 + bw * prog - 2, yy - 3, 3, 5); }
+      ctx.restore();
+    });
+    const d = Date.now(); const rem = Math.max(0, Math.ceil(d / 900000) * 900000 - d) / 1000; const mm = String(Math.floor(rem / 60)).padStart(2, '0'); const ss = String(Math.floor(rem % 60)).padStart(2, '0');
+    let li = -1; let lt = 0; (sc.srcInfo ?? []).forEach((s2, i) => { if (s2?.last > lt) { lt = s2.last; li = i; } });
+    const yb = y + 18 + 4 * 17 + 8; ctx.font = MONO(fs - 1.5); ctx.fillStyle = COL.chalk2; ctx.fillText('NEXT SCHEDULED TICK', x0, yb); ctx.fillStyle = COL.lime; ctx.font = MONO(13, 500); ctx.fillText(`${mm}:${ss}`, x0 + 128, yb);
+    if (li >= 0) { ctx.font = MONO(fs - 1.5); ctx.fillStyle = COL.chalk2; ctx.fillText('LAST INGEST', x0, yb + 17); ctx.fillStyle = COL.chalk; ctx.fillText(`${srcShort(m.sources[li]?.id)} · ${fmt.ago(lt)}`, x0 + 128, yb + 17); }
+  }
+
   // ---- relevance stripes (right edge): share of stored records with relevance >= 0.95, and the flagged share
   if (W >= 900 && z < 2.5) {
     const n = 26; const x1 = W - 20; const x0 = x1 - 46; const y1 = cy + R * 0.82; const hi = tw('hi', st.high, 1.8); const fillF = hi * n; const fl = tw('fl', st.flagged, 2.2);
@@ -82,5 +102,6 @@ export function drawSphereOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, nar
     if (st.flagged > 0) { const pr = calm ? 0.5 : 0.5 + 0.5 * Math.sin(t * 2.2); ctx.font = MONO(15, 500); const w2 = ctx.measureText(`${Math.round(fl)} FLAGGED`).width; ctx.fillStyle = `rgba(255,106,61,${0.55 + 0.4 * pr})`; ctx.beginPath(); ctx.arc(x1 - w2 - 12, fy - 8, 3.2 + pr * 1.4, 0, TAU); ctx.fill(); }
   }
   ctx.globalAlpha = 1;
-  placeLabels(ctx, sc, items, { W, H, reserved, narrow, labelsOn });
+  const hud = W >= 900 && z < 2.2 && !narrow ? [{ x: 16, y: cy - R * 0.62 - 34, w: 240, h: 150 }, { x: 16, y: cy + R * 0.3 - 16, w: 270, h: 160 }] : []; // keep point labels off the left readouts
+  placeLabels(ctx, sc, items, { W, H, reserved: [...reserved, ...hud], narrow, labelsOn });
 }
