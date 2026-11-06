@@ -386,13 +386,14 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
           <summary>How to read this</summary>
           {view === 'sphere' ? (
             <ul>
-              <li><b>Glyph:</b> one stored record, drawn as a 9&times;9 pixel pattern from its content hash on the globe surface. Colour is the source, brightness is NEAR relevance, a red ring marks a bot, duplicate or injection flag.</li>
+              <li><b>Glyph:</b> one stored record, drawn as a small cluster of glowing dots (a 9&times;9 pattern from its content hash) on the globe surface. Colour is the source, brightness is NEAR relevance, a red ring marks a bot, duplicate or injection flag.</li>
               <li><b>Longitude:</b> primary topic, one wedge per topic. <b>Latitude:</b> age, oldest at the south, newest toward the north. The lime arc on the equator fills to that opportunity&rsquo;s score.</li>
               <li><b>Orbits:</b> sources. A satellite&rsquo;s angle is the UTC time of day of that source&rsquo;s last ingest; the small white dot on each orbit is the UTC time now. It pulses if that ingest was under 20 minutes ago.</li>
               <li><b>Drag</b> to spin (it keeps its momentum), <b>Ctrl + wheel</b> or pinch to zoom, <b>hover or click a glyph</b> to see its source and stored opportunity links; clicking turns the globe to face it. Hover a source or topic chip to light its records.</li>
               <li><b>Readouts:</b> stored record count, top opportunity score (bar) and confidence (dashed), share of records with relevance 0.95 or higher, flagged share.</li>
               <li><b>Agent roles</b> on the small ring light up only while a run reports them active.</li>
-              <li><b>Decoration only:</b> dot skin, grid lines, scan ring, dust, limb glow, auto spin and cursor sparks carry no data.</li>
+              <li><b>Illustration, not live events:</b> the dots that fly from an orbit to a glyph of that source, the arcs between glyphs of one topic and the FETCH / DEDUPE / SCORE / LINK bars loop to show how the pipeline works. <b>Real:</b> the next-scheduled-tick countdown (the cron runs every 15 minutes), the last-ingest line, and the bright beams that fire only for a genuinely new record or an active run.</li>
+              <li><b>Decoration only:</b> dot skin, grid lines, scan ring, dust (including the motes streaming off each orbit), limb glow, auto spin and cursor sparks carry no data.</li>
             </ul>
           ) : view === 'disc' ? (
             <ul>

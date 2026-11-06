@@ -31,6 +31,7 @@ export class SphereScene extends DiscScene {
     this.spin = 0; this.spinV = 1; this.O = new Float64Array(3); this.nodeOk = new Uint8Array(0);
     const r = rnd(4242); const M = 900; this.lat3 = new Float32Array(M * 4); // fibonacci lattice: x, y, z, lat
     for (let i = 0; i < M; i++) { const y = 1 - ((i + 0.5) / M) * 2; const rr = Math.sqrt(1 - y * y); const ph = i * 2.399963229728653; this.lat3.set([R0 * 0.996 * rr * Math.cos(ph), R0 * 0.996 * y, R0 * 0.996 * rr * Math.sin(ph), Math.asin(y)], i * 4); }
+    this.orbDust = Array.from({ length: 150 }, () => ({ u: r(), j: [r() - 0.5, r() - 0.5, r() - 0.5], sz: 1.3 + r() * 2.6, sp: 0.025 + r() * 0.06, tw: r() * 6 }));
     this.shell = Array.from({ length: 460 }, () => ({ lon: r() * TAU, lat: Math.asin(r() * 2 - 1), rad: 1.1 + Math.pow(r(), 1.6) * 0.75, sp: (r() - 0.35) * 0.09, sz: 1.6 + r() * 2.4, al: 0.25 + r() * 0.6 }));
   }
 
@@ -48,8 +49,9 @@ export class SphereScene extends DiscScene {
       for (const [w, c] of live) { const sp = this.sectors[w].a1 - this.sectors[w].a0 - 0.02; let cap = 0; for (const lt of lats) cap += Math.max(1, Math.floor((R0 * Math.cos(lt) * sp) / pitch)); if (cap < c) { ok = false; break; } }
       if (ok) break;
     }
-    this.pitch = pitch; this.gsize = pitch * 0.9; this.pu = this.gsize / G; this.rings = lats;
-    this.nc = new Float32Array(N * 9); this.nr = new Float32Array(N * 9); this.nsx = new Float32Array(N); this.nsy = new Float32Array(N); this.nf = new Float32Array(N); this.nlt = new Float32Array(N); this.nrad = new Float32Array(N); this.nlat = new Float32Array(N); this.nodeOk = new Uint8Array(N);
+    this.pitch = pitch; this.gsize = pitch * 0.64; this.pu = this.gsize / G; this.rings = lats;
+    this.nc = new Float32Array(N * 9); this.nr = new Float32Array(N * 9); this.nsx = new Float32Array(N); this.nsy = new Float32Array(N); this.nf = new Float32Array(N); this.nlt = new Float32Array(N); this.nrad = new Float32Array(N); this.nlat = new Float32Array(N); this.nodeOk = new Uint8Array(N); this.simT = new Float32Array(N).fill(-9); this.flashTab = new Float32Array(N); this.bySrc = m.sources.map(() => []); this.byWell = by;
+    nodes.forEach((n, i) => { (this.bySrc[n.src] ??= []).push(i); });
     const place = (i, th, lat) => {
       const cl = Math.cos(lat); const sl = Math.sin(lat); const co = Math.cos(th); const so = Math.sin(th); nodes[i].slot = { x: 0, y: 0, r: R0, th, lat };
       this.nc.set([R0 * cl * co, R0 * sl, R0 * cl * so, -so, 0, co, -sl * co, cl, -sl * so], i * 9); this.nlat[i] = lat; this.nodeOk[i] = 1;
@@ -145,7 +147,7 @@ export class SphereScene extends DiscScene {
       xf(mS, nc[o], nc[o + 1], nc[o + 2]); const X = O[0]; const Y = O[1]; const Z = O[2]; const s = persp(Z);
       nr[o] = X; nr[o + 1] = Y; nr[o + 2] = Z; xf(mS, nc[o + 3], nc[o + 4], nc[o + 5]); nr[o + 3] = O[0]; nr[o + 4] = O[1]; nr[o + 5] = O[2]; xf(mS, nc[o + 6], nc[o + 7], nc[o + 8]); nr[o + 6] = O[0]; nr[o + 7] = O[1]; nr[o + 8] = O[2];
       const f = Z / R0; this.nf[i] = f; this.nsx[i] = cx + X * s * k; this.nsy[i] = cy - Y * s * k; this.nlt[i] = 0.7 + 0.3 * Math.max(0, (X * LIGHT[0] + Y * LIGHT[1] + Z * LIGHT[2]) / R0);
-      this.nrad[i] = Math.max(5, this.gsize * k * s * 0.58); this.sweepF[i] = calm ? 0 : Math.exp(-(((this.nlat[i] - sweepLat) / 0.11) ** 2));
+      this.nrad[i] = Math.max(6, this.pitch * k * s * 0.46); this.sweepF[i] = calm ? 0 : Math.exp(-(((this.nlat[i] - sweepLat) / 0.11) ** 2));
     }
 
     // ---- surface lattice: the dot-matrix skin of the globe (decorative)
@@ -199,6 +201,15 @@ export class SphereScene extends DiscScene {
       for (let q = 0; q <= 72; q++) { orb(s, (q / 72) * TAU); const sp = persp(O[2]); const x = cx + O[0] * sp * k; const y = cy - O[1] * sp * k; const a = (hotS ? 0.6 : 0.3) * A * (occl() ? 0.25 : O[2] > 0 ? 1 : 0.5); if (q) pushL(px, py, pa, x, y, a, col[0], col[1], col[2]); px = x; py = y; pa = a; }
       const tail = info.recent ? 1.3 : 0.7; px = 0;
       for (let q = 0; q <= 16; q++) { orb(s, tod - (q / 16) * tail); const sp = persp(O[2]); const x = cx + O[0] * sp * k; const y = cy - O[1] * sp * k; const a = (1 - q / 16) * (info.recent ? 0.95 : 0.55) * A * (occl() ? 0.3 : 1); if (q) pushL(px, py, pa, x, y, a, col[0], col[1], col[2]); px = x; py = y; pa = a; }
+      if (!flat) { // orbit dust (decorative): motes stream off the satellite along its orbit, spread out and fade; a faint ring of dust circles the whole orbit
+        const nd = Math.round(this.orbDust.length * clamp(this.q.dust / 600, 0.3, 1) * (info.recent ? 1 : 0.8)); const span = info.recent ? 4.8 : 3.4; const sp0 = R0 * 0.07 * ks;
+        for (let q = 0; q < nd; q++) {
+          const d = this.orbDust[q]; const u = ((d.u + s * 0.137 + (calm ? 0 : this.t * d.sp)) % 1 + 1) % 1; const fade = (1 - u) ** 1.6; orb(s, tod - u * span); const wob = 0.4 + u * 1.6;
+          const sp = persp(O[2]); const x = cx + (O[0] + d.j[0] * sp0 * wob) * sp * k; const y = cy - (O[1] + d.j[1] * sp0 * wob) * sp * k; const a = fade * (0.35 + 0.65 * (calm ? 1 : 0.5 + 0.5 * Math.sin(this.t * 1.7 + d.tw))) * (occl() ? 0.2 : O[2] > 0 ? 1 : 0.55) * A * (info.recent ? 0.95 : 0.6);
+          const c = mix(col, [1, 0.95, 0.85], 0.5 * (1 - u)); pushP(x, y, d.sz * (1.1 + k * 1.2) * sp, c[0], c[1], c[2], Math.min(1.2, a * 1.7), 0.1);
+        }
+        for (let q = 0; q < 40; q++) { const d = this.orbDust[q + 60]; orb(s, (q / 40) * TAU + (calm ? 0 : this.t * 0.02 * (s % 2 ? 1 : -1))); const sp = persp(O[2]); pushP(cx + (O[0] + d.j[0] * sp0) * sp * k, cy - (O[1] + d.j[1] * sp0) * sp * k, d.sz * 1.2 * sp, 1, 0.92, 0.78, 0.3 * A * (occl() ? 0.2 : O[2] > 0 ? 1 : 0.5) * (0.6 + 0.4 * Math.sin(this.t * 1.1 + d.tw)), 0.2); }
+      }
       orb(s, dayA); { const sp = persp(O[2]); const pu = calm ? 0.5 : 0.5 + 0.5 * Math.sin(this.t * 2.6); pushP(cx + O[0] * sp * k, cy - O[1] * sp * k, 7, 1, 0.97, 0.88, (0.45 + 0.4 * pu) * (occl() ? 0.2 : 1) * A, 0); } // UTC "now" on this orbit
       orb(s, tod); const sp = persp(O[2]); const sx = cx + O[0] * sp * k; const sy = cy - O[1] * sp * k; const oc = occl(); const vis = oc ? 0.3 : 1; const z = O[2];
       const age = info.last ? Math.max(0, now0 - info.last) : 1e12; const live = info.recent ? 1 : Math.max(0.1, Math.exp(-age / (6 * 3600e3)) * 0.7);
@@ -238,11 +249,11 @@ export class SphereScene extends DiscScene {
       }); }
 
     // ---- glyph pixels
-    const pix = this.pix; const pu = this.pu; this.pixStart = np; const psz0 = Math.max(0.9, pu * k * 0.95); const x0 = -40; const y0 = -40; const x1 = W + 40; const y1 = H + 40; const dimTable = new Float32Array(N);
+    const pix = this.pix; const pu = this.pu; this.pixStart = np; const psz0 = Math.max(0.9, pu * k * 0.95); const x0 = -40; const y0 = -40; const x1 = W + 40; const y1 = H + 40; const dimTable = new Float32Array(N); const flashTab = this.flashTab;
     for (let i = 0; i < N; i++) {
       const n = nodes[i]; let dim = 1;
       if (focusing) { if (fNode >= 0) dim = i === fNode ? 1.5 : (fnode.wells.some((l) => n.wells.some((q) => q.w === l.w)) ? 0.55 : 0.3); else if (fSec >= 0) dim = n.wells.some((l) => l.w === fSec) ? 1.15 : 0.25; else if (fSrc >= 0) dim = n.src === fSrc ? 1.2 : 0.3; }
-      dimTable[i] = dim;
+      dimTable[i] = dim; flashTab[i] = Math.max(0, 1 - (this.t - this.simT[i]) / 0.8);
     }
     for (let p = 0; p < pix.n; p++) {
       const i = pix.i[p]; const f = this.nf[i]; const thr = pix.thr[p]; if (f < -0.05 && thr > 0.35) continue; // far side: a thinned ghost layer shows through
@@ -252,17 +263,49 @@ export class SphereScene extends DiscScene {
       if (this.intro < 1 && !this.replay.active) { const thn = (n.slot.th + Math.PI * 2.5) % TAU; ap = clamp((this.intro * (TAU + 1.1) - thn) / 1.1, 0, 1); }
       if (ap <= 0) continue; const al = clamp((ap - thr * 0.85) * 5, 0, 1); if (al <= 0) continue;
       const ff = f > 0 ? 0.32 + 0.68 * Math.min(1, f / 0.5) : 0.1; const psz = psz0 * s * (0.55 + 0.45 * Math.max(0, f)); const dim = dimTable[i];
-      if (pix.kind[p] === 1) { pushP(sx, sy, psz * 1.6, RISK[0], RISK[1], RISK[2], 0.9 * al * this.vis[i] * Math.min(1, dim + 0.2) * (f > 0 ? 1 : 0.2), -1); continue; }
-      const lv = pix.lv[p]; const rel = 0.32 + 0.68 * clamp(n.rel, 0, 1); const shimmer = calm || flat ? 1 : 0.84 + 0.16 * Math.sin(fxT * 0.9 + thr * 18.85 + n.h * 0.001); const boost = 1 + 1.4 * this.sweepF[i];
+      if (pix.kind[p] === 1) { pushP(sx, sy, psz * 2.6, RISK[0], RISK[1], RISK[2], 0.8 * al * this.vis[i] * Math.min(1, dim + 0.2) * (f > 0 ? 1 : 0.2), 0.1); continue; }
+      const lv = pix.lv[p]; const rel = 0.32 + 0.68 * clamp(n.rel, 0, 1); const shimmer = calm || flat ? 1 : 0.84 + 0.16 * Math.sin(fxT * 0.9 + thr * 18.85 + n.h * 0.001); const boost = 1 + 1.4 * this.sweepF[i] + 1.8 * flashTab[i];
       const level = [0.5, 0.75, 1, 1.35][lv]; const a = clamp(rel * level * 0.7 * al * this.vis[i] * dim * shimmer * boost, 0, 2.1) * ff * this.nlt[i];
       const base = mix(n.color, WARM, 0.06); const c = lv === 3 ? mix(base, [1, 0.96, 0.88], 0.25) : base;
-      pushP(sx, sy, psz * 1.55, c[0], c[1], c[2], a, -1);
+      pushP(sx, sy, psz * [2.3, 2.7, 3.1, 3.8][lv], c[0], c[1], c[2], a * 1.15, 0.12);
     }
     this.pixEnd = np;
     // hovered / pinned glyph: soft halo
     for (const key of [this.hover, this.pinned, this.focus]) if (key?.t === 'ev' && this.nodeOk[key.i] && this.nf[key.i] > 0) { const i = key.i; const c = nodes[i].color; pushP(this.nsx[i], this.nsy[i], this.nrad[i] * 3.4, c[0], c[1], c[2], 0.22, 0.4); }
     this.layerKey = null; // a spinning globe is never a still layer
 
+    // ---- illustrative pipeline (decorative; labelled "illustration" in the legend and HUD): packets fly from each source orbit to a glyph of that source, and arcs link glyphs of one topic.
+    // Not live events. The real arrivals are the beams below.
+    if (!calm && ov.sats.length) {
+      const sim = this.sim ?? (this.sim = { pk: [], arcs: [], tp: 0, ta: 0 }); const T = this.t; const stt = this.stats;
+      if (T > sim.tp && sim.pk.length < 36) {
+        sim.tp = T + 0.18 + Math.random() * 0.3; let r0 = Math.random() * stt.N; let s = 0; while (s < stt.src.length - 1 && r0 > stt.src[s]) { r0 -= stt.src[s]; s++; }
+        const list = this.bySrc[s]; for (let tr = 0; tr < 6 && list?.length; tr++) { const ni = list[(Math.random() * list.length) | 0]; if (this.nodeOk[ni] && this.nf[ni] > 0.12 && this.vis[ni] > 0.5 && this.app[ni] > 0.9) { sim.pk.push({ s, ni, t0: T, dur: 0.9 + Math.random() * 0.6, bend: (Math.random() - 0.5) * 0.6 }); break; } }
+      }
+      if (T > sim.ta && sim.arcs.length < 5) {
+        sim.ta = T + 0.9 + Math.random() * 1.4; const secs = this.sectors.filter(Boolean); const sc2 = secs[(Math.random() * secs.length) | 0]; const list = sc2 && this.byWell[sc2.w];
+        if (list && list.length > 3) { const a = list[(Math.random() * list.length) | 0]; const b = list[(Math.random() * list.length) | 0]; if (a !== b && this.nodeOk[a] && this.nodeOk[b]) sim.arcs.push({ a, b, t0: T, dur: 2.8 }); }
+      }
+      for (let q = sim.pk.length - 1; q >= 0; q--) {
+        const pk = sim.pk[q]; const u = (T - pk.t0) / pk.dur; if (u >= 1) { this.simT[pk.ni] = T; sim.pk.splice(q, 1); continue; }
+        const sat = ov.sats[pk.s]; if (!sat) continue; const tx = this.nsx[pk.ni]; const ty = this.nsy[pk.ni]; const dx = tx - sat.x; const dy = ty - sat.y; const dl = Math.hypot(dx, dy) || 1; const col = mix(this.srcColors[pk.s] ?? [0.8, 0.8, 0.8], [1, 0.95, 0.85], 0.35);
+        const at = (e) => { const bw = Math.sin(e * Math.PI) * pk.bend * dl; return [sat.x + dx * e - (dy / dl) * bw, sat.y + dy * e + (dx / dl) * bw]; };
+        const vis = (sat.occ ? 0.3 : 1) * (this.nf[pk.ni] > 0 ? 1 : 0.3); const e = u * u * (3 - 2 * u); let [px, py] = at(Math.max(0, e - 0.2));
+        for (let c = 1; c <= 5; c++) { const [qx, qy] = at(Math.max(0, e - 0.2 + (0.2 * c) / 5)); pushL(px, py, 0.5 * (c / 5) * vis, qx, qy, 0.5 * ((c + 1) / 5) * vis, col[0], col[1], col[2]); px = qx; py = qy; }
+        pushP(px, py, 9, col[0], col[1], col[2], 0.85 * vis * Math.sin(Math.min(1, u * 1.15) * Math.PI * 0.5 + 0.2), 0.1);
+        if (u > 0.9) { const g = (u - 0.9) / 0.1; pushP(tx, ty, this.nrad[pk.ni] * 3 * g, col[0], col[1], col[2], 0.4 * g * vis, 0.3); }
+      }
+      for (let q = sim.arcs.length - 1; q >= 0; q--) {
+        const ar = sim.arcs[q]; const u = (T - ar.t0) / ar.dur; if (u >= 1) { sim.arcs.splice(q, 1); continue; }
+        const oa = ar.a * 9; const ob = ar.b * 9; const A0 = [nr[oa], nr[oa + 1], nr[oa + 2]]; const B0 = [nr[ob], nr[ob + 1], nr[ob + 2]]; const head = Math.min(1, u * 2.4); const fadeA = Math.sin(Math.PI * u) ** 0.8 * 0.6; const lift = 0.1 + 0.22 * Math.hypot(A0[0] - B0[0], A0[1] - B0[1], A0[2] - B0[2]) / (2 * R0);
+        let px = 0; let py = 0; let pa = 0; const NS = 18;
+        for (let c = 0; c <= NS; c++) {
+          const v = (c / NS) * head; let X = A0[0] + (B0[0] - A0[0]) * v; let Y = A0[1] + (B0[1] - A0[1]) * v; let Z = A0[2] + (B0[2] - A0[2]) * v; const l = Math.hypot(X, Y, Z) || 1; const rr = (R0 * (1 + lift * Math.sin(Math.PI * v))) / l; X *= rr; Y *= rr; Z *= rr;
+          const sp = persp(Z); const x = cx + X * sp * k; const y = cy - Y * sp * k; const a = fadeA * (Z > 0 ? 1 : 0.15) * (c / NS * 0.7 + 0.3); if (c) pushL(px, py, pa, x, y, a, 0.78, 0.96, 0.5); px = x; py = y; pa = a;
+          if (c === NS && head > 0.99) pushP(x, y, 12, 0.85, 1, 0.6, fadeA * (Z > 0 ? 1 : 0.2), 0.1);
+        }
+      }
+    }
     // ---- beams: each real arrival (live poll or replay) streaks from its source satellite to the glyph
     for (let q = this.sparks.length - 1; q >= 0; q--) {
       const sp = this.sparks[q]; const u = (this.t - sp.t0) / 0.45; if (u >= 1) { this.sparks.splice(q, 1); continue; } if (u < 0) continue;
