@@ -362,3 +362,6 @@
 @media (max-width: 900px) { .vp-tiles { grid-template-columns: 1fr; } .vp-two { grid-template-columns: 1fr; } .vp-banner { grid-template-columns: auto 1fr; } .vp-banner > .btn { grid-column: 1 / -1; } }
 @media (max-width: 560px) { .vp-ctl li { grid-template-columns: 1fr; } .vp .hold, .vp-ctl .btn, .vp-ctl .hold { width: 100%; } .vp-banner { padding: 16px; } }
 @media (prefers-reduced-motion: reduce) { .vp .btn, .vp .hold { transition: none; } }
+
+.vp-warnline { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line)); border-radius: 10px; background: color-mix(in srgb, var(--warn) 9%, var(--ink-1)); color: var(--chalk); font-size: 14px; line-height: 1.45; } .vp-warnline svg { flex: none; margin-top: 2px; color: var(--warn); }
+.vp-alt { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--ink-0); } .vp-alt summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; } .vp-alt p { margin: 8px 0; color: var(--chalk-2); font-size: 14px; }

@@ -50,3 +50,19 @@ export function withdrawCheck(text, available, decimals) {
 
 /** The exact amount for the "Max" button, or '' when unknown. */
 export const maxText = (available, decimals) => { const b = toBig(available); return b === null || b <= 0n ? '' : exactDecimal(b, decimals); };
+
+/**
+ * A vault that can pay people spends a tiny NEAR deposit (1 yoctoNEAR) on every payment, out of its SPENDABLE NEAR: what it holds minus its storage cost (about 3.4 NEAR for this build)
+ * minus a 1 NEAR reserve. A vault funded only with the token has none, and every payment is refused with "no spendable NEAR". Returns '' when all is well, else the plain explanation.
+ */
+export function payFuelWarning(v) {
+  if (!v?.payouts) return '';
+  const have = toBig(v.available); if (have === null || have > 0n) return '';
+  return 'No payment can go out yet. The vault has no spendable NEAR: every payment needs a tiny NEAR deposit, and the vault keeps back what its storage costs (about 3.4 NEAR) plus a 1 NEAR reserve. Send it more NEAR until “In the vault” shows an amount.';
+}
+
+/** The note shown with the steps of a grant that lets the agent pay people. '' for any other grant. */
+export function payoutsNeedNote(payload) {
+  const n = Array.isArray(payload?.payouts?.tokens) ? payload.payouts.tokens.length : 0; if (!n) return '';
+  return 'This grant lets the agent pay people. Besides the tokens, the vault also needs NEAR it can spend: it keeps back its storage cost (about 3.4 NEAR) and a 1 NEAR reserve, and every payment uses a tiny NEAR deposit. Fund the vault with NEAR above that, or no payment can go out.';
+}

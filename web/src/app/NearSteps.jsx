@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { Icon, SkeletonRows } from '../ui.jsx';
 import { T } from './copy.js';
-import { sendNearTx } from './ownerTx.js';
+import { sendNearTx, sendSetupSigned } from './ownerTx.js';
 import OnboardHelp from './OnboardHelp.jsx';
+import { payoutsNeedNote } from './vaultView.js';
 
 const KEY = (id) => `autonear.nearsteps.${id}`;
 const load = (id) => { try { return JSON.parse(sessionStorage.getItem(KEY(id)) || '{}'); } catch { return {}; } };
@@ -49,6 +50,7 @@ export default function NearSteps({ d, owner, onDone }) {
   return (
     <div className="finish near-steps">
       <p className="why"><Icon name="wallet" size={14} />{T.nearStepsIntro}</p>
+      {payoutsNeedNote(d.payload) && <p className="vp-warnline"><Icon name="info" size={16} />{payoutsNeedNote(d.payload)}</p>}
       <ol className="ap-steps">
         {steps.map((s, i) => { const w = stepWords(s, vault); const done = prog[i]; return (
           <li key={i} className={done ? 'done' : i === next ? 'now' : ''}>
@@ -59,7 +61,7 @@ export default function NearSteps({ d, owner, onDone }) {
         ); })}
       </ol>
       {err && <p className="why" role="alert">{err}</p>}
-      {setup && <OnboardHelp setup={setup} onClose={() => setSetup(null)} />}
+      {setup && <OnboardHelp setup={setup} onClose={() => setSetup(null)} onSign={() => sendSetupSigned({ account: owner.address })} />}
       {verdict && <p role="status">{verdict.ok || verdict.fieldsOk ? 'Checked on the network: the limits match what you approved.' : 'The network does not match what you approved yet. Wait a minute and check again.'}</p>}
       {on && <p role="status">{on.activated ? T.nearOn : `${T.nearNotOn} ${on.reason ?? ''}`.trim()}</p>}
     </div>
