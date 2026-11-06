@@ -28,7 +28,7 @@
 .chip.mineral { color: var(--mineral-hi); border-color: color-mix(in srgb, var(--mineral-hi) 50%, var(--line)); }
 /* wallet button */
 .wb { display: grid; gap: 8px; justify-items: start; } .wb-hint, .wb-err { margin: 0; font-size: 13px; color: var(--chalk-3); } .wb-err { color: var(--risk); }
-.wb-choices { display: flex; gap: 8px; flex-wrap: wrap; } .wb-choices img { border-radius: 4px; }
+.wb-list { display: grid; gap: 8px; } .wb-list .btn { justify-content: flex-start; gap: 12px; } .wb-list img { border-radius: 6px; }
 /* landing */
 .ln-top { display: flex; justify-content: space-between; align-items: center; padding: 16px clamp(16px, 4vw, 48px); }
 .ln-hero { position: relative; width: 100%; height: clamp(600px, calc(100svh - 76px), 920px); display: flex; align-items: center; padding: 0 clamp(16px, 4vw, 56px); }
