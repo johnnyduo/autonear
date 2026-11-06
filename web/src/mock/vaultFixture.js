@@ -11,6 +11,7 @@ const hsh = (i) => `${pad(i)}${'f1c7'.repeat(15)}`;
 const ETH = (x) => BigInt(Math.round(x * 1e6)) * 10n ** 12n;           // 1e6 resolution is enough for fixtures
 const NEAR = (x) => BigInt(Math.round(x * 1e6)) * 10n ** 18n;
 const S = (b) => b.toString();
+const USDC = (x) => BigInt(Math.round(x * 1e6)); // the demo token has 6 decimals
 
 // ---- tiny ABI encoder (fixture calldata for the plan; mirrors the decoder in views/vault/decode.js so the review UI is exercised for real) ----
 const w = (hex) => hex.replace(/^0x/, '').padStart(64, '0');
@@ -46,6 +47,18 @@ export function buildFixture(scenario = 'default', now = Date.now()) {
     available: S(NEAR(0.8)), agentBalance: S(NEAR(0.12)),
     templates: [{ id: `${hsh(0x21)}`, label: 'registry-v1 (wasm)', deposit: S(NEAR(5)), artifactHash: `sha256:${hsh(0x72)}`, matches: true }],
     readAt: now - 6000, readError: null, mandateDecisionId: 'dec_fx_grant_b' };
+  // The demo vault that can pay people (the payouts build). A mock USDC token on testnet, two payees, one payment made and one waiting for the owner.
+  const TOKEN = 'mock-usdc.fixture.testnet'; const PAYEE_A = 'alice.fixture.testnet'; const PAYEE_B = 'bob-design-studio.fixture.testnet';
+  const vP = { id: 'vault_fx_p', chainId: 'near-testnet', network: 'NEAR testnet', address: 'fx-pay-vault.fixture.testnet', owner: 'fx-owner.fixture.testnet', status: 'active', build: 'pay', paused: false, codeOk: true, unit: unitNear,
+    mandate: { agent: 'fx-agent.fixture.testnet', expiresAt: sec(now + 6 * DAY), perDrawCap: S(NEAR(0.5)), periodSecs: 86400, periodCap: S(NEAR(2)), totalCap: S(NEAR(10)), maxDeploys: 3, revoked: false, epoch: 1 },
+    usage: { totalSpent: S(NEAR(1.2)), periodSpent: S(NEAR(0.3)), deploys: 1, periodResetsAt: sec(now + 9 * HR) },
+    budget: { maxDraw: S(NEAR(0.5)), remainingPeriod: S(NEAR(1.7)), remainingTotal: S(NEAR(8.8)), remainingDeploys: 2, blocked: '' },
+    available: S(NEAR(4.5)), agentBalance: S(NEAR(0.9)), templates: [{ id: `${hsh(0x23)}`, label: 'registry-v1 (wasm)', deposit: S(NEAR(5)), artifactHash: `sha256:${hsh(0x72)}`, matches: true }],
+    payouts: {
+      tokens: [{ token: TOKEN, symbol: 'USDC', decimals: 6, perPayCap: S(USDC(100)), periodCap: S(USDC(250)), totalCap: S(USDC(1000)), usage: { totalSpent: S(USDC(325)), periodSpent: S(USDC(75)) }, remaining: { period: S(USDC(175)), total: S(USDC(675)), maxPayment: S(USDC(100)) }, balance: S(USDC(480.5)), matches: true }],
+      payees: [{ account: PAYEE_A, matches: true }, { account: PAYEE_B, matches: true }],
+    },
+    readAt: now - 5000, readError: null, mandateDecisionId: 'dec_fx_grant_p' };
   const vC = { id: 'vault_fx_c', chainId: 'evm:421614', network: 'Arbitrum Sepolia', address: addr(0xc0), owner: OWNER, paused: false, codeOk: true, unit: unitEth,
     mandate: { agent: AGENT, expiresAt: sec(now - 3 * HR), perDrawCap: S(ETH(0.004)), periodSecs: 3600, periodCap: S(ETH(0.01)), totalCap: S(ETH(0.05)), maxDeploys: 2, revoked: false, epoch: 2 },
     usage: { totalSpent: S(ETH(0.031)), periodSpent: 0, deploys: 1, periodResetsAt: sec(now - 2 * HR) },
@@ -94,7 +107,7 @@ export function buildFixture(scenario = 'default', now = Date.now()) {
   const empty = scenario === 'empty';
   const state = empty ? 'idle' : { default: 'running', blocked: 'blocked', paused: 'paused', idle: 'idle', worker: 'idle' }[scenario] ?? 'running';
   const loop = { state, lastTickAt: scenario === 'worker' || empty ? null : now - 37_000, lastError: state === 'blocked' ? 'preview mismatch on vault_fx_d: the JS model said draw(0.005) is ok, the chain preview said E_PerDrawCap. Loop blocked itself; nothing was sent.' : state === 'paused' ? null : scenario === 'default' ? 'HTTP 429 from the OP Sepolia RPC at the previous tick (rate limited); retried and succeeded.' : null, usedToday: empty ? 0 : 2, maxPerDay: 5 };
-  const vaults = empty ? [] : scenario.startsWith('grant-') ? (grantStage === 'pending' || grantStage === 'tampered' ? [] : [vG]) : [vA, vB, vC, vD, vE];
+  const vaults = empty ? [] : scenario.startsWith('grant-') ? (grantStage === 'pending' || grantStage === 'tampered' ? [] : [vG]) : (scenario === 'default' ? [vP, vA, vB, vC, vD, vE] : [vA, vB, vC, vD, vE]);
   const vault = { enabled: scenario !== 'disabled', signingSupported: scenario !== 'worker', loop, agent: { evm: { address: AGENT }, near: { account: 'fx-agent.fixture.testnet', publicKey: `ed25519:${hsh(0x55).slice(0, 44)}` } },
     vaults,
     health: [
@@ -124,6 +137,12 @@ export function buildFixture(scenario = 'default', now = Date.now()) {
     if (state === 'blocked') add('anomaly', 2 * MIN, { vaultId: 'vault_fx_d', status: 'refused', detail: 'JS model preview_draw(0.005 ETH) = ok but chain preview = E_PerDrawCap. Loop blocked itself.' });
     else add('loop', 35 * MIN, { detail: 'operator resumed the loop after reviewing the anomaly', vaultId: null });
   }
+  if (!empty && scenario === 'default') {
+    const nb = (h) => `https://testnet.nearblocks.io/txns/${h}`;
+    add('pay', 3 * HR, { vaultId: 'vault_fx_p', decisionId: 'dec_fx_pay1', amount: S(USDC(25)), tx: true, detail: `paid ${USDC(25)} base units of ${TOKEN} to ${PAYEE_A}; verified on chain` });
+    rows.at(-1).explorerUrl = nb(rows.at(-1).txHash);
+    add('refused', 2 * HR, { vaultId: 'vault_fx_p', decisionId: 'dec_fx_pay0', status: 'refused', detail: `payment of 500 USDC to ${PAYEE_A} not sent: the amount is above the per-payment cap the owner set (PerPayCap); nothing was signed` });
+  }
   const ledger = { items: rows, chainOk: scenario !== 'broken' };
 
   const dec = (id, o) => ({ id, action: 'deploy_testnet', chain_id: 'evm:84532', artifact_hash: `sha256:${hsh(0x71)}`, created_at: now - 6 * HR, expiry: now + 18 * HR, payload: { networkLabel: 'Base Sepolia' }, ...o });
@@ -134,7 +153,19 @@ export function buildFixture(scenario = 'default', now = Date.now()) {
     dec('dec_fx_dep5', { effectiveStatus: 'pending', status: 'pending', approver: null, chain_id: 'near-testnet', payload: { networkLabel: 'NEAR testnet' } }),
     dec('dec_fx_dep0', { effectiveStatus: 'executed', status: 'executed', approver: 'operator', decided_at: now - 3 * DAY }),
     { ...grantDecision },
+    ...(scenario === 'default' ? [
+      dec('dec_fx_pay2', { action: 'pay_testnet', chain_id: 'near-testnet', target: vP.address, method: 'pay', effectiveStatus: 'pending', status: 'pending', approver: null, created_at: now - 20 * MIN, nonce: hsh(0x93).slice(0, 32), payload_hash: hsh(0x94), max_spend: S(USDC(12.5)),
+        payload: { action: 'pay_testnet', protocol: 'near', network: 'near-testnet', vault: vP.address, token: TOKEN, symbol: 'USDC', decimals: 6, payee: PAYEE_B, amount: S(USDC(12.5)), memo: 'design work, October' } }),
+      dec('dec_fx_pay1', { action: 'pay_testnet', chain_id: 'near-testnet', target: vP.address, method: 'pay', effectiveStatus: 'executed', status: 'executed', approver: 'mandate:vault_fx_p:1+fx-owner.fixture.testnet', decided_at: now - 3 * HR - 2 * MIN, created_at: now - 4 * HR, max_spend: S(USDC(25)),
+        payload: { action: 'pay_testnet', protocol: 'near', network: 'near-testnet', vault: vP.address, token: TOKEN, symbol: 'USDC', decimals: 6, payee: PAYEE_A, amount: S(USDC(25)), memo: 'invoice 42' } }),
+    ] : []),
   ];
   const artifacts = [{ hash: `sha256:${hsh(0x71)}`, kind: 'contract-build:evm' }, { hash: `sha256:${hsh(0x72)}`, kind: 'contract-build:near' }];
-  return { mode: 'ok', scenario, at: now, vault, ledger, decisions, artifacts, grant: { decision: grantDecision, plan: grantPlan } };
+  // GET /api/payments (same shape as the server: newest first, the verified payment attached when there is one)
+  const payments = { items: scenario === 'default' && !empty ? [
+    { decisionId: 'dec_fx_pay2', status: 'pending', effectiveStatus: 'pending', vault: vP.address, token: TOKEN, symbol: 'USDC', decimals: 6, payee: PAYEE_B, amount: S(USDC(12.5)), amountDisplay: '12.5 USDC', memo: 'design work, October', summary: `Pay 12.5 USDC to ${PAYEE_B} for design work, October`, createdAt: now - 20 * MIN, expiry: now + 23 * HR, approver: null, payment: null },
+    { decisionId: 'dec_fx_pay1', status: 'executed', effectiveStatus: 'executed', vault: vP.address, token: TOKEN, symbol: 'USDC', decimals: 6, payee: PAYEE_A, amount: S(USDC(25)), amountDisplay: '25 USDC', memo: 'invoice 42', summary: `Pay 25 USDC to ${PAYEE_A} for invoice 42`, createdAt: now - 4 * HR, expiry: now + 20 * HR, approver: 'mandate:vault_fx_p:1+fx-owner.fixture.testnet',
+      payment: { id: 1, txHash: rows.find((r) => r.kind === 'pay')?.txHash ?? null, status: 'confirmed', explorerUrl: rows.find((r) => r.kind === 'pay')?.explorerUrl ?? '', recordedAt: now - 3 * HR, verification: {} } },
+  ] : [] };
+  return { mode: 'ok', scenario, at: now, vault, ledger, decisions, artifacts, payments, grant: { decision: grantDecision, plan: grantPlan } };
 }

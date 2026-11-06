@@ -207,3 +207,27 @@
 
 .cn-explain { margin: 0 0 18px 52px; padding: 14px 16px; border: 1px solid var(--line-hi); border-radius: 14px; background: color-mix(in srgb, var(--ink-0) 70%, transparent); } .cn-explain b { display: block; margin-bottom: 4px; font: 600 12px var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: #7ee9ff; } .cn-explain p { margin: 0 0 10px; max-width: 68ch; font-size: 14px; line-height: 1.55; } .cn-explain ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13.5px; color: var(--chalk-2); } .cn-explain li b { display: inline; color: var(--chalk); font: 600 13px var(--f-mono); letter-spacing: 0; text-transform: none; margin: 0; }
 @media (max-width: 820px) { .cn-explain { margin-left: 0; } }
+/* payments (Vault page, Home, Approvals). Extends the existing look; tables stack into labelled cards on small screens. */
+.pay h3 { font: 500 12px/1.2 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--chalk-3); margin: 22px 0 10px; }
+.pay-tok { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; } .pay-tok:first-of-type { margin-top: 6px; } .pay-tok h3 { margin: 0; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--chalk); }
+.pay-bal { color: var(--chalk-2); font-size: 14px; } .pay-bal b { color: var(--chalk); font-weight: 600; }
+.pay-lim { margin-top: 12px; } .pay-lim li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; } .pay-lim .meter { flex: 1 0 100%; margin-top: 4px; }
+.acct { overflow-wrap: anywhere; font-family: var(--f-mono); font-size: .92em; } .pay-people .chip { height: auto; min-height: 28px; padding: 4px 10px; white-space: normal; text-transform: none; letter-spacing: 0; font-size: 12.5px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; } .tbl th { text-align: left; font: 500 11px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--chalk-3); padding: 0 12px 8px 0; border-bottom: 1px solid var(--line-hi); }
+.tbl td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; color: var(--chalk-2); } .tbl td b { color: var(--chalk); }
+.pay-form { display: grid; gap: 14px; } .pay-form[aria-disabled='true'] .field { opacity: .6; }
+.pay-grid { align-items: start; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; } .pay-grid .field small { font-size: 12.5px; }
+.pay-more summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; } .pay-more .field { margin-top: 4px; max-width: 420px; }
+.ferr { color: var(--risk); font-size: 13px; } .pay-sent { margin: 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--signal) 45%, var(--line)); border-radius: 10px; color: var(--chalk-2); display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.pay-sent b { color: var(--chalk); }
+.hm-pay { display: flex; justify-content: space-between; gap: 16px; align-items: center; flex-wrap: wrap; margin: 0 0 24px; } .hm-pay h2 { margin: 0 0 4px; } .hm-pay p { margin: 0; }
+.req h2, .hist span { overflow-wrap: anywhere; } .hist li > span:first-child { min-width: 0; }
+@media (max-width: 640px) {
+  .tbl.stack-sm thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tbl.stack-sm, .tbl.stack-sm tbody, .tbl.stack-sm tr, .tbl.stack-sm td { display: block; width: 100%; }
+  .tbl.stack-sm tr { padding: 10px 0; border-bottom: 1px solid var(--line); } .tbl.stack-sm td { border: 0; padding: 3px 0; display: flex; gap: 12px; justify-content: space-between; text-align: right; }
+  .tbl.stack-sm td::before { content: attr(data-label); flex: none; color: var(--chalk-3); font: 500 11px/1.8 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; text-align: left; }
+  .pay-sent .btn, .pay-form .btn.primary { width: 100%; } .pay-form .btn { min-height: 44px; }
+  .hist li { grid-template-columns: 1fr auto; } .hist time { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) { .req .tech summary, .hist-wrap .tech summary { min-height: 40px; display: flex; align-items: center; } }

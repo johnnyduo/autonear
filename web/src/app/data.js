@@ -12,6 +12,9 @@ const nearFx = (fx) => {
   return { ...fx, vault, decisions: (fx.decisions ?? []).filter((d) => isNear(d.chain_id)), ledger: { ...fx.ledger, items: (fx.ledger?.items ?? []).filter((e) => !e.vaultId || ids.has(e.vaultId)) } };
 };
 
+// `#/vault?fixture=1&scenario=idle` previews a vault without payouts (the default preview has one). Any other scenario name falls back to the default.
+export const fixtureScenario = () => { try { const s = new URLSearchParams((location.hash || '').split('?')[1] || '').get('scenario'); return s === 'idle' ? s : 'default'; } catch { return 'default'; } };
+
 export function useAppData() {
   const forced = isFixtureMode();
   const status = useApi('/api/status', { poll: 15000 });
@@ -20,6 +23,9 @@ export function useAppData() {
   const ledgerLive = useApi('/api/vault/ledger?limit=40', { poll: 30000, enabled: !forced });
   const watch = useApi('/api/watch');
   const autonomy = useApi('/api/autonomy', { poll: 20000 });
+  // Payments are only asked for when a vault in the report can pay (a v1 vault never causes this request).
+  const canPayLive = !forced && (vaultLive.data?.vaults ?? []).some((v) => v.payouts);
+  const paymentsLive = useApi('/api/payments', { poll: 20000, enabled: canPayLive });
   const opps = useApi('/api/opportunities', { poll: 60000 });
   const noVault = vaultLive.data && !(vaultLive.data.vaults ?? []).length;
   const demo = forced || Boolean(noVault);
@@ -27,7 +33,7 @@ export function useAppData() {
   useEffect(() => {
     if (!demo || fx) return undefined;
     let on = true;
-    import('../mock/vaultFixture.js').then((m) => on && setFx(nearFx(m.buildFixture('default', Date.now())))).catch(() => {});
+    import('../mock/vaultFixture.js').then((m) => on && setFx(nearFx(m.buildFixture(fixtureScenario(), Date.now())))).catch(() => {});
     return () => { on = false; };
   }, [demo, fx]);
   const liveDecisions = decLive.data?.items ?? [];
@@ -43,10 +49,11 @@ export function useAppData() {
     vaultError: demo ? null : vaultLive.error,
     decisions: demoDecisions ? (fx?.decisions ?? []) : liveDecisions,
     ledger: demoLedger ? (fx?.ledger?.items ?? []) : liveLedger,
+    payments: demo ? (fx?.payments ?? { items: [] }) : (canPayLive ? (paymentsLive.data ?? { items: [] }) : { items: [] }),
     watch: watch.data, autonomy: autonomy.data, opps: opps.data?.items ?? [],
-    reload: () => { status.reload(); vaultLive.reload(); decLive.reload(); ledgerLive.reload(); watch.reload(); autonomy.reload(); },
+    reload: () => { status.reload(); vaultLive.reload(); decLive.reload(); ledgerLive.reload(); paymentsLive.reload(); watch.reload(); autonomy.reload(); },
     reloadWatch: watch.reload, reloadAutonomy: autonomy.reload,
-  }), [demo, demoDecisions, demoLedger, liveDecisions, liveLedger, forced, fx, status, vaultLive, decLive, ledgerLive, watch, autonomy, opps]); // eslint-disable-line react-hooks/exhaustive-deps
+  }), [demo, demoDecisions, demoLedger, liveDecisions, liveLedger, forced, fx, status, vaultLive, decLive, ledgerLive, paymentsLive, canPayLive, watch, autonomy, opps]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /** The vault the app talks about: the first one that has a mandate, else the first. */

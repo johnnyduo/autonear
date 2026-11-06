@@ -8,6 +8,7 @@ import { mainVault } from './data.js';
 import { href } from './nav.js';
 import { readNearVault, sendNearTx, sendVaultTx } from './ownerTx.js';
 import HoldButton from './HoldButton.jsx';
+import Payments from './Payments.jsx';
 
 const tn = (f) => (f > 0.9 ? 'risk' : f > 0.7 ? 'warn' : '');
 
@@ -70,6 +71,7 @@ export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, t
         </> : <p>No limits are set, so the agent cannot take anything from the vault.</p>}
         <a className="btn sm" href={href('vault/advanced', opts)}>Change limits (advanced tools)</a>
       </section>
+      {v.payouts && <Payments v={v} data={data} owner={owner} canWrite={canWrite} demo={demo} opts={opts} toast={toast} stopped={stopped} />}
       <section className="card danger-zone">
         <h2>Stop and take back</h2>
         <div className="row">

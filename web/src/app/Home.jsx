@@ -4,9 +4,10 @@ import { api, fmt } from '../api.js';
 import { Icon, Meter } from '../ui.jsx';
 import { fmtAmount, ratio, unitOf } from '../views/vault/format.js';
 import { ConstellationPanel } from '../views/_overview-parts.jsx';
-import { T, homeLine } from './copy.js';
+import { P, T, homeLine, pfill } from './copy.js';
 import { mainVault, pendingOf } from './data.js';
 import { href } from './nav.js';
+import { payHome } from './pay.js';
 import { buildScene } from './scene-model.js';
 
 export default function Home({ data, owner, canWrite, demo, opts, toast }) {
@@ -30,6 +31,7 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
   const isNear = String(vault?.chainId ?? '').startsWith('near'); const tu = isNear ? data.autonomy?.topUp?.near : data.autonomy?.topUp?.evm;
   const gasFrac = vault ? ratio(vault.agentBalance, tu?.target ?? (isNear ? '2000000000000000000000000' : '10000000000000000')) : 0;
   const lowGas = model.gas?.low;
+  const pay = payHome(vault, data.payments);
   const finds = [...data.opps].sort((a, b) => b.score - a.score).slice(0, 3);
   const watching = !demo && owner.address && !owner.isOwner;
   return (
@@ -76,6 +78,13 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
           <a className="btn sm primary" href={href('approvals', opts)}>{pending.length ? 'Review' : 'Open Approvals'}</a>
         </article>
       </section>
+      {pay && (
+        <section className="hm-pay card" aria-labelledby="p-h">
+          <div><h2 id="p-h">{P.homeLine}</h2>
+            <p>{pay.any ? [pay.paid.length ? pfill(P.homePaid, { x: pay.paid.join(', ') }) : '', pay.waiting ? pfill(P.homeWaiting, { n: pay.waiting }) : ''].filter(Boolean).join(' · ') || P.homeNone : P.homeNone}</p></div>
+          <a className="btn sm" href={href('vault', opts)}>{P.openVault}</a>
+        </section>
+      )}
       <section className="hm-finds" aria-labelledby="f-h">
         <div className="row sp"><h2 id="f-h">What it found lately</h2><a href={href('watch', opts)}>Steer what it looks for →</a></div>
         {finds.length ? (

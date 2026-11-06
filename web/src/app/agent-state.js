@@ -8,3 +8,19 @@ export function agentPublishState(d, vault, ledger = [], nowSec = Math.floor(Dat
   const live = vs.some((v) => v.status === 'active' && !v.paused && v.mandate && !v.mandate.revoked && Number(v.mandate.expiresAt) > nowSec);
   return live ? 'waiting' : 'novault';
 }
+
+/**
+ * Where an owner-approved payment stands: 'sending' (the agent has claimed it), 'held' (the newest history entry for it is a refusal or failure),
+ * 'waiting' (a switched-on vault that can pay this person in this token exists), or 'novault'. Same rules as agentPublishState, plus the vault must
+ * be a payouts vault whose token and payee lists name what the request asks for.
+ */
+export function payState(d, vault, ledger = [], nowSec = Math.floor(Date.now() / 1000)) {
+  if (d.effectiveStatus === 'executing') return 'sending';
+  const last = [...ledger].filter((e) => e.decisionId === d.id).sort((a, b) => Number(new Date(b.time)) - Number(new Date(a.time)))[0];
+  if (last && (last.status === 'refused' || last.status === 'failed')) return 'held';
+  const p = d.payload ?? {};
+  const vs = (vault?.vaults ?? []).filter((x) => (!d.chain_id || !x.chainId || x.chainId === d.chain_id) && (!p.vault || !x.address || x.address === p.vault));
+  const live = vs.some((v) => v.status === 'active' && !v.paused && v.mandate && !v.mandate.revoked && Number(v.mandate.expiresAt) > nowSec
+    && v.payouts && v.payouts.tokens.some((t) => t.token === p.token) && v.payouts.payees.some((x) => x.account === p.payee));
+  return live ? 'waiting' : 'novault';
+}

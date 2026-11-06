@@ -2,9 +2,9 @@
 import { lazy, Suspense, useState } from 'react';
 import { api, fmt } from '../api.js';
 import { Empty, Icon, SkeletonRows } from '../ui.jsx';
-import { STATUS_WORD, T, describeDecision } from './copy.js';
+import { P, STATUS_WORD, T, describeDecision } from './copy.js';
 import { pendingOf } from './data.js';
-import { agentPublishState } from './agent-state.js';
+import { agentPublishState, payState } from './agent-state.js';
 import { href } from './nav.js';
 import HoldButton from './HoldButton.jsx';
 
@@ -25,6 +25,12 @@ function Finish({ d, reload, opts, toast, owner, data }) {
   };
   if (d.action === 'grant_mandate' && String(d.chain_id).startsWith('near')) return <Suspense fallback={<SkeletonRows n={3} />}><NearSteps d={d} owner={owner} onDone={reload} /></Suspense>;
   if (d.action === 'grant_mandate') return <p className="why">Approved. Now send the on-chain steps from your wallet. <a className="btn sm primary" href={href(`vault/grant/${d.id}`, opts)}>Continue</a></p>;
+  if (d.action === 'pay_testnet') {
+    const st = payState(d, data.vault, data.ledger);
+    return <p className="why" role="status"><Icon name={st === 'held' ? 'alert' : 'bot'} size={14} />{{ waiting: P.waiting, sending: P.sending, held: P.held, novault: P.noVault }[st]}{' '}
+      {st === 'held' && <a className="btn sm" href={href('approvals', { ...opts, activity: true })}>{P.seeWhy}</a>}
+      {st === 'novault' && <a className="btn sm primary" href={href('vault', opts)}>{P.openVault}</a>}</p>;
+  }
   if (!evm && d.action === 'deploy_testnet') {
     const st = agentPublishState(d, data.vault, data.ledger);
     return <p className="why" role="status"><Icon name={st === 'held' ? 'alert' : 'bot'} size={14} />{st === 'waiting' ? T.agentWaiting : st === 'held' ? T.agentHeld : T.agentNoVault}{' '}
@@ -45,7 +51,8 @@ export default function Approvals({ data, owner, canWrite: canOwn, opts, toast }
   const canWrite = canOwn && !data.demoDecisions; // example requests cannot be approved
   const [busy, setBusy] = useState('');
   const pending = pendingOf(data.decisions);
-  const approved = data.decisions.filter((d) => d.effectiveStatus === 'approved' && !String(d.approver ?? '').startsWith('mandate:'));
+  // A payment the agent is sending right now stays visible until it is recorded (its approver then reads "mandate:...+owner"), so it never vanishes in between.
+  const approved = data.decisions.filter((d) => (d.effectiveStatus === 'approved' && !String(d.approver ?? '').startsWith('mandate:')) || (d.action === 'pay_testnet' && d.effectiveStatus === 'executing'));
   const past = data.decisions.filter((d) => ['executed', 'rejected', 'expired', 'failed'].includes(d.effectiveStatus)).slice(0, 8);
   const why = !owner.address ? 'Connect your wallet to decide.' : !owner.isOwner ? T.readOnly : T.demoNote;
   const act = async (d, kind) => {
@@ -77,7 +84,7 @@ export default function Approvals({ data, owner, canWrite: canOwn, opts, toast }
         ); })}
         {approved.map((d) => (
           <li key={d.id} className="card live">
-            <div className="row sp"><h2>{describeDecision(d).title}</h2><span className="chip ok">{STATUS_WORD.approved}</span></div>
+            <div className="row sp"><h2>{describeDecision(d).title}</h2><span className="chip ok">{d.effectiveStatus === 'executing' ? STATUS_WORD.executing : STATUS_WORD.approved}</span></div>
             {canWrite ? <Finish d={d} reload={data.reload} opts={opts} toast={toast} owner={owner} data={data} /> : <p className="why">{why}</p>}
             <Technical d={d} />
           </li>
