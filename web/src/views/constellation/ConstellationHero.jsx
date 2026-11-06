@@ -149,7 +149,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   const [model, setModel] = useState(null);
   const [view, setView] = useState('sphere');
   const [star, setStar] = useState('evidence');
-  useEffect(() => { const sc = sceneRef.current; if (sc) sc.rightInset = star === 'council' && (stage.current?.clientWidth ?? 0) > 900 ? 352 : 0; });
+  useEffect(() => { const sc = sceneRef.current; if (sc) { const sw = stage.current?.clientWidth ?? 0; sc.rightInset = star === 'council' && sw > 900 ? Math.min(380, Math.max(300, sw * 0.24)) + 28 : 0; } });
   const councilApi = useApi('/api/council', { poll: 30000, enabled: !demo });
   const [hoverK, setHoverK] = useState(null); const [pinnedK, setPinnedK] = useState(null); const [focusK, setFocusK] = useState(null);
   const [filter, setFilter] = useState({ srcOff: new Set(), topicOff: new Set() });

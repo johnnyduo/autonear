@@ -337,7 +337,7 @@ export class SphereScene extends DiscScene {
       for (let c = 1; c <= 28; c++) { const th = (c / 28) * TAU; const bx = rp.x + Math.cos(th) * rad; const by = rp.y + Math.sin(th) * rad; pushL(ax, ay, a, bx, by, a, 1, 0.92, 0.65); ax = bx; ay = by; }
     }
     // ---- the council star, and the summary streams that carry the evidence story to it
-    let topSafe = 0; let bottomSafe = H - 24; for (const r of this.resv ?? []) { if (r.y < H * 0.3) { if (r.x < W / 2 + 360 && r.x + r.w > W / 2 - 360) topSafe = Math.max(topSafe, r.y + r.h); } else if (r.y > H * 0.55) bottomSafe = Math.min(bottomSafe, r.y); } // only what overlaps the centred header counts at the top
+    let topSafe = 0; let bottomSafe = H - 24; for (const r of this.resv ?? []) { if (r.y < H * 0.3) { if (r.x < (W - (this.rightInset ?? 0)) / 2 + 300 && r.x + r.w > (W - (this.rightInset ?? 0)) / 2 - 300) topSafe = Math.max(topSafe, r.y + r.h); } else if (r.y > H * 0.55) bottomSafe = Math.min(bottomSafe, r.y); } // only what overlaps the centred header counts at the top
     this.council.build({ topSafe, bottomSafe, rightInset: this.rightInset ?? 0, pushP, pushL, cx: coX, cy: coY, k: coK, W, H, T: this.t, calm, main: se > 0.5, fade: 1 });
     { const cry = this.council.cry; const T = this.t; ov.streamCap = null; const GOLDS = [1, 0.8, 0.46]; const CYN = [0.2, 0.92, 1]; const MG = [1, 0.25, 0.8];
       for (const c of cry) {
