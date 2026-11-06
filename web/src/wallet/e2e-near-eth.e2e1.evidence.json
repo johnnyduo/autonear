@@ -1,0 +1,111 @@
+{
+  "network": "near-testnet",
+  "note": "Owner-side transactions were signed by a TEST key through an injected EIP-1193 provider (viem local account), not by the user's MetaMask. Relayer: eth-rpc.testnet.near.org (NEP-518).",
+  "owner": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b",
+  "vault": "vault-e2e1.autonear-fund-1106-d.testnet",
+  "startedAt": "2026-11-06T04:26:57.948Z",
+  "steps": [
+    {
+      "label": "plain transfer 0.3 NEAR into the vault",
+      "signer": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b (test key, injected provider)",
+      "relayerHash": "0xf1b3adb05ff4aacde5f7544db0d994f8673c1e19f588be31d8f68906f42ad80a",
+      "ok": true,
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xf1b3adb05ff4aacde5f7544db0d994f8673c1e19f588be31d8f68906f42ad80a"
+    },
+    {
+      "label": "allow_template (registry wasm, fixed init args)",
+      "signer": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b (test key, injected provider)",
+      "relayerHash": "0xb011db45e5fec8d6f62c313a321ac645c843fefe9a9bf531fed8aaf16150dbf0",
+      "ok": true,
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xb011db45e5fec8d6f62c313a321ac645c843fefe9a9bf531fed8aaf16150dbf0"
+    },
+    {
+      "label": "set_mandate",
+      "signer": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b (test key, injected provider)",
+      "relayerHash": "0xf3cb65f3657712b7f47dc818ca14e27e3b4ac4afa7db6384bd00d01debe26fbc",
+      "ok": true,
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xf3cb65f3657712b7f47dc818ca14e27e3b4ac4afa7db6384bd00d01debe26fbc"
+    },
+    {
+      "label": "pause",
+      "signer": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b (test key, injected provider)",
+      "relayerHash": "0xb01624e2235c2776ded980481593775b4c4a9848cdd90402ac3ba5481cf4046a",
+      "ok": true,
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xb01624e2235c2776ded980481593775b4c4a9848cdd90402ac3ba5481cf4046a"
+    },
+    {
+      "label": "unpause",
+      "signer": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b (test key, injected provider)",
+      "relayerHash": "0x14b5da7df656b2dc857c0ba3dc145e3a20dfe368e99b3f228858f5e030b72d37",
+      "ok": true,
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x14b5da7df656b2dc857c0ba3dc145e3a20dfe368e99b3f228858f5e030b72d37"
+    },
+    {
+      "label": "revoke",
+      "signer": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b (test key, injected provider)",
+      "relayerHash": "0xc1d274b7e1b117d889a3759ad8fea384281d07f955a05dda228a7d6c24c12b4f",
+      "ok": true,
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xc1d274b7e1b117d889a3759ad8fea384281d07f955a05dda228a7d6c24c12b4f"
+    },
+    {
+      "label": "withdraw 1.9160 NEAR back to the owner",
+      "signer": "0x4aef87e3001efb67114944bc2cf319ddf40cbc4b (test key, injected provider)",
+      "relayerHash": "0x2ec7656270cf9855da5d6606433322bd62f3e0d82e88f666e00b78f3dbdfa23b",
+      "ok": true,
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x2ec7656270cf9855da5d6606433322bd62f3e0d82e88f666e00b78f3dbdfa23b"
+    }
+  ],
+  "checks": [
+    {
+      "name": "accept_ownership: the 0x account is now the vault owner",
+      "ok": true,
+      "detail": "owner 0x4aef87e3001efb67114944bc2cf319ddf40cbc4b"
+    },
+    {
+      "name": "transfer into the vault arrived",
+      "ok": true,
+      "detail": "0.3004 NEAR left the owner"
+    },
+    {
+      "name": "allow_template: the template is on the vault allowlist with the approved init args",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "set_mandate: limits are active on chain",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "accept_ownership: the 0x account is now the vault owner",
+      "ok": true,
+      "detail": "owner 0x4aef87e3001efb67114944bc2cf319ddf40cbc4b"
+    },
+    {
+      "name": "unpause: vault is running again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "revoke: limits are revoked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "withdraw: the owner balance went up (after relayer fees)",
+      "ok": true,
+      "detail": "3.7854 NEAR -> 5.7000 NEAR"
+    },
+    {
+      "name": "the vault no longer shows the owner as pending",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "resumedAt": "2026-11-06T04:32:45.508Z",
+  "finishedAt": "2026-11-06T04:37:28.883Z",
+  "result": {
+    "pass": 9,
+    "fail": 0
+  }
+}

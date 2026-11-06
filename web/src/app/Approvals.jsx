@@ -8,12 +8,13 @@ import { href } from './nav.js';
 import HoldButton from './HoldButton.jsx';
 
 const WalletPanel = lazy(() => import('../wallet/WalletPanel.jsx'));
+const NearSteps = lazy(() => import('./NearSteps.jsx'));
 
 function Technical({ d }) {
   return <details className="tech"><summary>Technical details</summary><dl><dt>Request</dt><dd className="mono-v">{d.id}</dd><dt>Network</dt><dd className="mono-v">{d.chain_id}</dd><dt>Fingerprint</dt><dd className="mono-v">{d.payload_hash}</dd></dl></details>;
 }
 
-function Finish({ d, reload, opts, toast }) {
+function Finish({ d, reload, opts, toast, owner }) {
   const [rc, setRc] = useState({ busy: false, msg: '' });
   const evm = String(d.chain_id).startsWith('evm:');
   const submit = async (txHash) => {
@@ -21,6 +22,7 @@ function Finish({ d, reload, opts, toast }) {
     try { const r = await api(`/api/decisions/${d.id}/receipt`, { method: 'POST', body: { txHash: String(txHash).trim() } }); setRc({ busy: false, msg: r.recorded ? 'Recorded and checked on chain.' : 'The chain did not confirm it yet. Try again in a minute.' }); if (r.recorded) { toast('Done: checked on chain.'); reload(); } }
     catch (e) { setRc({ busy: false, msg: e.message }); }
   };
+  if (d.action === 'grant_mandate' && String(d.chain_id).startsWith('near')) return <Suspense fallback={<SkeletonRows n={3} />}><NearSteps d={d} owner={owner} onDone={reload} /></Suspense>;
   if (d.action === 'grant_mandate') return <p className="why">Approved. Now send the on-chain steps from your wallet. <a className="btn sm primary" href={href(`vault/grant/${d.id}`, opts)}>Continue</a></p>;
   if (!evm) return <p className="why">Approved. This network is finished from the command line. <a className="btn sm" href={href('approval', opts)}>Show me how</a></p>;
   return (
@@ -69,7 +71,7 @@ export default function Approvals({ data, owner, canWrite: canOwn, opts, toast }
         {approved.map((d) => (
           <li key={d.id} className="card live">
             <div className="row sp"><h2>{describeDecision(d).title}</h2><span className="chip ok">{STATUS_WORD.approved}</span></div>
-            {canWrite ? <Finish d={d} reload={data.reload} opts={opts} toast={toast} /> : <p className="why">{why}</p>}
+            {canWrite ? <Finish d={d} reload={data.reload} opts={opts} toast={toast} owner={owner} /> : <p className="why">{why}</p>}
             <Technical d={d} />
           </li>
         ))}

@@ -15,3 +15,31 @@ export async function sendVaultTx({ chainId, address, fn, args = [], expect }) {
   await actions.waitForTransactionReceipt(config, { hash, chainId });
   return hash;
 }
+
+// --- NEAR vaults owned by an Ethereum-style account (0x...): the owner signs in MetaMask, the relayer submits (NEP-518). See ../wallet/nearEth.js.
+const NEAR_FNS = new Set(['accept_ownership', 'pause', 'unpause', 'revoke', 'withdraw', 'allow_template', 'set_mandate']);
+
+async function walletProvider(expect) {
+  const [{ walletConfig }, actions] = await Promise.all([import('../wallet/config.js'), import('wagmi/actions')]);
+  const config = walletConfig(); let conn = actions.getConnection(config);
+  if (!conn.address) { await actions.reconnect(config).catch(() => {}); conn = actions.getConnection(config); } // after a page reload the wallet used at sign-in is restored first
+  if (!conn.address) { const c = actions.getConnectors(config)[0]; if (!c) throw new Error('No wallet found.'); await actions.connect(config, { connector: c }); conn = actions.getConnection(config); }
+  if (expect && conn.address?.toLowerCase() !== String(expect).toLowerCase()) throw new Error(`Switch your wallet to ${expect.slice(0, 6)}…${expect.slice(-4)} and try again.`);
+  const provider = await conn.connector.getProvider(); if (!provider?.request) throw new Error('The wallet did not offer a connection to sign with.');
+  return provider;
+}
+
+/** One owner action on a NEAR vault (or a plain transfer when method is null). Resolves to { hash, explorer } once the network confirmed it; throws with plain words otherwise. */
+export async function sendNearTx({ account, receiver, method, args = {}, deposit = 0n, gas, onStage }) {
+  if (method && !NEAR_FNS.has(method)) throw new Error('Unsupported action');
+  const near = await import('../wallet/nearEth.js'); const provider = await walletProvider(account);
+  onStage?.('sign');
+  const { hash } = await near.callNear({ provider, account: account.toLowerCase(), receiver, method, args, deposit, gas });
+  onStage?.('wait');
+  const r = await near.waitForReceipt(hash);
+  if (!r.ok) throw new Error('The network did not accept this step. Nothing was changed.');
+  return { hash, explorer: near.explorerTx(hash) };
+}
+
+/** Read the vault's own config (owner, pending owner, paused) straight from NEAR. */
+export async function readNearVault(vault) { const near = await import('../wallet/nearEth.js'); return near.viewNear({ contract: vault, method: 'config' }); }
