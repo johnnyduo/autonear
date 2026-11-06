@@ -17,14 +17,14 @@ Read this, then `PROGRESS.md` (claims with proof) and the project memory (`token
 ## Accounts (NEAR testnet; balances as of this handoff)
 | Role | Account | NEAR |
 | --- | --- | --- |
-| User's wallet, app owner, pending vault owner | `0x5ebaddf71482d40044391923be1fc42938129988` (ends 9988) | 28 |
+| User's wallet, app owner, pending vault owner | `0x5ebaddf71482d40044391923be1fc42938129988` (ends 9988) | 33 |
 | Demo owner (automated key on the agent machine, not a human) | `autonear-owner-1106.testnet` | ~9.9 |
 | Agent funder | `autonear-agent-1106.testnet` | ~9.0 |
 | Agent (keystore identity) | `d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34` | ~5.5 |
 | Vault (locked, no keys) | `vault-v1.autonear-owner-1106.testnet` | ~8.8 |
 | Registry deployed through the vault | `reg1.vault-v1.autonear-owner-1106.testnet` | 3.8 |
-| EVM-format accounts of the agent and demo owner | `0xd64ec57d1b48ec638b04b5716c1e888b2ffaff67`, `0x4aef87e3001efb67114944bc2cf319ddf40cbc4b` | 4.1 each |
-| Spare funds (same key as the agent) | `autonear-fund-1106-d`, `-e`, `-f`, `-g` `.testnet` | 10 each |
+| EVM-format accounts of the agent and demo owner | `0xd64ec57d1b48ec638b04b5716c1e888b2ffaff67`, `0x4aef87e3001efb67114944bc2cf319ddf40cbc4b` | 8.1 and 9.7 |
+| Spare funds (same key as the agent) | `autonear-fund-1106-d`, `-e`, `-f`, `-g` `.testnet` | 4.8, 6.5, 6.3, 2.0 |
 
 The vault's `pending_owner` is the user's `0x…9988`. It becomes the owner only when that account calls `accept_ownership`. The mandate on the vault is revoked (end of the test run).
 
@@ -45,7 +45,7 @@ The vault's `pending_owner` is the user's `0x…9988`. It becomes the owner only
 ## Open work, in order
 1. The user clicks Accept ownership with the 9988 wallet and reports what MetaMask shows; fix whatever breaks. Then try a real `grant_mandate` through `NearSteps`.
 2. DONE 2026-11-06: Gemini is live on production (`LLM_PROVIDER=gemini`, model `gemini-3.1-flash-lite`); Bluesky is configured. A real run (`run_2943ba6692ff`) went through all stages and created pending decision `dec_5128411b07596b` (`deploy_testnet`, owner and proposer `0x5eba…9988`, contract account `autonear-registry-1106.testnet`, estimate 2.108 NEAR). Contract build attested with `npm run attest -- near --post` (84 tests, commit marked `+dirty` because the tree had other edits). The skeptic's LLM challenge was rejected once for a schema violation (too-long field) and the deterministic skeptic was used; that is recorded in the run. Starting a run needs `OPERATOR_TOKEN`: the new value is in `data/operator.token` (same value set on Vercel). Pass `owner` and `contractAccount` in the POST body or no decision is created.
-3. Put the real testnet deployment into the app's history (the 14 transactions are only in `docs/testnet`).
+3. DONE 2026-11-06: the 14 recorded transactions are in Activity ("Recorded run on NEAR testnet", data in `web/src/app/testnetRun.json`, trimmed from `docs/testnet/near-testnet-v1.json`).
 4. More independent non-social demand sources (every opportunity still says `LOW CONFIDENCE: only 2 independent non-social sources`); `data_indexing` and `ai_agents` have no on-chain corroboration.
 5. Bluesky credentials; optional MiroFish (needs LLM and Zep keys).
 6. 3D glyph sphere view (deferred on the user's request; a first attempt was stopped, no files left).
@@ -59,6 +59,7 @@ The vault's `pending_owner` is the user's `0x…9988`. It becomes the owner only
 - Plain wording in user-facing text and comments. No hype words.
 
 ## Handy facts
+- Faucets (checked 2026-11-06): `helper.testnet.near.org/account` is rate limited per IP ("retry in 7 hours" after the earlier batch). `near-faucet.io` is a Next.js server action: POST to `/` with header `Next-Action: 6d7e3b6e9794a0361cd2decc8f2f1e1e88971970` (the id changes when the site is redeployed; read it from the page's JS chunk), body `[{"contractId":"near_faucet","receiverId":"<account>","amount":"<yocto>"}]`. Up to 0.4 NEAR per call worked; about 10 calls in a row, then HTTP 500 for several minutes (throttle). Total on the accounts above is about 103 NEAR.
 - Dev servers used so far: API `DB_PATH=<scratch copy> PORT=8787 node src/server.js`, web `npx vite --host 127.0.0.1 --port 5191` in `web/`. Screenshot helper scripts lived in the old session's scratchpad and are gone; `window.__coTier = 0` pins the constellation quality tier in headless runs (software WebGL is about 2 fps).
 - Vercel CLI: link a scratch directory with `vercel link --yes --project autonear --scope copycatfinance`; do not link inside the repo.
 - npm cache under `~/.npm` is root-owned: use `npm_config_cache=<some temp dir>` for installs.
