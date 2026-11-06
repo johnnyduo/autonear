@@ -524,6 +524,7 @@
 
   function start() {
     stopRun();
+    win.scrollTo({ left: 0, top: 0, behavior: 'instant' }); // every replay starts at the top of the page
     const els = Array.prototype.slice.call(doc.querySelectorAll('[data-sw]'));
     allEls = els;
     if (!els.length) { revealAll(); setPhase('still'); return; }
@@ -626,7 +627,7 @@
   }
   if (!wantStill) {
     // Hide before the first paint when the script runs early; boot() removes this again if there is nothing to build.
-    try { injectStyle(); root.classList.add('sw-on'); } catch (e) { /* ignore */ }
+    try { if ('scrollRestoration' in win.history) win.history.scrollRestoration = 'manual'; injectStyle(); root.classList.add('sw-on'); } catch (e) { /* ignore */ }
     watchdog = win.setTimeout(onWatchdog, WATCHDOG);
   }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot, { once: true }); else boot();
