@@ -16,6 +16,7 @@ import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from
 import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant } from './vault/index.js';
 import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
+import { getWatch, setWatch } from './watch.js';
 import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 import { buildChallenge, checkSignedChallenge, consumeNonce, deriveSecret, issueSession, readSession, resolveOwner, SESSION_TTL_MS } from './owner-session.js';
 
@@ -59,6 +60,7 @@ const ALLOW = [
   [/^\/api\/auth\/(challenge|session)$/, 'POST'],
   [/^\/api\/auth\/me$/, 'GET, HEAD'],
   [/^\/api\/autonomy$/, 'GET, HEAD'],
+  [/^\/api\/watch$/, 'GET, HEAD, PUT'],
   [/^\/api\/autonomy\/mode$/, 'PUT'],
 ];
 const safeEq = (a, b) => { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
@@ -133,6 +135,11 @@ export function createApp(deps) {
     let g;
 
     if (p === '/api/health' && m === 'GET') return out({ ok: true, time: now() });
+    if (p === '/api/watch' && m === 'GET') return out({ ...(await getWatch(db)), sourceIds: CONNECTORS.map((c) => c.id) });
+    if (p === '/api/watch' && m === 'PUT') {
+      const who = await needOwner(req);
+      return out(await setWatch(db, await body(req), who.actor, { sourceIds: CONNECTORS.map((c) => c.id) }));
+    }
     if (p === '/api/autonomy' && m === 'GET') {
       const evm = topUpConfig(process.env, 'evm'); const near = topUpConfig(process.env, 'near');
       const str = (c) => ({ low: String(c.low), target: String(c.target) });

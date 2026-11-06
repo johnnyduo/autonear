@@ -1,6 +1,7 @@
 import { sha256, now, j, parse, putBlob, audit } from './db.js';
 import { assessRelevance, RELEVANCE_THRESHOLD } from './relevance.js';
 import { CONNECTORS } from './connectors/index.js';
+import { applyWatch, getWatch } from './watch.js';
 
 const MAX_FAILS_BEFORE_OPEN = 3;
 const circuitMs = (fails) => Math.min(60 * 60_000, 2 ** Math.max(0, fails - MAX_FAILS_BEFORE_OPEN) * 5 * 60_000);
@@ -27,6 +28,12 @@ export async function ingestSource(db, connector, { trigger = 'manual', fetchImp
       [connector.id, trigger, t0, t0, 'skipped', `circuit open until ${new Date(src.circuit_open_until).toISOString()}`]);
     return { sourceId: connector.id, status: 'skipped', runId: r.lastInsertRowid };
   }
+  const watch = await getWatch(db);
+  if (watch.sources[connector.id] === false) { // the owner switched this source off: no network, reported plainly
+    await db.run('UPDATE sources SET status=? WHERE id=?', ['disabled_by_owner', connector.id]);
+    const r = await db.run('INSERT INTO ingest_runs(source_id,trigger,started_at,ended_at,status,error) VALUES(?,?,?,?,?,?)', [connector.id, trigger, t0, t0, 'skipped', 'disabled by the owner']);
+    return { sourceId: connector.id, status: 'disabled_by_owner', runId: r.lastInsertRowid };
+  }
   const avail = connector.availability?.();
   if (avail && avail.status !== 'ready') { // e.g. opt-in source without credentials: say so, do not call it an error, do not touch the network
     await db.run('UPDATE sources SET status=?,last_error=NULL WHERE id=?', [avail.status, connector.id]);
@@ -46,9 +53,10 @@ export async function ingestSource(db, connector, { trigger = 'manual', fetchImp
     for (const it of items) {
       if (seen.has(it.externalId)) { stats.duplicates++; continue; }
       seen.add(it.externalId);
-      const rel = it.forceTags
+      let rel = it.forceTags
         ? { score: 1, isNear: true, reasons: ['official NEAR RPC observation'], tags: it.forceTags, flags: [] }
         : assessRelevance({ title: it.title, body: it.body, url: it.relevanceUrl ?? it.url, org: it.org, author: it.author, authorType: it.authorType });
+      if (!it.forceTags) { const w = applyWatch(rel, `${it.title}\n${it.body}`, watch); if (w.drop) { stats.filtered++; continue; } rel = w.rel; }
       if (!rel.isNear || rel.score < RELEVANCE_THRESHOLD) { stats.filtered++; continue; }
       if (++processed > cap) { capped++; continue; }
       const full = norm(`${it.title}\n${it.body}`);
