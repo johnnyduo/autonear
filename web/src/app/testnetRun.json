@@ -106,5 +106,12 @@
    "ok": false,
    "explorer": "https://testnet.nearblocks.io/txns/JpjuQ7y4Pmt9M8vSgcTdb68jzyxfacLFrFtTYNojCck"
   }
- ]
+ ],
+ "accounts": {
+  "owner": "autonear-owner-1106.testnet",
+  "agentNamedFunder": "autonear-agent-1106.testnet",
+  "agent": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34",
+  "vault": "vault-v1.autonear-owner-1106.testnet",
+  "registry": "reg1.vault-v1.autonear-owner-1106.testnet"
+ }
 }
