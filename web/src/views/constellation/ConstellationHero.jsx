@@ -8,6 +8,7 @@ import { drawOverlay } from './overlay.js';
 import { Canvas2DRenderer } from './render-2d.js';
 import { GLRenderer } from './render-gl.js';
 import { DiscScene } from './disc.js';
+import { SphereScene } from './sphere.js';
 import { Scene } from './scene.js';
 import { ListView } from './ListView.jsx';
 import { ROLES, isRecent, lastIngest, roleStates, CountUp } from './shared.js';
@@ -90,11 +91,11 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
 
 export default function ConstellationHero({ status, sources, activeRun, opps, calm, full = false, onReady, onStats }) {
   const stage = useRef(null); const glCv = useRef(null); const ovCv = useRef(null); const tip = useRef(null);
-  const sceneRef = useRef(null); const scenes = useRef({ disc: null, graph: null }); const latest = useRef({}); const rt = useRef({ hover: null, pinned: null, focus: null, pointer: null, engaged: false, touch: false, tier: undefined, fps: 0 });
+  const sceneRef = useRef(null); const scenes = useRef({ sphere: null, disc: null, graph: null }); const latest = useRef({}); const rt = useRef({ hover: null, pinned: null, focus: null, pointer: null, engaged: false, touch: false, tier: undefined, fps: 0 });
   const [rk, setRk] = useState('gl');
   const [data, setData] = useState(null); const [err, setErr] = useState(null);
   const [model, setModel] = useState(null);
-  const [view, setView] = useState('disc');
+  const [view, setView] = useState('sphere');
   const [hoverK, setHoverK] = useState(null); const [pinnedK, setPinnedK] = useState(null); const [focusK, setFocusK] = useState(null);
   const [filter, setFilter] = useState({ srcOff: new Set(), topicOff: new Set() });
   const [replay, setReplay] = useState({ active: false, playing: false, pos: 0, mode: 'ingest', cur: null });
@@ -165,7 +166,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     function start() {
     const R = rt.current; const st = stage.current;
     let sc = scenes.current[view];
-    if (!sc) { sc = view === 'disc' ? new DiscScene({ calm }) : new Scene({ calm }); sc.setModel(latest.current.model); scenes.current[view] = sc; }
+    if (!sc) { sc = view === 'sphere' ? new SphereScene({ calm }) : view === 'disc' ? new DiscScene({ calm }) : new Scene({ calm }); sc.setModel(latest.current.model); scenes.current[view] = sc; }
     sceneRef.current = sc; R.pinned = null; R.hover = null; R.focus = null; R.sized = false; setPinnedK(null); setFocusK(null); setHoverK(null); syncScene(sc);
     let renderer;
     try { renderer = rk === 'gl' ? new GLRenderer(glCv.current, { onLost: () => setRk('2d') }) : new Canvas2DRenderer(glCv.current); } catch { if (rk === 'gl') { setRk('2d'); return undefined; } setErr(new Error('Canvas is unavailable in this browser.')); return undefined; }
@@ -247,7 +248,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
       if (!ptrs.has(e.pointerId)) return; const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, p);
       if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) sc.zoom(pinch / d, (a.x + b.x) / 2, (a.y + b.y) / 2); pinch = d; moved += 10; return; }
       const dx = p.x - prev.x; const dy = p.y - prev.y; moved += Math.abs(dx) + Math.abs(dy);
-      if (moved > 4) { if (e.pointerType === 'touch' && sc.kind === 'graph') sc.drag(dx, 0); else sc.drag(dx, dy); }
+      if (moved > 4) { if (e.pointerType === 'touch' && (sc.kind === 'graph' || sc.kind === 'sphere')) sc.drag(dx, 0); else sc.drag(dx, dy); }
     };
     const onUp = (e) => {
       const sc = S(); if (ui(e) && !ptrs.has(e.pointerId)) return; const was = ptrs.size; ptrs.delete(e.pointerId); pinch = 0;
@@ -308,6 +309,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     <div className="co-hero" data-view={view}>
       <div className="co-tools" data-ui data-reserve>
         <div className="co-seg" role="group" aria-label="View">
+          <button type="button" aria-pressed={view === 'sphere'} onClick={() => setView('sphere')}>Glyph sphere</button>
           <button type="button" aria-pressed={view === 'disc'} onClick={() => setView('disc')}>Glyph disc</button>
           <button type="button" aria-pressed={view === 'graph'} onClick={() => setView('graph')}>3D graph</button>
           <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>View as list</button>
@@ -331,7 +333,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
       {view === 'list' ? (
         <ListView model={model} srcInfo={srcInfo} filter={filter} />
       ) : (
-        <div className={`co-stage ${view}`} ref={stage} tabIndex={0} role="group" aria-roledescription={view === 'disc' ? 'glyph disc' : '3D evidence graph'} aria-label={`Evidence constellation, ${N} stored records. Drag to ${view === 'disc' ? 'pan' : 'rotate'}, Ctrl and wheel or pinch to zoom, arrow keys move, plus and minus zoom, Home resets, Escape releases a pinned node. The list view shows the same data as a table.`}>
+        <div className={`co-stage ${view}`} ref={stage} tabIndex={0} role="group" aria-roledescription={view === 'sphere' ? 'glyph sphere' : view === 'disc' ? 'glyph disc' : '3D evidence graph'} aria-label={`Evidence constellation, ${N} stored records. Drag to ${view === 'disc' ? 'pan' : 'rotate'}, Ctrl and wheel or pinch to zoom, arrow keys move, plus and minus zoom, Home resets, Escape releases a pinned node. The list view shows the same data as a table.`}>
           <canvas key={rk} ref={glCv} className="co-cv" role="img" aria-label={`Evidence constellation: ${N} stored evidence records from ${model.sources.length} sources, grouped by ${model.wells.filter((w) => w.linked).length} topics and linked to ${model.wells.filter((w) => w.opp).length} opportunities.`} />
           <canvas ref={ovCv} className="co-cv co-ov" aria-hidden="true" />
           <ul className="co-kb" aria-label="Most relevant nodes. Tab moves through them, Enter pins one, Escape releases it.">
@@ -375,14 +377,24 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
         </div>
         <div className="co-chiprow" role="group" aria-label="Filter by topic">
           {model.wells.map((w, wi) => { const off = filter.topicOff.has(w.id); return (
-            <button type="button" key={w.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view === 'disc' && setFocusK({ t: 'well', i: wi })} onMouseLeave={() => setFocusK((f) => (f?.t === 'well' && f.i === wi ? null : f))} onClick={() => setFilter((f) => ({ ...f, topicOff: toggle(f.topicOff, w.id) }))}>{w.label}<span className="num"><CountUp value={counts.top[w.id] ?? 0} /></span></button>
+            <button type="button" key={w.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view !== 'graph' && setFocusK({ t: 'well', i: wi })} onMouseLeave={() => setFocusK((f) => (f?.t === 'well' && f.i === wi ? null : f))} onClick={() => setFilter((f) => ({ ...f, topicOff: toggle(f.topicOff, w.id) }))}>{w.label}<span className="num"><CountUp value={counts.top[w.id] ?? 0} /></span></button>
           ); })}
         </div>
       </div>
       {view !== 'list' && (
         <details className="co-legend" data-ui data-reserve>
           <summary>How to read this</summary>
-          {view === 'disc' ? (
+          {view === 'sphere' ? (
+            <ul>
+              <li><b>Glyph:</b> one stored record, drawn as a 9&times;9 pixel pattern from its content hash on the globe surface. Colour is the source, brightness is NEAR relevance, a red ring marks a bot, duplicate or injection flag.</li>
+              <li><b>Longitude:</b> primary topic, one wedge per topic. <b>Latitude:</b> age, oldest at the south, newest toward the north. The lime arc on the equator fills to that opportunity&rsquo;s score.</li>
+              <li><b>Orbits:</b> sources. A satellite&rsquo;s angle is the UTC time of day of that source&rsquo;s last ingest; the small white dot on each orbit is the UTC time now. It pulses if that ingest was under 20 minutes ago.</li>
+              <li><b>Drag</b> to spin (it keeps its momentum), <b>Ctrl + wheel</b> or pinch to zoom, <b>hover or click a glyph</b> to see its source and stored opportunity links; clicking turns the globe to face it. Hover a source or topic chip to light its records.</li>
+              <li><b>Readouts:</b> stored record count, top opportunity score (bar) and confidence (dashed), share of records with relevance 0.95 or higher, flagged share.</li>
+              <li><b>Agent roles</b> on the small ring light up only while a run reports them active.</li>
+              <li><b>Decoration only:</b> dot skin, grid lines, scan ring, dust, limb glow, auto spin and cursor sparks carry no data.</li>
+            </ul>
+          ) : view === 'disc' ? (
             <ul>
               <li><b>Glyph:</b> one stored record. The pixel pattern comes from its content hash. Colour is the source, brightness is NEAR relevance, a red ring marks a bot, duplicate or injection flag.</li>
               <li><b>Sectors:</b> primary topic. The arc on the rim fills to that opportunity&rsquo;s score. Newer records sit closer to the rim.</li>
