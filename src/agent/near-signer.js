@@ -196,12 +196,12 @@ export function createNearSigner({ key, rpcUrl, networkId = 'testnet', fetchImpl
     const signed = signTransaction({ signerId: key.accountId, publicKey: key.publicKey, nonce, receiverId: target, blockHash: ak.blockHash, actions: [functionCall(callSpec.method, argBytes, gasAttached, 0n)] }, key.sign);
     lastNonce = nonce;
     let res;
-    try { res = submit === 'broadcast_tx_commit' ? await rpc.broadcastCommit(signed.base64) : await rpc.sendTx(signed.base64); } catch (e) { res = null; if (!/timeout|TIMEOUT/i.test(String(e?.message))) throw e; }
+    try { res = submit === 'broadcast_tx_commit' ? await rpc.broadcastCommit(signed.base64) : await rpc.sendTx(signed.base64); } catch (e) { res = null; if (!/timeout|TIMEOUT|HTTP (?:408|504)\b/i.test(String(e?.message))) throw e; }
     const start = Date.now();
     let sum = res?.status ? summarizeTxResult(res) : { status: 'pending' };
     while (sum.status === 'pending' && Date.now() - start < timeoutMs) {
       await sleep(pollMs);
-      try { res = await rpc.txStatus(signed.hashB58, key.accountId); sum = summarizeTxResult(res); } catch (e) { if (!/UNKNOWN_TRANSACTION|doesn't exist|not found|TIMEOUT/i.test(String(e?.message))) throw e; }
+      try { res = await rpc.txStatus(signed.hashB58, key.accountId); sum = summarizeTxResult(res); } catch (e) { if (!/UNKNOWN_TRANSACTION|doesn't exist|not found|TIMEOUT|HTTP (?:408|504)\b/i.test(String(e?.message))) throw e; }
     }
     return { chain: 'near', txHash: signed.hashB58, from: key.accountId, to: target, method: callSpec.method, nonce: nonce.toString(), attachedGas: gasAttached.toString(), maxFeeBound: worstCaseFee.toString(), ok: sum.status === 'success', status: sum.status, failure: sum.failure ? JSON.stringify(sum.failure).slice(0, 400) : null, finality: sum.finality, tokensBurnt: sum.tokensBurnt?.toString?.() ?? null };
   }

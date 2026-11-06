@@ -465,6 +465,16 @@ describe('NEAR signer against a fake RPC node', () => {
     const decoded = Buffer.from(submitted.signed_tx_base64, 'base64').toString('latin1');
     assert.ok(decoded.includes('"name":"reg1"') && decoded.includes('"code":"AGFzbQ=="'));
   });
+  test('HTTP 408 / 504 from the gateway on send_tx is a soft timeout: the tx may have landed, so the signer looks it up by hash instead of throwing', async () => {
+    for (const code of [408, 504]) {
+      const ks = memKeystore(); const log = [];
+      const inner = fakeRpc({ status: () => ({ chain_id: 'testnet' }), gas_price: () => ({ gas_price: '100000000' }), query: () => ({ nonce: 41, block_hash: bh, permission: 'FullAccess' }), tx: () => okResult('h') }, log);
+      const fx = async (u, i) => (JSON.parse(i.body).method === 'send_tx' ? new Response('gateway timeout', { status: code }) : inner(u, i));
+      const signer = ks.signer('near', { rpcUrl: NEAR_URL, fetchImpl: fx, pollMs: 1, sleep: async () => {} });
+      const r = await signer.signAndSend(draw, limits);
+      assert.equal(r.ok, true, `HTTP ${code}`); assert.ok(r.txHash); assert.ok(log.some((x) => x.method === 'tx'), 'the outcome was fetched by hash');
+    }
+  });
   test('hostile RPC error text with a secret is redacted', async () => {
     const ks = memKeystore(); const sk = near.formatSecretKey(h2b('9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60'));
     const signer = ks.signer('near', { rpcUrl: NEAR_URL, fetchImpl: fakeRpc({ status: () => { throw new Error(`oops ${sk}`); } }) });

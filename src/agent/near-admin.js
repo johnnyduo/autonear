@@ -112,13 +112,13 @@ export function createNearAdmin({ rpcUrl, accountId, secretKey, networkId = 'loc
     const signed = signAdminTransaction({ signerId: accountId, publicKey: pub, nonce, receiverId, blockHash: ak.blockHash, actions }, sign);
     lastNonce = nonce;
     let res = null;
-    try { res = await rpc.sendTx(signed.base64, waitUntil); } catch (e) { if (!/timeout|TIMEOUT/i.test(String(e?.message))) throw e; }
+    try { res = await rpc.sendTx(signed.base64, waitUntil); } catch (e) { if (!/timeout|TIMEOUT|HTTP (?:408|504)\b/i.test(String(e?.message))) throw e; }
     const start = Date.now();
     let sum = res?.status ? summarizeTxResult(res) : { status: 'pending' };
     const finalOk = (s) => s.status !== 'pending' && (waitUntil !== 'FINAL' || s.finality === 'FINAL');
     while (!finalOk(sum) && Date.now() - start < timeoutMs) {
       await sleep(pollMs);
-      try { res = await rpc.txStatus(signed.hashB58, accountId, waitUntil); sum = summarizeTxResult(res); } catch (e) { if (!/UNKNOWN_TRANSACTION|doesn't exist|not found|TIMEOUT/i.test(String(e?.message))) throw e; }
+      try { res = await rpc.txStatus(signed.hashB58, accountId, waitUntil); sum = summarizeTxResult(res); } catch (e) { if (!/UNKNOWN_TRANSACTION|doesn't exist|not found|TIMEOUT|HTTP (?:408|504)\b/i.test(String(e?.message))) throw e; }
     }
     const out = { txHash: signed.hashB58, from: accountId, to: receiverId, nonce, ok: sum.status === 'success', status: sum.status, failure: sum.failure, finality: sum.finality, res, summary: sum };
     if (!out.ok && !allowFail) throw new Error(`near-admin: tx ${out.txHash} to ${receiverId} ${sum.status}: ${JSON.stringify(sum.failure ?? null).slice(0, 600)}`);

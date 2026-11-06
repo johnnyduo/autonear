@@ -1,0 +1,186 @@
+{
+  "network": "near-testnet",
+  "startedAt": "2026-11-06T15:35:29.799Z",
+  "vault": "vault-v2.autonear-owner-1106.testnet",
+  "txs": [
+    {
+      "label": "fund scratch wallet 0.55 NEAR",
+      "hash": "3nVVASoUzxwHrk6vWJpsZYQxkcJmZedmPyZ5HRzErTh3"
+    },
+    {
+      "label": "transfer_ownership -> scratch wallet",
+      "hash": "3cxeE63VXtT1U9rHivLz1EmH7tS98MVW4VyqGS73Btxe"
+    },
+    {
+      "label": "scratch accept_ownership (with one-time setup)",
+      "hash": "0xbd22def7e14f6354b371bdedac65425b8d31e317893b69e8f6528603bf21666f",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xbd22def7e14f6354b371bdedac65425b8d31e317893b69e8f6528603bf21666f",
+      "ok": true
+    },
+    {
+      "label": "scratch transfer 0.05 NEAR -> vault",
+      "hash": "0x99ac0b7a811384d899d0e3dc81b21f11c69347d0914f419f709d985b26c8f1f3",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x99ac0b7a811384d899d0e3dc81b21f11c69347d0914f419f709d985b26c8f1f3",
+      "ok": true
+    },
+    {
+      "label": "scratch pause",
+      "hash": "0x27f08f921b93a4283304bbade09815b83999544836a1374545b3297ff1bf91d5",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x27f08f921b93a4283304bbade09815b83999544836a1374545b3297ff1bf91d5",
+      "ok": true
+    },
+    {
+      "label": "scratch unpause",
+      "hash": "0xf3ab62cdcbbb0e4e286278b6017dc6aa4f7e7ad471a75e34e1a23f2620650a6d",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xf3ab62cdcbbb0e4e286278b6017dc6aa4f7e7ad471a75e34e1a23f2620650a6d",
+      "ok": true
+    },
+    {
+      "label": "scratch set_mandate",
+      "hash": "0x64ba44512e8b93f7cbfdec75c6881c36092141f6e30dea7ff4caf9ab55bd5245",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x64ba44512e8b93f7cbfdec75c6881c36092141f6e30dea7ff4caf9ab55bd5245",
+      "ok": true
+    },
+    {
+      "label": "scratch revoke",
+      "hash": "0x342ab3668e15410cf45d6df81227c9f2511749d7a229ce44a0c8517776c72243",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x342ab3668e15410cf45d6df81227c9f2511749d7a229ce44a0c8517776c72243",
+      "ok": true
+    },
+    {
+      "label": "scratch withdraw 0.05 NEAR",
+      "hash": "0x782cb18e4717a840a6a6cadafcf8ab8e5ee4b8725006510f43c222edccb4147d",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x782cb18e4717a840a6a6cadafcf8ab8e5ee4b8725006510f43c222edccb4147d",
+      "ok": true
+    },
+    {
+      "label": "scratch transfer_ownership -> demo owner",
+      "hash": "0x063ff264cc940c717abfe723214b2aeec5a0602c12662e9026df89e35957326c",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x063ff264cc940c717abfe723214b2aeec5a0602c12662e9026df89e35957326c",
+      "ok": true
+    },
+    {
+      "label": "demo owner accept_ownership",
+      "hash": "71XQ6xvezvMRikJhUYKhV7YzsW9xULe5GNsX1SK8ugCe"
+    },
+    {
+      "label": "scratch sweeps its spare NEAR back to the demo owner",
+      "hash": "0xedd10cc09044ac0878d5665615a229e9f82f802190fdb28eabbb923d42fc0439",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xedd10cc09044ac0878d5665615a229e9f82f802190fdb28eabbb923d42fc0439",
+      "ok": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "scratch wallet funded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault is offered to the scratch wallet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "onboardingStatus is false before the setup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "accept_ownership",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "relayer key present now; vault owner is the scratch wallet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "transfer 0.05 NEAR to the vault",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the vault balance rose by exactly 0.05 NEAR",
+      "ok": true,
+      "detail": "4.6973 NEAR -> 4.7473 NEAR"
+    },
+    {
+      "name": "pause",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault is paused on chain",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "unpause",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault runs again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "set_mandate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the mandate is on chain and active (agent, caps as signed)",
+      "ok": true,
+      "detail": "{\"agent\":\"d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34\",\"expires_at\":\"1793982984\",\"per_draw_cap\":\"1000000000000000000000"
+    },
+    {
+      "name": "revoke",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the mandate shows revoked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "withdraw 0.05 NEAR to the wallet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the vault balance fell by exactly 0.05 NEAR",
+      "ok": true,
+      "detail": "4.7473 NEAR -> 4.6973 NEAR"
+    },
+    {
+      "name": "the wallet received it (net of the relayer fee)",
+      "ok": true,
+      "detail": "0.4965 NEAR -> 0.5450 NEAR"
+    },
+    {
+      "name": "scratch wallet offered the vault back",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault is owned by the demo owner again",
+      "ok": true,
+      "detail": "autonear-owner-1106.testnet"
+    }
+  ],
+  "signers": {
+    "scratchWallet": "throw-away key, injected provider (not a human, not MetaMask)",
+    "owner": "autonear-owner-1106.testnet (demo owner key, automated)"
+  },
+  "scratchWallet": "0x0db77f61c80ace1a4739431e8951e415e8e4f2ca",
+  "finishedAt": "2026-11-06T15:37:27.697Z",
+  "result": {
+    "pass": 20,
+    "fail": 0
+  },
+  "scope": "NEAR public testnet. The wallet key is a throw-away test key (not a human, not MetaMask). Not an independent audit; no mainnet."
+}
