@@ -1,7 +1,8 @@
 // Council: who decides what gets built. Seven seats vote on every opportunity from stored numbers (rules in src/council.js), the weighted support becomes a verdict,
 // and the verdict decides what Auto mode may do. The animation REPLAYS the stored votes; it is not a live vote. The stage strip below shows the real state of the journey.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { fmt, useApi } from '../api.js';
+import { CountUp } from '../views/constellation/shared.js';
 
 const COL = { back: '#c6f432', abstain: '#f2b84b', object: '#ff6a3d' };
 const SEAT_LABEL = { signal_collector: 'Collector', evidence_analyst: 'Analyst', skeptic: 'Skeptic', product_architect: 'Architect', builder: 'Builder', security_reviewer: 'Security', launch_planner: 'Planner' };
@@ -49,13 +50,74 @@ function Chamber({ entry, rules, replayKey }) {
   );
 }
 
-function Journey({ j }) {
-  if (!j) return null;
+const OUTC = { shipped: '#c6f432', live: '#66ffcc', failed: '#ff4080', held: '#f2b84b', waiting: '#80d9ff', in_progress: '#f2b84b', ready: '#c6f432', not_started: '#8c8b82' };
+const WHO = { research: ['System', 'The seven roles read the evidence and write the brief'], build: ['System', 'Builds the contract and checks it'], decision: ['System', 'Writes one request with exact limits'], approve: ['You or the agent', 'Approved by you, or by the agent inside your limits in Auto'], deploy: ['You or the agent', 'The contract is sent to the chain'], verify: ['Chain', 'The receipt is compared with the checked build'], monitor: ['System', 'Re-checked on every scheduled check'] };
+const STATE_WORD = { done: 'Done', active: 'Now', blocked: 'Stopped', todo: 'Waiting' };
+
+/** Fades a chapter in once, the first time it scrolls into view. Without IntersectionObserver or with reduced motion it is simply shown. */
+function useReveal() {
+  const ref = useRef(null); const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (!ref.current || reduce() || typeof IntersectionObserver !== 'function') { setOn(true); return undefined; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setOn(true); io.disconnect(); } }, { threshold: 0.12 }); io.observe(ref.current); return () => io.disconnect();
+  }, []);
+  return [ref, on];
+}
+function Chapter({ id, n, title, lead, children }) {
+  const [ref, on] = useReveal();
   return (
-    <ol className="cn-steps" aria-label="From verdict to a deployed product">
-      <li className="cn-step done"><i /><b>Council</b><small>verdict</small></li>
-      {j.stages.map((s) => <li key={s.id} className={`cn-step ${s.state}`}><i /><b>{s.label}</b><small>{s.detail}</small></li>)}
+    <section id={id} ref={ref} className={`cn-ch${on ? ' in' : ''}`} aria-labelledby={`${id}-h`}>
+      <header><span className="cn-n" aria-hidden="true">{n}</span><div><h2 id={`${id}-h`}>{title}</h2><p className="dim">{lead}</p></div></header>
+      {children}
+    </section>
+  );
+}
+
+/** The whole story in one line of four stops. The stop where the product is right now pulses; dots flow along the finished links. */
+function Story({ stops, here }) {
+  return (
+    <ol className="cn-story" aria-label="From evidence to outcome">
+      {stops.map((s, i) => (
+        <li key={s.id} className={`cn-stop${i === here ? ' here' : ''}${i < here ? ' past' : ''}`}>
+          <a href={`#${s.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'start' }); }}>
+            <span className="cn-dotgrid" aria-hidden="true">{Array.from({ length: 25 }, (_, q) => <i key={q} style={{ '--d': `${(q % 5) * 0.12 + Math.floor(q / 5) * 0.12}s`, '--on': s.fill > q / 25 ? 1 : 0.18 }} />)}</span>
+            <span className="cn-stop-t"><small>{s.kicker}</small><b>{s.big}</b><em>{s.sub}</em></span>
+          </a>
+          {i < stops.length - 1 && <span className="cn-link-flow" aria-hidden="true"><i /><i /><i /></span>}
+        </li>
+      ))}
     </ol>
+  );
+}
+
+function Rail({ j, mode }) {
+  if (!j) return null;
+  const stages = [{ id: 'verdict', label: 'Council verdict', state: 'done', detail: 'The council backed it' }, ...j.stages]; const cur = stages.findIndex((x) => x.state === 'active' || x.state === 'blocked'); const upto = cur < 0 ? stages.filter((x) => x.state === 'done').length - 1 : cur;
+  return (
+    <ol className="cn-rail" aria-label="Execution steps">
+      {stages.map((s, i) => {
+        const who = WHO[s.id] ?? ['Council', 'The seven seats voted'];
+        return (
+          <li key={s.id} className={`cn-rs ${s.state}`}>
+            <span className="cn-rs-dot" aria-hidden="true">{s.state === 'done' ? '✓' : s.state === 'blocked' ? '!' : i + 1}</span>
+            <div className="cn-rs-b"><b>{s.label}</b><span className="cn-rs-w">{STATE_WORD[s.state]} · {who[0]}</span><p>{s.detail}</p><small className="faint">{who[1]}</small></div>
+            {i < stages.length - 1 && <span className="cn-rs-bar" aria-hidden="true"><i style={{ transform: `scaleY(${i < upto ? 1 : 0})` }} />{i === upto && s.state !== 'blocked' && s.state !== 'todo' && <u />}</span>}
+          </li>
+        );
+      })}
+      <li className="cn-mode-note"><b>{mode === 'auto' ? 'Auto mode' : 'Manual mode'}</b> {mode === 'auto' ? 'The agent runs the approval and deploy steps itself, but only for a product the council backs and only inside your limits.' : 'Every approval and deploy step waits for you. The council only advises.'}</li>
+    </ol>
+  );
+}
+
+function Pod({ oc }) {
+  const col = OUTC[oc?.state ?? 'not_started']; const n = 100; const lit = Math.round(((oc?.progress?.done ?? 0) / Math.max(1, oc?.progress?.total ?? 1)) * n);
+  return (
+    <svg className="cn-pod" viewBox="0 0 120 120" role="img" aria-label={`Outcome: ${oc?.headline ?? 'nothing in flight'}. ${oc?.progress?.done ?? 0} of ${oc?.progress?.total ?? 0} steps done.`}>
+      <defs><radialGradient id="cn-pg"><stop offset="0" stopColor={col} stopOpacity=".28" /><stop offset="1" stopColor={col} stopOpacity="0" /></radialGradient></defs>
+      <circle cx="60" cy="60" r="58" fill="url(#cn-pg)" />
+      {Array.from({ length: n }, (_, q) => { const x = (q % 10) - 4.5; const y = Math.floor(q / 10) - 4.5; if (x * x + y * y > 21) return null; const rank = (9 - Math.floor(q / 10)) * 10 + (q % 10); const on = rank < lit; return <circle key={q} cx={60 + x * 10} cy={60 + y * 10} r={on ? 3.2 : 1.9} fill={on ? col : '#4a4f55'} opacity={on ? 1 : 0.5} className={on ? 'cn-pd on' : 'cn-pd'} style={{ animationDelay: `${(q % 10) * 0.08}s` }} />; })}
+    </svg>
   );
 }
 
@@ -68,46 +130,79 @@ export default function Council({ data }) {
   if (api.error && !council) return <div className="ap-wrap"><p role="alert">Could not load the council. <button type="button" className="btn sm" onClick={api.reload}>Retry</button></p></div>;
   if (!council) return <div className="ap-wrap"><p className="faint" role="status">Counting the votes…</p></div>;
   if (!entry) return <div className="ap-wrap"><h1 className="ap-h1">Council</h1><p className="dim">No opportunity has been scored yet. The council convenes after the first collection.</p></div>;
-  const next = entry.verdict === 'go'
-    ? (mode === 'auto' ? 'The council backs this one. In Auto the agent researches it, builds and checks the contract, and acts only inside your limits. Anything it cannot check is left for you.' : 'The council backs this one. You are in manual mode, so it will wait for you at every step and nothing is executed without your approval.')
-    : entry.verdict === 'watch'
-      ? (entry.buildable ? 'Not strong enough yet. The agent keeps collecting and the council votes again on the next check. In Auto nothing is executed for this one.' : 'A real trend, but nothing can be built and verified for this topic yet. It is flagged for you to decide whether to add a build template. In Auto nothing is executed.')
-      : 'Not now. The evidence does not clear the bar. In Auto nothing is executed; the council keeps looking.';
+  const rules = council.rules; const live = entry.oppId === journey?.oppId; const oc = live ? journey.outcome : null; const stages = live ? journey.stages : [];
+  const records = data.status?.data?.counts?.evidence; const srcs = data.status?.data?.sources ?? []; const srcOk = srcs.filter((x) => x.status === 'ok').length;
+  const cur = stages.findIndex((x) => x.state === 'active' || x.state === 'blocked'); const doneN = stages.filter((x) => x.state === 'done').length;
+  const here = !live ? 1 : oc && ['shipped', 'live', 'failed'].includes(oc.state) ? 3 : cur >= 0 || doneN > 0 || ['waiting', 'held', 'in_progress'].includes(oc?.state) ? 2 : 1;
+  const stops = [
+    { id: 'ch-seen', kicker: '1 · SEEN', big: <CountUp value={records ?? 0} />, sub: `records from ${srcOk || srcs.length || 0} sources`, fill: 1 },
+    { id: 'ch-voted', kicker: '2 · VOTED', big: entry.verdict.toUpperCase(), sub: `support ${entry.support.toFixed(2)} of ${rules.goAt} needed`, fill: entry.support },
+    { id: 'ch-next', kicker: '3 · EXECUTING', big: live ? `${doneN} of ${stages.length}` : '—', sub: live ? 'steps done' : 'pick the top product', fill: live ? doneN / Math.max(1, stages.length) : 0 },
+    { id: 'ch-out', kicker: '4 · OUTCOME', big: oc ? oc.headline : 'Not started', sub: oc ? oc.next : '', fill: oc ? oc.progress.done / Math.max(1, oc.progress.total) : 0 },
+  ];
+  const checks = [
+    [`Support ${entry.support.toFixed(2)} is at least ${rules.goAt}`, entry.support >= rules.goAt], [`Confidence ${(entry.confidence ?? 0).toFixed(2)} is at least ${rules.minConfidence}`, (entry.confidence ?? 0) >= rules.minConfidence],
+    [entry.vetoes.length ? `${entry.vetoes.join(' and ')} vetoed it` : 'Neither the Skeptic nor Security vetoed it', entry.vetoes.length === 0], [entry.buildable ? 'A contract template exists, so it can be built and checked' : 'No contract template exists for this topic yet', entry.buildable],
+  ];
+  const vd = VERDICT[entry.verdict];
   return (
     <div className="ap-wrap cn">
       <header className="cn-head">
-        <div><h1 className="ap-h1">Council</h1><p className="dim">Seven seats vote on every opportunity. Their weighted support decides what the agent is allowed to build and run on its own.</p></div>
-        <div className="cn-mode"><span className="eyebrow">Mode</span><b>{mode === 'auto' ? 'Auto: acts only on a GO' : 'Manual: you approve everything'}</b></div>
+        <div><h1 className="ap-h1">Council</h1><p className="dim">One product, one story: what the agent saw, who voted, what was decided, and where it stands on the way to a deployed contract.</p></div>
+        <a className="btn sm" href="#/constellation">See it in the constellation</a>
       </header>
+      <p className="cn-now" role="status"><span className="cn-pulse-dot" style={{ background: vd[2] }} aria-hidden="true" /><b>{entry.title}</b> · {vd[1].toLowerCase()}. {oc ? `${oc.headline}. ${oc.next}` : 'Pick the top opportunity in the ranking to follow it all the way.'}</p>
+      <Story stops={stops} here={here} />
 
-      <section className="cn-card" aria-label="Vote chamber">
-        <div className="cn-row"><div><span className="eyebrow">Voting on</span><h2>{entry.title}</h2></div><button type="button" className="btn sm" onClick={() => setReplay(replay + 1)}>Replay the vote</button></div>
-        <Chamber entry={entry} rules={council.rules} replayKey={replay} />
-        <p className="faint cn-note">Each vote is computed from stored data by published rules, and the reason is quoted below. The animation replays those stored votes; it is not a live vote and no AI opinion is involved.</p>
-        <ul className="cn-reasons">
-          {entry.votes.map((v) => <li key={v.role}><i style={{ background: COL[v.stance] }} aria-hidden="true" /><b>{SEAT_LABEL[v.role]}</b><span className="num">{v.support.toFixed(2)}</span><span className="dim">{v.reason}</span></li>)}
+      <Chapter id="ch-seen" n="1" title="What did it see?" lead="Public posts, on-chain activity and official sources, stored with a link back to the original.">
+        <div className="cn-seen">
+          <div className="cn-big"><b><CountUp value={records ?? 0} /></b><span>stored records</span></div>
+          <div className="cn-big"><b>{srcOk || srcs.length}</b><span>sources working{srcs.length ? ` of ${srcs.length}` : ''}</span></div>
+          <div className="cn-bars" role="img" aria-label="Records in the last 14 days against the 14 days before, per product">
+            {list.map((o) => { const m = Math.max(1, ...list.map((x) => Math.max(x.recent, x.prior))); return (
+              <div key={o.oppId} className="cn-bar-row"><span>{o.title}</span><span className="cn-pair"><i style={{ width: `${(o.recent / m) * 100}%` }} className="now" /><i style={{ width: `${(o.prior / m) * 100}%` }} className="was" /></span><em className="num">{o.recent} / {o.prior}</em></div>); })}
+            <p className="faint cn-note">Bright bar: records in the last {rules.trendWindowDays} days. Dim bar: the {rules.trendWindowDays} days before. A longer bright bar means the topic is speeding up.</p>
+          </div>
+        </div>
+      </Chapter>
+
+      <Chapter id="ch-voted" n="2" title="Who voted, and how?" lead="Seven seats, each with its own question. A vote is a number from stored data, with the reason beside it.">
+        <div className="cn-row"><div><span className="eyebrow">Voting on</span><h3>{entry.title}</h3></div><button type="button" className="btn sm" onClick={() => setReplay(replay + 1)}>Replay the vote</button></div>
+        <Chamber entry={entry} rules={rules} replayKey={replay} />
+        <ul className="cn-reasons">{entry.votes.map((v) => <li key={v.role}><i style={{ background: COL[v.stance] }} aria-hidden="true" /><b>{SEAT_LABEL[v.role]}</b><span className="num">{v.support.toFixed(2)}</span><span className="dim">{v.reason}</span></li>)}</ul>
+        <p className="faint cn-note">The animation replays the stored votes. It is not a live vote and no AI opinion is involved.</p>
+      </Chapter>
+
+      <Chapter id="ch-decide" n="3" title="What did it decide?" lead="Four plain checks. All four must pass for a GO.">
+        <div className="cn-decide">
+          <div className="cn-verdict" style={{ '--c': vd[2] }}><b>{vd[0]}</b><span>{vd[1]}</span></div>
+          <ul className="cn-checks">{checks.map(([t, ok]) => <li key={t} className={ok ? 'ok' : 'no'}><i aria-hidden="true">{ok ? '✓' : '✗'}</i>{t}</li>)}</ul>
+        </div>
+        <h3 className="cn-sub">Every product, ranked</h3>
+        <ul className="cn-rank">
+          {list.map((o) => { const v = VERDICT[o.verdict]; return (
+            <li key={o.oppId} aria-current={o.oppId === entry.oppId} onClick={() => { setPick(o.oppId); setReplay((r) => r + 1); }}>
+              <button type="button" className="cn-link" onClick={() => { setPick(o.oppId); setReplay((r) => r + 1); }}>{o.title}</button>
+              <span className="cn-meter" aria-label={`support ${o.support.toFixed(2)}`}><i style={{ width: `${o.support * 100}%`, background: v[2] }} /><u style={{ left: `${rules.watchAt * 100}%` }} /><u style={{ left: `${rules.goAt * 100}%` }} /></span>
+              <span className="cn-dots" aria-label="seat votes">{o.votes.map((x) => <i key={x.role} title={`${SEAT_LABEL[x.role]}: ${x.support.toFixed(2)}`} style={{ background: COL[x.stance] }} />)}</span>
+              <span className="chip" style={{ borderColor: v[2], color: v[2] }}>{v[0]}</span>
+              <small className="faint">{o.momentum > 0.55 ? '▲ rising' : o.momentum < 0.45 ? '▼ cooling' : '● steady'}{o.buildable ? '' : ' · cannot be built yet'}</small>
+            </li>); })}
         </ul>
-        {entry.vetoes.length > 0 && <p className="cn-veto" role="note">Veto from {entry.vetoes.join(' and ')}: this blocks a GO on its own.</p>}
-      </section>
+        <p className="faint cn-note">Thin marks on each bar: WATCH at {rules.watchAt} and GO at {rules.goAt}. Counted {fmt.ago(council.at)}.</p>
+      </Chapter>
 
-      <section className="cn-card" aria-label="What happens next">
-        <h2>What happens next</h2><p>{next}</p>
-        {entry.oppId === journey?.oppId ? <Journey j={journey} /> : <p className="faint">Pick the top opportunity to see the live journey.</p>}
-      </section>
+      <Chapter id="ch-next" n="4" title="What happens next?" lead="From a GO to a contract on the chain. Each step shows who does it and where it stands.">
+        {live ? <Rail j={journey} mode={mode} /> : <p className="dim">The live journey is shown for the top product. Pick it in the ranking above.</p>}
+      </Chapter>
 
-      <section className="cn-card" aria-label="Ranking">
-        <h2>Ranking</h2>
-        <table className="cn-table"><thead><tr><th>Opportunity</th><th>Support</th><th>Trend</th><th>Can be built</th><th>Verdict</th></tr></thead>
-          <tbody>{list.map((o) => { const vd = VERDICT[o.verdict]; return (
-            <tr key={o.oppId} aria-selected={o.oppId === entry.oppId} onClick={() => { setPick(o.oppId); setReplay((r) => r + 1); }}>
-              <td><button type="button" className="cn-link" onClick={() => { setPick(o.oppId); setReplay((r) => r + 1); }}>{o.title}</button></td>
-              <td className="num">{o.support.toFixed(2)}</td>
-              <td className="num" title={`${o.recent} records in the last ${council.rules.trendWindowDays} days, ${o.prior} before`}>{o.momentum > 0.55 ? '▲ rising' : o.momentum < 0.45 ? '▼ cooling' : '● steady'}</td>
-              <td>{o.buildable ? 'yes' : 'not yet'}</td>
-              <td><span className="chip" style={{ borderColor: vd[2], color: vd[2] }}>{vd[0]}</span></td>
-            </tr>); })}</tbody></table>
-        <p className="faint cn-note">Last counted {fmt.ago(council.at)}. A GO needs support of {council.rules.goAt} or more, confidence of {council.rules.minConfidence} or more, no veto, and a contract template that can be built and checked.</p>
-      </section>
+      <Chapter id="ch-out" n="5" title="Where does it end up?" lead="The final judgement is read from stored runs, requests, deployments and checks. Nothing here is guessed.">
+        <div className="cn-outcome" style={{ '--c': OUTC[oc?.state ?? 'not_started'] }}>
+          <Pod oc={oc} />
+          <div><b className="cn-out-h">{oc ? oc.headline : 'Not started'}</b><p>{oc ? oc.detail : 'No product is in flight for this one.'}</p>{oc && <p className="dim">Next: {oc.next}</p>}
+            {journey?.deployment?.explorer && <a className="btn sm" href={journey.deployment.explorer} target="_blank" rel="noopener noreferrer">View on the explorer</a>}</div>
+        </div>
+      </Chapter>
     </div>
   );
 }

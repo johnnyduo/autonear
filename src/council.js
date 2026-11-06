@@ -96,8 +96,8 @@ export async function councilGate(db, decision, env = process.env) {
   return { ok: e.verdict === 'go', reason: `council verdict is ${e.verdict}: ${e.reason}`, entry: e };
 }
 
-/** Real state of the journey from verdict to a monitored deployment, for one opportunity. Every field is read from stored runs, decisions and deployments. */
-export async function journeyFor(db, oppId) {
+/** Real state of the journey from verdict to a monitored deployment, and the FINAL JUDGEMENT of where that product stands. Every field is read from stored runs, decisions, deployments and monitor results. */
+export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } = {}) {
   const run = await db.get('SELECT * FROM runs WHERE opportunity_id=? ORDER BY started_at DESC LIMIT 1', [oppId]);
   const roles = {}; let artifacts = [];
   if (run) {
@@ -105,18 +105,35 @@ export async function journeyFor(db, oppId) {
     artifacts = (await db.all('SELECT kind FROM artifacts WHERE run_id=?', [run.id])).map((a) => a.kind);
   }
   const decision = run ? await db.get("SELECT id, status, approver, decided_at, expiry FROM decisions WHERE run_id=? AND action='deploy_testnet' ORDER BY created_at DESC LIMIT 1", [run.id]) : null;
-  const deployment = decision ? await db.get('SELECT id, status, verification, explorer_url, time FROM deployments WHERE decision_id=? ORDER BY time DESC LIMIT 1', [decision.id]) : null;
+  const deployment = decision ? await db.get('SELECT id, network, account, status, verification, explorer_url, time FROM deployments WHERE decision_id=? ORDER BY time DESC LIMIT 1', [decision.id]) : null;
+  const monitor = deployment ? parse((await db.get('SELECT v FROM kv WHERE k=?', [`monitor:${deployment.id}`]))?.v, null) : null;
   const built = artifacts.some((k) => k.startsWith('contract-build')); const byAgent = Boolean(decision?.approver && String(decision.approver).startsWith('mandate:'));
-  const ver = deployment ? parse(deployment.verification, {}) : null;
+  const verified = Boolean(deployment && ['verified', 'verified_local'].includes(deployment.status)); const expired = Boolean(decision && decision.status === 'pending' && decision.expiry < now());
+  const declined = Boolean(decision && ['rejected', 'expired', 'cancelled'].includes(decision.status)) || expired;
   const st = (done, active, blocked) => (blocked ? 'blocked' : done ? 'done' : active ? 'active' : 'todo');
-  const researchDone = run && ['awaiting_approval', 'succeeded', 'blocked'].includes(run.state);
+  const researchDone = Boolean(run && ['awaiting_approval', 'succeeded', 'blocked'].includes(run.state));
+  const failedRun = Boolean(run && ['failed', 'budget_exceeded', 'cancelled'].includes(run.state));
   const stages = [
-    { id: 'research', label: 'Research', state: !run ? 'todo' : run.state === 'running' || run.state === 'queued' ? 'active' : run.state === 'failed' || run.state === 'budget_exceeded' || run.state === 'cancelled' ? 'blocked' : 'done', detail: run ? `run ${run.state}` : 'no run yet' },
-    { id: 'build', label: 'Build and attest', state: st(built, run && !built && run.state === 'running', researchDone && !built), detail: built ? 'attested contract build stored' : researchDone ? 'no attested build (needs a build host with the toolchain)' : 'waiting' },
-    { id: 'decision', label: 'Decision', state: st(Boolean(decision), built && !decision), detail: decision ? `decision ${decision.status}` : 'not created yet' },
-    { id: 'approve', label: byAgent ? 'Agent executes in the limits' : 'Owner approves and signs', state: st(Boolean(decision?.approver) || Boolean(deployment), decision?.status === 'pending'), detail: decision?.approver ? `approved by ${byAgent ? 'the agent inside the owner limits' : 'the owner'}` : decision ? 'waiting' : 'waiting' },
+    { id: 'research', label: 'Research', state: !run ? 'todo' : run.state === 'running' || run.state === 'queued' ? 'active' : failedRun ? 'blocked' : 'done', detail: run ? `run ${run.state}` : 'no run yet' },
+    { id: 'build', label: 'Build and check', state: st(built, run && !built && run.state === 'running', researchDone && !built), detail: built ? 'checked contract build stored' : researchDone ? 'no checked build yet (needs a build host)' : 'waiting' },
+    { id: 'decision', label: 'Decision', state: st(Boolean(decision) && !declined, built && !decision, declined), detail: decision ? `decision ${expired ? 'expired' : decision.status}` : 'not created yet' },
+    { id: 'approve', label: byAgent ? 'Agent executes in the limits' : 'Owner approves and signs', state: st(Boolean(decision?.approver) || Boolean(deployment), decision?.status === 'pending' && !expired, declined), detail: decision?.approver ? `approved by ${byAgent ? 'the agent inside the owner limits' : 'the owner'}` : declined ? 'not approved' : 'waiting' },
     { id: 'deploy', label: 'Deploy', state: st(Boolean(deployment), Boolean(decision?.approver) && !deployment), detail: deployment ? `deployment ${deployment.status}` : 'not deployed' },
-    { id: 'verify', label: 'Verify on chain', state: st(Boolean(ver && (ver.ok === true || deployment?.status === 'confirmed')), Boolean(deployment) && !(ver && ver.ok === true)), detail: deployment ? (ver?.ok === true ? 'receipt matches the attested build' : 'checking') : 'waiting' },
+    { id: 'verify', label: 'Check on chain', state: st(verified, Boolean(deployment) && !verified && deployment.status !== 'failed', Boolean(deployment) && deployment.status === 'failed'), detail: verified ? 'receipt matches the checked build' : deployment ? (deployment.status === 'failed' ? 'the receipt did not match' : 'checking') : 'waiting' },
+    { id: 'monitor', label: 'Monitor', state: monitor ? (monitor.ok ? 'done' : 'blocked') : verified ? 'active' : 'todo', detail: monitor ? (monitor.ok ? `all ${monitor.checks?.length ?? 0} checks pass` : `failing: ${(monitor.checks ?? []).filter((c) => !c.ok).map((c) => c.name).join(', ').slice(0, 60)}`) : verified ? 'first check pending' : 'waiting' },
   ];
-  return { oppId, run: run ? { id: run.id, state: run.state, startedAt: run.started_at, endedAt: run.ended_at, roles } : null, decision: decision ? { id: decision.id, status: decision.status, byAgent } : null, deployment: deployment ? { id: deployment.id, status: deployment.status, explorer: deployment.explorer_url } : null, stages };
+  const done = stages.filter((x) => x.state === 'done').length;
+  let outcome;
+  if (verified && monitor?.ok) outcome = { state: 'shipped', headline: 'Shipped and healthy', detail: `Deployed on ${deployment.network} at ${deployment.account}, verified against the checked build and re-checked on chain.`, next: 'Nothing needed. It is monitored on every check.' };
+  else if (verified && monitor && !monitor.ok) outcome = { state: 'failed', headline: 'Shipped, but a check is failing', detail: `The monitor reports: ${(monitor.checks ?? []).filter((c) => !c.ok).map((c) => c.name).join(', ')}.`, next: 'The owner should pause and look at it.' };
+  else if (verified) outcome = { state: 'live', headline: 'Shipped, first check pending', detail: `Deployed on ${deployment.network} at ${deployment.account} and verified against the checked build.`, next: 'The first monitor check runs on the next scheduled check.' };
+  else if (deployment) outcome = { state: 'failed', headline: 'The deployment did not verify', detail: `Deployment status is ${deployment.status}.`, next: 'The owner reviews the receipt.' };
+  else if (declined) outcome = { state: 'held', headline: expired ? 'The request expired' : 'The owner declined', detail: 'No contract was deployed.', next: 'A new run can create a new request.' };
+  else if (failedRun) outcome = { state: 'failed', headline: 'The research run did not finish', detail: `Run state: ${run.state}.`, next: 'Retry the run from the Runs page.' };
+  else if (researchDone && !built) outcome = { state: 'held', headline: 'Held at the build step', detail: 'The research is done, but there is no checked contract build to deploy.', next: 'Needs a build host with the Rust toolchain. Build there, then the request can be created.' };
+  else if (decision?.status === 'pending') outcome = { state: 'waiting', headline: 'Waiting to be executed', detail: 'The request is ready.', next: mode === 'auto' ? 'In Auto the agent executes it inside the owner limits, because the council backs it.' : 'The owner approves and signs in their own wallet.' };
+  else if (run && ['running', 'queued'].includes(run.state)) outcome = { state: 'in_progress', headline: 'Research in progress', detail: `Run ${run.state}.`, next: 'The seven roles run one after another.' };
+  else if (verdict === 'go') outcome = { state: 'ready', headline: 'Backed by the council', detail: 'No run has started for this product yet.', next: 'The next scheduled check starts the research.' };
+  else outcome = { state: 'not_started', headline: verdict ? `Council says ${verdict}` : 'Not started', detail: 'Nothing is being built for this product.', next: 'The council votes again on the next check.' };
+  return { oppId, run: run ? { id: run.id, state: run.state, startedAt: run.started_at, endedAt: run.ended_at, roles } : null, decision: decision ? { id: decision.id, status: expired ? 'expired' : decision.status, byAgent } : null, deployment: deployment ? { id: deployment.id, status: deployment.status, explorer: deployment.explorer_url, account: deployment.account, network: deployment.network } : null, stages, outcome: { ...outcome, progress: { done, total: stages.length } } };
 }

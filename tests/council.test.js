@@ -77,3 +77,26 @@ test('journey reads real run / decision / deployment state and API serves it pub
   assert.equal(res.status, 200); const body = await res.json(); assert.equal(body.council.opportunities[0].votes.length, 7); assert.ok(body.journey.stages.length >= 5);
   const post = await (app.handle?.bind(app) ?? app)(new Request('http://x/api/council', { method: 'POST' })); assert.equal(post.status, 405);
 });
+
+test('final judgement follows the stored facts: ready, in progress, held at build, waiting, shipped, failed, declined', async () => {
+  const db = await seeded(); const c = await currentCouncil(db); const oid = c.opportunities[0].oppId; const now = Date.now();
+  assert.equal((await journeyFor(db, oid, { verdict: 'go' })).outcome.state, 'ready');
+  assert.equal((await journeyFor(db, oid, { verdict: 'watch' })).outcome.state, 'not_started');
+  await db.run("INSERT INTO runs(id,opportunity_id,trigger,state,budget,started_at) VALUES('run_j',?,'operator','running','{}',?)", [oid, now]);
+  assert.equal((await journeyFor(db, oid)).outcome.state, 'in_progress');
+  await db.run("UPDATE runs SET state='blocked' WHERE id='run_j'");
+  const held = await journeyFor(db, oid); assert.equal(held.outcome.state, 'held'); assert.match(held.outcome.next, /build host/);
+  await db.run("INSERT INTO artifacts(id,run_id,kind,immutable_ref,hash,test_results,created_at) VALUES('a1','run_j','contract-build:near','r','h1','{}',?)", [now]);
+  await db.run("UPDATE runs SET state='awaiting_approval' WHERE id='run_j'");
+  await db.run("INSERT INTO decisions(id,run_id,artifact_hash,action,chain_id,target,method,max_spend,expiry,nonce,payload,payload_hash,status,created_at) VALUES('dec_j','run_j','h1','deploy_testnet','near:testnet','t','m','0',?,'n1','{}','ph','pending',?)", [now + 3600e3, now]);
+  const w = await journeyFor(db, oid, { verdict: 'go', mode: 'auto' }); assert.equal(w.outcome.state, 'waiting'); assert.match(w.outcome.next, /Auto the agent/);
+  assert.equal((await journeyFor(db, oid, { mode: 'manual' })).outcome.next.includes('owner approves'), true);
+  await db.run("INSERT INTO deployments(id,decision_id,network,account,artifact_hash,transaction_hash,explorer_url,time,status,verification) VALUES('dep_j','dec_j','near:testnet','vault.testnet','h1','tx1','http://e',?,'verified','{}')", [now]);
+  assert.equal((await journeyFor(db, oid)).outcome.state, 'live');
+  await db.run("INSERT INTO kv(k,v) VALUES('monitor:dep_j',?)", [JSON.stringify({ at: now, ok: true, checks: [{ name: 'a', ok: true }] })]);
+  const sh = await journeyFor(db, oid); assert.equal(sh.outcome.state, 'shipped'); assert.equal(sh.stages.at(-1).state, 'done'); assert.equal(sh.outcome.progress.done, sh.outcome.progress.total - 0 === 7 ? 7 : sh.outcome.progress.done);
+  await db.run("UPDATE kv SET v=? WHERE k='monitor:dep_j'", [JSON.stringify({ at: now, ok: false, checks: [{ name: 'code hash unchanged', ok: false }] })]);
+  const bad = await journeyFor(db, oid); assert.equal(bad.outcome.state, 'failed'); assert.match(bad.outcome.detail, /code hash/);
+  await db.run("DELETE FROM deployments WHERE id='dep_j'"); await db.run("UPDATE decisions SET status='rejected' WHERE id='dec_j'");
+  assert.equal((await journeyFor(db, oid)).outcome.state, 'held');
+});

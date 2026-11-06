@@ -107,12 +107,13 @@ export function drawSphereOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, nar
   placeLabels(ctx, sc, items, { W, H, reserved: [...reserved, ...hud, ...(cRes ?? [])], narrow, labelsOn });
 }
 
+const OCSS = { shipped: '#c6f432', live: '#66ffcc', failed: '#ff4080', held: '#f2b84b', waiting: '#80d9ff', in_progress: '#f2b84b', ready: '#c6f432', not_started: '#8c8b82' };
 const VCSS = { go: '#c6f432', watch: '#f2b84b', drop: '#8c8b82' }; const SCSS = { back: '#59ffd1', abstain: '#f2b84b', object: '#ff4080' };
 const cut = (str, n) => (str.length > n ? `${str.slice(0, n - 1)}…` : str);
 
 /** Labels, captions and the launch-lane text for the council star (and the small caption of whichever star is not in the middle). */
 function councilOverlay(ctx, sc, { W, H, narrow, calm, fs, items, hot, isHot, evMain, t }) {
-  const cs = sc.council; const v = cs.view; if (!v) return []; const e = cs.entry; const res = []; const main = v.main; const vcol = VCSS[e?.verdict ?? 'watch'];
+  const cs = sc.council; const v = cs.view; if (!v) return []; const e = cs.entry; const res = []; const oc = cs.data?.journey?.outcome; const main = v.main; const vcol = VCSS[e?.verdict ?? 'watch'];
   ctx.save(); ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
   if (main) {
     if (e) {
@@ -120,14 +121,16 @@ function councilOverlay(ctx, sc, { W, H, narrow, calm, fs, items, hot, isHot, ev
       ctx.font = SERIF(narrow ? 22 : 30); ctx.fillStyle = 'rgba(236,233,223,0.95)'; ctx.fillText(cut(e.title, narrow ? 32 : 60), W / 2, narrow ? 128 : 92);
       ctx.font = MONO(fs, 600); ctx.fillStyle = vcol; ctx.shadowColor = vcol; ctx.shadowBlur = 10;
       ctx.fillText(`${(e.verdict === 'go' ? 'GO · WAITING TO BE BUILT' : e.verdict === 'watch' ? 'WATCH · NOT YET' : 'DROP').toUpperCase()}  ·  SUPPORT ${e.support.toFixed(2)}`, W / 2, narrow ? 150 : 118); ctx.shadowBlur = 0;
+      if (oc) { ctx.font = MONO(fs, 600); ctx.fillStyle = OCSS[oc.state]; ctx.shadowColor = OCSS[oc.state]; ctx.shadowBlur = 8; ctx.fillText(`FINAL JUDGEMENT  ·  ${oc.headline.toUpperCase()}`, W / 2, narrow ? 172 : 142); ctx.shadowBlur = 0; ctx.font = MONO(fs - 1.5); ctx.fillStyle = COL.chalk2; ctx.fillText(cut(oc.next, narrow ? 44 : 110), W / 2, narrow ? 190 : 160); }
     } else { ctx.font = MONO(fs); ctx.fillStyle = COL.chalk2; ctx.fillText('The council has nothing to vote on yet.', W / 2, 90); }
     cs.seats.forEach((s) => { if (s.z < -40 || !s.vote) return; const c = s.lit ? SCSS[s.vote.stance] : COL.chalk3; items.push({ key: `seat${s.i}`, x: s.x, y: s.y, r: 12, a: s.lit ? 1 : 0.55, pr: isHot('seat', s.i) ? 0 : 3, lines: [[s.name.toUpperCase(), fs, COL.chalk, 600], [s.lit ? `${s.vote.support.toFixed(2)} · ${s.vote.stance}` : 'waiting…', fs - 1, c, 500]] }); });
     cs.cry.forEach((c) => { items.push({ key: `prod${c.i}`, x: c.x, y: c.y, r: c.r, a: c.z > 0 ? 1 : 0.5, pr: isHot('prod', c.i) ? 0 : c.win ? 1 : 4, lines: [[cut(c.o.title, 26), fs, c.win ? COL.chalk : COL.chalk2, 600], [c.win ? `${c.o.verdict.toUpperCase()} · WAITING TO BE BUILT` : `${c.o.verdict.toUpperCase()} · ${c.o.support.toFixed(2)}`, fs - 1, VCSS[c.o.verdict], 500]] }); });
     cs.lane.forEach((n, i) => { const c = n.state === 'done' ? '#c6f432' : n.state === 'active' ? '#f2b84b' : n.state === 'blocked' ? '#ff4080' : '#8c8b82'; ctx.font = MONO(narrow ? 8.5 : fs - 1, 600); ctx.fillStyle = c; ctx.fillText(narrow ? cut(n.label, 8).toUpperCase() : n.label.toUpperCase(), n.x, n.y + 24); if (!narrow) { ctx.font = MONO(fs - 2.5); ctx.fillStyle = COL.chalk3; ctx.fillText(cut(n.detail ?? '', 24), n.x, n.y + 38); } void i; });
+    if (cs.podV) { const pv = cs.podV; const c = OCSS[oc?.state ?? 'not_started']; ctx.font = MONO(narrow ? 8.5 : fs - 1, 600); ctx.fillStyle = c; ctx.fillText('OUTCOME', pv.x, pv.y + pv.r + 16); if (!narrow && oc) { ctx.font = MONO(fs - 2.5); ctx.fillStyle = COL.chalk2; ctx.fillText(cut(oc.headline, 22), pv.x, pv.y + pv.r + 30); } if (isHot('outcome', 0)) { ctx.strokeStyle = c; ctx.lineWidth = 1.4; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.arc(pv.x, pv.y, pv.r * 1.7, 0, TAU); ctx.stroke(); ctx.setLineDash([]); } }
     if (cs.lane.length && !narrow) { ctx.font = MONO(fs - 2, 500); ctx.fillStyle = 'rgba(126,233,255,0.8)'; ctx.fillText('PRODUCT LAUNCH LANE · stage colours are the stored state of the journey', W / 2, cs.lane[0].y - 26); }
   } else {
     ctx.font = MONO(fs - 1, 600); ctx.fillStyle = '#7ee9ff'; ctx.fillText('COUNCIL', v.cx, v.cy + v.R * 2.6 + 6); ctx.font = MONO(fs - 2, 500); ctx.fillStyle = e ? vcol : COL.chalk3; ctx.fillText(e ? `${e.verdict.toUpperCase()} · ${cut(e.title, 18)}` : 'counting votes…', v.cx, v.cy + v.R * 2.6 + 20);
-    ctx.fillStyle = COL.chalk3; ctx.fillText('click to open', v.cx, v.cy + v.R * 2.6 + 33);
+    if (oc) { ctx.fillStyle = OCSS[oc.state]; ctx.fillText(cut(oc.headline, 26), v.cx, v.cy + v.R * 2.6 + 33); ctx.fillStyle = COL.chalk3; ctx.fillText('click to open', v.cx, v.cy + v.R * 2.6 + 46); } else { ctx.fillStyle = COL.chalk3; ctx.fillText('click to open', v.cx, v.cy + v.R * 2.6 + 33); }
   }
   if (!evMain && sc.evView) { const ev = sc.evView; ctx.font = MONO(fs - 1, 600); ctx.fillStyle = '#ffcc77'; ctx.fillText('EVIDENCE', ev.cx, ev.cy + ev.R * 1.9 + 14); ctx.font = MONO(fs - 2, 500); ctx.fillStyle = COL.chalk3; ctx.fillText(`${sc.stats?.N ?? 0} stored records · click to open`, ev.cx, ev.cy + ev.R * 1.9 + 28); }
   if (evMain && sc.ov.streamCap && !narrow) { const c = sc.ov.streamCap; ctx.font = MONO(fs - 2, 600); ctx.fillStyle = 'rgba(126,233,255,0.85)'; ctx.fillText('EVIDENCE SUMMARY ▸ COUNCIL', c.x, c.y - 12); res.push({ x: c.x - 90, y: c.y - 24, w: 180, h: 20 }); }

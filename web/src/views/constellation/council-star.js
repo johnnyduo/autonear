@@ -10,21 +10,18 @@ const VERD = { go: [0.78, 0.96, 0.2], watch: [0.97, 0.72, 0.3], drop: [0.55, 0.5
 const STANCE = { back: [0.35, 1, 0.82], abstain: [0.97, 0.72, 0.3], object: [1, 0.25, 0.5] };
 export const SEAT_NAMES = ['Collector', 'Analyst', 'Skeptic', 'Architect', 'Builder', 'Security', 'Planner'];
 const CYCLE = 14;
+export const OUT = { shipped: [0.78, 0.96, 0.2], live: [0.4, 1, 0.8], failed: [1, 0.25, 0.5], held: [0.97, 0.72, 0.3], waiting: [0.5, 0.85, 1], in_progress: [0.97, 0.72, 0.3], ready: [0.78, 0.96, 0.2], not_started: [0.55, 0.57, 0.6] };
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const px0 = (O, cx, s, k) => cx + O[0] * s * k; const py0 = (O, cy, s, k) => cy - O[1] * s * k;
 const mat = (yaw, pit) => { const cy = Math.cos(yaw); const sy = Math.sin(yaw); const cp = Math.cos(pit); const sp = Math.sin(pit); return [cy, 0, sy, sp * sy, cp, -sp * cy, -cp * sy, sp, cp * cy]; };
 const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 
-function icosphere(sub = 2) {
-  const t = (1 + Math.sqrt(5)) / 2; const nm = (v) => { const l = Math.hypot(...v); return v.map((x) => x / l); };
-  let V = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(nm);
-  let F = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
-  for (let s = 0; s < sub; s++) {
-    const cache = new Map(); const mid = (a, b) => { const key = a < b ? `${a}_${b}` : `${b}_${a}`; if (cache.has(key)) return cache.get(key); V.push(nm(V[a].map((x, i) => (x + V[b][i]) / 2))); cache.set(key, V.length - 1); return V.length - 1; };
-    const G = []; for (const [a, b, c] of F) { const ab = mid(a, b); const bc = mid(b, c); const ca = mid(c, a); G.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]); } F = G;
-  }
-  const E = new Set(); for (const [a, b, c] of F) for (const [x, y] of [[a, b], [b, c], [c, a]]) E.add(x < y ? `${x}_${y}` : `${y}_${x}`);
-  return { V, E: [...E].map((e) => e.split('_').map(Number)) };
+/** Points on a sphere (golden spiral) with a size tier each: 0 = tiny pixel square, 1 = small dot, 2 = medium dot, 3 = large glowing dot. */
+function dotSphere(n, seed) {
+  const out = new Float32Array(n * 5); let r = seed; const rnd = () => { r = (Math.imul(r, 1664525) + 1013904223) >>> 0; return r / 4294967296; };
+  for (let i = 0; i < n; i++) { const y = 1 - ((i + 0.5) / n) * 2; const rr = Math.sqrt(1 - y * y); const ph = i * 2.399963229728653; const u = rnd(); out.set([rr * Math.cos(ph), y, rr * Math.sin(ph), u < 0.5 ? 0 : u < 0.8 ? 1 : u < 0.955 ? 2 : 3, rnd() * 6.28], i * 5); }
+  return out;
 }
 
 /** The opportunity the star is voting on: the one the journey follows, else the winner, else the first. */
@@ -33,7 +30,7 @@ export function focusEntry(d) { const c = d?.council; if (!c) return null; retur
 export class CouncilStar {
   constructor() {
     this.cam = { yaw: 0.5, tyaw: 0.5, pit: 0.38, tpit: 0.38, vyaw: 0, vpit: 0, zoom: 1, tzoom: 1 }; this.spin = 0; this.spinV = 1;
-    this.geo = icosphere(2); this.data = null; this.seats = []; this.cry = []; this.flash = []; this.view = null; this.O = new Float64Array(3); this.lane = []; this.bursts = [];
+    this.dots = dotSphere(980, 913); this.pod = dotSphere(150, 77); this.podOrder = Array.from({ length: 150 }, (_, i) => i).sort((a, b) => this.pod[a * 5 + 1] - this.pod[b * 5 + 1]); this.data = null; this.podV = null; this.seats = []; this.cry = []; this.flash = []; this.view = null; this.O = new Float64Array(3); this.lane = []; this.bursts = [];
   }
   setData(d) { this.data = d; }
   get entry() { return focusEntry(this.data); }
@@ -59,28 +56,27 @@ export class CouncilStar {
     pushP(cx, cy, R * 4.2, VIO[0], VIO[1], VIO[2], 0.13 * fade, 0.5); pushP(cx, cy, R * 2.6, MAG[0], MAG[1], MAG[2], 0.1 * fade, 0.5);
     pushP(cx, cy, R * (1.1 + 0.5 * gaugeS + 0.06 * pulse), MAG[0], 0.3, 0.9, (0.3 + 0.2 * gaugeS) * fade, 0.3); pushP(cx, cy, R * 0.34, 1, 0.8, 1, 0.55 * fade, 0);
 
-    // ---- wireframe star: icosphere edges, cyan to magenta by height, with data-flicker travelling over the edges
-    const { V, E } = this.geo; const px = new Float32Array(V.length); const py = new Float32Array(V.length); const pz = new Float32Array(V.length); const R3 = C0 * 0.78;
-    for (let i = 0; i < V.length; i++) { xf(M, V[i][0] * R3, V[i][1] * R3, V[i][2] * R3); const s = P(O[2]); px[i] = cx + O[0] * s * k; py[i] = cy - O[1] * s * k; pz[i] = O[2] / R3; }
-    for (let q = 0; q < E.length; q++) {
-      const [a, b] = E[q]; const zf = (pz[a] + pz[b]) * 0.5; const yy = (V[a][1] + V[b][1]) * 0.5; const col = mix(CYAN, MAG, clamp(0.5 + 0.55 * yy + 0.2 * Math.sin(T * 0.6 + q * 0.05), 0, 1));
-      const flick = calm ? 0 : Math.max(0, Math.sin(T * 1.8 - (V[a][1] + V[a][0]) * 3.2 + q * 0.02)) ** 14; const al = (zf > 0 ? 0.2 + 0.16 * zf : 0.06) * (1 + 3.2 * flick) * fade;
-      pushL(px[a], py[a], al, px[b], py[b], al, col[0], col[1], col[2]);
-    }
-    for (let i = 0; i < V.length; i += 1) { if (pz[i] < -0.1 && (i & 1)) continue; const w = calm ? 0 : Math.max(0, Math.sin(T * 1.5 - V[i][1] * 4)) ** 6; pushP(px[i], py[i], (2.2 + 4 * w) * (0.7 + k * 1.4), CYAN[0], CYAN[1], CYAN[2], (pz[i] > 0 ? 0.55 : 0.12) * (0.6 + 0.8 * w) * fade, 0.1); }
+    // ---- dot-matrix star: 760 points in four sizes (pixel squares, small, medium, large glowing dots), a scan band runs over it, colour runs cyan to magenta with height
+    { const D = this.dots; const sweep = calm ? 9 : Math.sin(T * 0.55) * 0.95; const SZ = [2.2, 2.8, 4.4, 7.2]; const R3 = C0 * 0.8;
+      for (let i = 0; i < D.length / 5; i++) {
+        const o = i * 5; xf(M, D[o] * R3, D[o + 1] * R3, D[o + 2] * R3); const f = O[2] / R3; const tier = D[o + 3]; if (f < -0.05 && tier < 2 && (i & 1)) continue; const s = P(O[2]);
+        const band = calm ? 0 : Math.exp(-(((D[o + 1] - sweep) / 0.13) ** 2)); const wv = calm ? 0 : Math.max(0, Math.sin(T * 1.4 + D[o + 4])) ** 10; const col = mix(CYAN, MAG, clamp(0.5 + 0.5 * D[o + 1] + 0.22 * Math.sin(T * 0.7 + D[o + 4]), 0, 1));
+        const al = (f > 0 ? 0.3 + 0.62 * f : 0.07) * (1 + 2.4 * band + 1.6 * wv) * fade * (tier === 3 ? 1.1 : 1); const sz = SZ[tier] * (0.55 + 0.5 * Math.max(0, f)) * (0.6 + k * 1.4) * s * (1 + 0.5 * band + 0.3 * wv);
+        pushP(px0(O, cx, s, k), py0(O, cy, s, k), sz * (tier >= 2 ? 1.5 : 1), col[0], col[1], col[2], Math.min(1.3, al), tier === 0 ? -1 : tier === 1 ? 0.25 : 0.12);
+      } }
 
-    // ---- gauge ring: 72 ticks around the star; the filled part is the weighted support, white marks are the watch / go thresholds
-    { const rg = C0 * 1.42; const tl = -0.32; const rules = this.data?.council?.rules ?? { watchAt: 0.48, goAt: 0.62 }; const n = 72;
+    // ---- gauge ring: 144 dots around the star; the filled part (bigger, verdict colour) is the weighted support, big white dots mark the watch / go thresholds
+    { const rg = C0 * 1.42; const tl = -0.32; const rules = this.data?.council?.rules ?? { watchAt: 0.48, goAt: 0.62 }; const n = 144;
       for (let q = 0; q < n; q++) {
-        const th = (q / n) * TAU; const fill = q / n < gaugeS; const mk = [rules.watchAt, rules.goAt].some((r) => Math.abs(q / n - r) < 0.5 / n); const l0 = rg; const l1 = rg * (mk ? 1.1 : fill ? 1.06 : 1.03);
-        const ca = Math.cos(th); const sa = Math.sin(th); const p = (rr) => { xf(MW, rr * ca, -Math.sin(tl) * rr * sa, Math.cos(tl) * rr * sa); return [cx + O[0] * P(O[2]) * k, cy - O[1] * P(O[2]) * k, O[2]]; };
-        const a = p(l0); const b = p(l1); const col = mk ? WHITE : fill ? vc : VIO; const al = (mk ? 0.8 : fill ? 0.85 : 0.2) * (a[2] > 0 ? 1 : 0.35) * fade; pushL(a[0], a[1], al, b[0], b[1], al, col[0], col[1], col[2]);
-        if (fill && q === Math.floor(gaugeS * n) - 1) pushP(b[0], b[1], 14, vc[0], vc[1], vc[2], 0.7 * fade, 0.1);
+        const th = (q / n) * TAU; const fill = q / n < gaugeS; const mk = [rules.watchAt, rules.goAt].some((r) => Math.abs(q / n - r) < 0.6 / n); const ca = Math.cos(th); const sa = Math.sin(th);
+        xf(MW, rg * ca, -Math.sin(tl) * rg * sa, Math.cos(tl) * rg * sa); const s = P(O[2]); const x = cx + O[0] * s * k; const y = cy - O[1] * s * k; const front = O[2] > 0 ? 1 : 0.35; const col = mk ? WHITE : fill ? vc : VIO;
+        const sz = (mk ? 7 : fill ? (q % 3 === 0 ? 5.2 : 3.4) : q % 6 === 0 ? 3.2 : 2) * (0.6 + k * 1.2) * s; pushP(x, y, sz, col[0], col[1], col[2], (mk ? 0.95 : fill ? 0.9 : 0.32) * front * fade, fill || mk ? 0.12 : -1);
+        if (fill && q === Math.floor(gaugeS * n) - 1) pushP(x, y, 22, vc[0], vc[1], vc[2], 0.7 * fade, 0.1);
       } }
 
     // ---- seat ring + seats: seven beacons on a tilted ring. Each fires a bolt into the core when its stored vote is replayed.
-    { const rs = C0 * 1.12; const tl = 0.5; let ppx = 0; let ppy = 0; let ppa = 0;
-      for (let q = 0; q <= 72; q++) { const th = (q / 72) * TAU; xf(MW, rs * Math.cos(th), -Math.sin(tl) * rs * Math.sin(th), Math.cos(tl) * rs * Math.sin(th)); const s = P(O[2]); const x = cx + O[0] * s * k; const y = cy - O[1] * s * k; const a = 0.18 * (O[2] > 0 ? 1 : 0.4) * fade; if (q) pushL(ppx, ppy, ppa, x, y, a, CYAN[0], CYAN[1], CYAN[2]); ppx = x; ppy = y; ppa = a; }
+    { const rs = C0 * 1.12; const tl = 0.5; 
+      for (let q = 0; q < 110; q++) { const th = (q / 110) * TAU + (calm ? 0 : T * 0.03); xf(MW, rs * Math.cos(th), -Math.sin(tl) * rs * Math.sin(th), Math.cos(tl) * rs * Math.sin(th)); const s = P(O[2]); const x = cx + O[0] * s * k; const y = cy - O[1] * s * k; const sz = (q % 9 === 0 ? 5 : q % 3 === 0 ? 3 : 2) * (0.6 + k * 1.2) * s; pushP(x, y, sz, CYAN[0], CYAN[1], CYAN[2], (q % 9 === 0 ? 0.55 : 0.3) * (O[2] > 0 ? 1 : 0.35) * fade, q % 3 ? -1 : 0.2); }
       this.seats = SEAT_NAMES.map((name, i) => {
         const th = (i / 7) * TAU + (calm ? 0.3 : T * 0.07); xf(MW, rs * Math.cos(th), -Math.sin(tl) * rs * Math.sin(th), Math.cos(tl) * rs * Math.sin(th)); const s = P(O[2]); const x = cx + O[0] * s * k; const y = cy - O[1] * s * k; const z = O[2];
         const v = votes[i]; const lit = Boolean(v) && fired(i); const col = lit ? STANCE[v.stance] : VIO; const fl = lit && !calm ? Math.max(0, 1 - sinceFire(i) / 0.7) : 0;
@@ -104,22 +100,35 @@ export class CouncilStar {
     }); }
 
     // ---- verdict burst: when the replay reaches the end the star shockwaves in the verdict colour
-    if (!calm) { const tb = cyc - 10.3; if (tb > 0 && tb < 1.6) { const u = tb / 1.6; const rr = R * (0.9 + 2.2 * u); const a = 0.8 * (1 - u) * fade; let ax = cx + rr; let ay = cy; for (let q = 1; q <= 40; q++) { const th = (q / 40) * TAU; const bx = cx + Math.cos(th) * rr; const by = cy + Math.sin(th) * rr * 0.9; pushL(ax, ay, a, bx, by, a, vc[0], vc[1], vc[2]); ax = bx; ay = by; } } }
+    if (!calm) { const tb = cyc - 10.3; if (tb > 0 && tb < 1.6) { const u = tb / 1.6; const rr = R * (0.9 + 2.2 * u); const a = 0.8 * (1 - u) * fade; for (let q = 0; q < 64; q++) { const th = (q / 64) * TAU; pushP(cx + Math.cos(th) * rr, cy + Math.sin(th) * rr * 0.9, q % 4 === 0 ? 9 : 4, vc[0], vc[1], vc[2], a, q % 2 ? -1 : 0.15); } } }
 
-    // ---- launch lane (main view only): verdict -> research -> build -> decision -> approve -> deploy -> verify, coloured from the stored journey
-    this.lane = [];
+    // ---- launch lane (main view only): verdict -> research -> build -> decision -> approve -> deploy -> verify -> monitor, then the OUTCOME pod (the final judgement).
+    // Stage colours and the pod come from the stored journey; the pulse that runs along the lane replays the verdict.
+    this.lane = []; this.podV = null; const jr = this.data?.journey; const oc = jr?.outcome; const occ = OUT[oc?.state ?? 'not_started'];
     if (main && fade > 0.4) {
-      const st = this.data?.journey?.stages ?? []; const nodes = [{ label: 'Verdict', state: e ? 'done' : 'todo', detail: e ? verdict.toUpperCase() : '' }, ...st]; const y = Math.min(H - (W < 640 ? 160 : 118), cy + R * 2.05); const x0 = W * 0.14; const x1 = W * 0.86; const n = nodes.length;
-      const col = (s) => (s === 'done' ? [0.78, 0.96, 0.2] : s === 'active' ? [0.97, 0.72, 0.3] : s === 'blocked' ? [1, 0.25, 0.5] : [0.42, 0.45, 0.5]);
+      const st = jr?.stages ?? []; const nodes = [{ label: 'Verdict', state: e ? 'done' : 'todo', detail: e ? verdict.toUpperCase() : '' }, ...st]; const y = Math.min(H - (W < 640 ? 160 : 118), cy + R * 2.05); const narrow = W < 640;
+      const x0 = W * (narrow ? 0.07 : 0.1); const x1 = W * (narrow ? 0.76 : 0.8); const n = nodes.length; const podX = W * (narrow ? 0.89 : 0.915); const podR = narrow ? 24 : 40;
+      const col = (s2) => (s2 === 'done' ? [0.78, 0.96, 0.2] : s2 === 'active' ? [0.97, 0.72, 0.3] : s2 === 'blocked' ? [1, 0.25, 0.5] : [0.42, 0.45, 0.5]);
+      const xs = (i) => x0 + ((x1 - x0) * i) / (n - 1); const dot = (x, y2, sz, c, a, sq) => pushP(x, y2, sz, c[0], c[1], c[2], a, sq ? -1 : 0.15);
       for (let i = 0; i < n; i++) {
-        const x = x0 + ((x1 - x0) * i) / (n - 1); const c = col(nodes[i].state); const act = nodes[i].state === 'active';
-        if (i) { const pc = col(nodes[i - 1].state); const pxn = x0 + ((x1 - x0) * (i - 1)) / (n - 1); const al = nodes[i].state === 'todo' ? 0.16 : 0.6; pushL(pxn + 14, y, al, x - 14, y, al, pc[0], pc[1], pc[2]); pushL(pxn + 14, y + 1, al * 0.5, x - 14, y + 1, al * 0.5, 1, 1, 1); }
-        pushP(x, y, (act ? 40 + 10 * pulse : 28), c[0], c[1], c[2], nodes[i].state === 'todo' ? 0.3 : 0.7, 0.2); pushP(x, y, 8, 1, 1, 1, nodes[i].state === 'todo' ? 0.4 : 0.95, 0);
+        const x = xs(i); const c = col(nodes[i].state); const act = nodes[i].state === 'active';
+        if (i) { const pc = col(nodes[i - 1].state); const todo = nodes[i].state === 'todo'; const xa = xs(i - 1) + 16; const xb = x - 16; const cnt = Math.max(2, Math.floor((xb - xa) / 9)); for (let q = 0; q < cnt; q++) { const xx = xa + ((xb - xa) * (q + 0.5)) / cnt; dot(xx, y, q % 3 === 0 ? 4 : 2.4, pc, todo ? 0.2 : 0.7, q % 3); } }
+        pushP(x, y, act ? 44 + 10 * pulse : 30, c[0], c[1], c[2], nodes[i].state === 'todo' ? 0.25 : 0.6, 0.3); dot(x, y, 11, c, nodes[i].state === 'todo' ? 0.5 : 1, false); dot(x, y, 5, WHITE, nodes[i].state === 'todo' ? 0.4 : 0.95, true);
         this.lane.push({ x, y, ...nodes[i] });
       }
-      if (!calm && e) { const first = nodes.findIndex((nd, i) => i && nd.state !== 'done'); const end = first < 0 ? n - 1 : Math.max(0, first - 1 + (verdict === 'go' ? 1 : 0)); const u = clamp((cyc - 10.4) / 3, 0, 1); if (cyc > 10.4 && end > 0) { const xx = x0 + ((x1 - x0) * end * u) / (n - 1); pushP(xx, y, 22, vc[0], vc[1], vc[2], 0.9 * (1 - u * 0.4), 0.1); pushL(xx - 60 * u, y, 0, xx, y, 0.9, vc[0], vc[1], vc[2]); } }
-      // feeder from the star to the verdict node
-      const x = this.lane[0]?.x ?? cx; pushL(cx, cy + R * 0.82, 0.5 * fade, x, y - 8, 0.35 * fade, vc[0], vc[1], vc[2]);
+      // connector from the last stage to the pod
+      { const last = nodes[n - 1]; const xa = x1 + 16; const xb = podX - podR - 8; const cnt = Math.max(2, Math.floor((xb - xa) / 9)); const pc = col(last.state); for (let q = 0; q < cnt; q++) dot(xa + ((xb - xa) * (q + 0.5)) / cnt, y, q % 3 === 0 ? 4 : 2.4, pc, last.state === 'todo' ? 0.2 : 0.7, q % 3); }
+      // outcome pod: a small dot-sphere that fills bottom to top with the share of finished stages, coloured by the final judgement
+      { const prog = oc ? oc.progress.done / Math.max(1, oc.progress.total) : 0; const spinP = calm ? 0.4 : T * 0.5; const Mp = mat(spinP, 0.35); const nLit = Math.round(prog * (this.pod.length / 5));
+        pushP(podX, y, podR * (3.3 + 0.4 * pulse), occ[0], occ[1], occ[2], 0.22 * fade, 0.5);
+        this.podOrder.forEach((idx, rank) => { const o = idx * 5; xf(Mp, this.pod[o] * podR, this.pod[o + 1] * podR, this.pod[o + 2] * podR); const on = rank < nLit; const f = O[2] / podR; const tier = this.pod[o + 3]; const c = on ? occ : VIO; const sz = [2.8, 3.4, 4.6, 6.4][tier] * (0.6 + 0.4 * Math.max(0, f)); pushP(podX + O[0], y - O[1], sz, c[0], c[1], c[2], (on ? 1 : 0.42) * (f > 0 ? 1 : 0.4) * fade, tier === 0 ? -1 : 0.2); });
+        if (!calm && oc) { const st2 = oc.state; if (st2 === 'shipped' || st2 === 'live') { for (let q = 0; q < 6; q++) { const u = ((T * 0.6 + q / 6) % 1); const a = (q / 6) * TAU + T * 0.4; pushP(podX + Math.cos(a) * podR * (1.2 + u), y + Math.sin(a) * podR * (1.2 + u), 4, occ[0], occ[1], occ[2], 0.8 * (1 - u), 0.1); } }
+          else if (st2 === 'failed') { const g = hash(Math.floor(T * 9)); if (g > 0.55) pushL(podX - podR * 1.5, y + (g - 0.7) * podR * 2, 0.6, podX + podR * 1.5, y + (g - 0.7) * podR * 2, 0.6, occ[0], occ[1], occ[2]); }
+          else { const ring = (T * 0.4) % 1; for (let q = 0; q < 20; q++) { const a = (q / 20) * TAU; pushP(podX + Math.cos(a) * podR * (1.15 + ring * 0.8), y + Math.sin(a) * podR * (1.15 + ring * 0.8), 3, occ[0], occ[1], occ[2], 0.5 * (1 - ring), -1); } } }
+        this.podV = { x: podX, y, r: podR }; }
+      // the verdict pulse running along the lane
+      if (!calm && e) { const first = nodes.findIndex((nd, i) => i && nd.state !== 'done'); const end = first < 0 ? n - 1 : Math.max(0, first - 1 + (verdict === 'go' ? 1 : 0)); const u = clamp((cyc - 10.4) / 3, 0, 1); if (cyc > 10.4 && end > 0) { const xx = xs(0) + (xs(end) - xs(0)) * u; pushP(xx, y, 24, vc[0], vc[1], vc[2], 0.9 * (1 - u * 0.4), 0.1); for (let q = 1; q < 6; q++) pushP(xx - q * 8 * u, y, 8 - q, vc[0], vc[1], vc[2], 0.6 * (1 - q / 6), 0.1); } }
+      pushL(cx, cy + R * 0.82, 0.4 * fade, this.lane[0]?.x ?? cx, y - 8, 0.3 * fade, vc[0], vc[1], vc[2]);
     }
     this.cycle = cyc; this.verdict = verdict; this.partial = gaugeS;
   }
@@ -131,7 +140,8 @@ export class CouncilStar {
     const slop = touch ? 10 : 3;
     for (const s of this.seats) if ((s.x - x) ** 2 + (s.y - y) ** 2 < (s.r + slop) ** 2 && s.z > -40) return { t: 'seat', i: s.i };
     for (const c of this.cry) if ((c.x - x) ** 2 + (c.y - y) ** 2 < (c.r + slop) ** 2) return { t: 'prod', i: c.i };
+    if (this.podV && (this.podV.x - x) ** 2 + (this.podV.y - y) ** 2 < (this.podV.r * 1.5 + slop) ** 2) return { t: 'outcome', i: 0 };
     return null;
   }
-  screenOf(key) { if (key.t === 'seat') { const s = this.seats[key.i]; return s ? { x: s.x, y: s.y, r: 14 } : null; } const c = this.cry[key.i]; return c ? { x: c.x, y: c.y, r: c.r } : null; }
+  screenOf(key) { if (key.t === 'outcome') return this.podV ? { x: this.podV.x, y: this.podV.y, r: this.podV.r } : null; if (key.t === 'seat') { const s = this.seats[key.i]; return s ? { x: s.x, y: s.y, r: 14 } : null; } const c = this.cry[key.i]; return c ? { x: c.x, y: c.y, r: c.r } : null; }
 }
