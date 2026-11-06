@@ -340,3 +340,10 @@ test('endpoints: daily token budget stops a new build', () => withGemini([good()
     const r = await post(app, '/api/sites/opp_treasury/build', { regenerate: true }); assert.equal(r.status, 409); assert.match(r.body.error, /daily token budget/); assert.equal(calls.length, 1);
   } finally { if (prev === undefined) delete process.env.SITE_DAILY_TOKENS; else process.env.SITE_DAILY_TOKENS = prev; }
 }));
+
+test('schema: marketing filler is rejected with a plain reason', () => {
+  const bad = good(); bad.sub = 'A seamless way to move treasury funds.';
+  const r = validateContent(bad);
+  assert.equal(r.ok, false);
+  assert.match(r.errors.join(' '), /marketing wording/);
+});

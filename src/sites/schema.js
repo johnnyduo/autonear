@@ -6,6 +6,7 @@ const STEP = { title: 28, body: 90 };
 export const LIMITS = Object.freeze({ badge: 24, headline: 70, sub: 140, cta: 24, feature: FEATURE, step: STEP, features: 3, steps: 3 });
 
 const CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+const SLOP = ['seamless', 'robust', 'leverage', 'empower', 'unlock', 'revolution', 'cutting-edge', 'next-gen', 'game-chang', 'streamline', 'holistic', 'synerg', 'effortless', 'state-of-the-art', 'world-class', 'supercharge'];
 const BAD = [['<', 'markup'], ['>', 'markup'], ['&#', 'an HTML entity'], ['http', 'a link'], ['://', 'a link'], ['javascript:', 'a script URL']];
 
 /** Returns an error string or null. */
@@ -17,6 +18,7 @@ function checkString(v, max, path) {
   if (CONTROL.test(s)) return `${path}: control characters are not allowed`;
   const low = s.toLowerCase();
   for (const [needle, what] of BAD) if (low.includes(needle)) return `${path}: contains ${what} ("${needle}")`;
+  for (const w of SLOP) if (low.includes(w)) return `${path}: uses marketing wording ("${w}"); say what it does in plain words`;
   return null;
 }
 
