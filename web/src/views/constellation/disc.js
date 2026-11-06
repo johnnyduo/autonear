@@ -6,6 +6,8 @@ import { hash32, WELLS, WELL_SHORT } from './data.js';
 import { ROLES } from './shared.js';
 import { PSTRIDE, LSTRIDE } from './scene.js';
 import { drawDiscOverlay } from './overlay-disc.js';
+import { buildFx, fxBudget } from './fx-disc.js';
+import { buildFlow, flowBudget } from './fx-flow.js';
 
 export const R0 = 300; export const G = 9;
 const WARM = [1, 0.8, 0.46]; const LIME = [0.776, 0.957, 0.196]; const RISK = [1, 0.416, 0.239];
@@ -38,7 +40,7 @@ export class DiscScene {
     this.kind = 'disc'; this.calm = calm; this.W = 800; this.H = 500; this.t = 0; this.model = null;
     this.cam = { zoom: 1, tzoom: 1, px: 0, py: 0, tpx: 0, tpy: 0, par: [0, 0], tpar: [0, 0] };
     this.auto = !calm; this.dragging = false; this.hover = null; this.pinned = null; this.focus = null; this.hold = false;
-    this.q = { dust: 600, prov: true }; this.filter = { srcOff: new Set(), topicOff: new Set() };
+    this.q = { dust: 600, prov: true, fx: 1 }; this.fxT = 0; this.ripples = []; this.trail = []; this.ptr = null; this.sweepF = new Float32Array(0); this.flowF = new Float32Array(0); this.flowPairs = []; this.flowMax = 1; this.srcColors = []; this.fkKey = ''; this.fkT = 0; this.lastTrail = null; this.filter = { srcOff: new Set(), topicOff: new Set() };
     this.replay = { active: false, playing: false, pos: 0, speed: 26, mode: 'ingest' };
     this.sparks = []; this.srcFlash = []; this.srcInfo = []; this.roleState = {}; this.runWell = -1; this.activeRun = false;
     this.ov = {}; this.stats = null; this.intro = 0; this.idleSince = 0; this.stars = null; this.labelState = new Map();
@@ -56,8 +58,9 @@ export class DiscScene {
     if (first && !this.calm) this.intro = 0; else this.intro = 1;
     this.index = new Map(nodes.map((n, i) => [n.id, i]));
     this.sortReplay(); this.applyFilter(); this.computeStats(); this.makeStars();
-    this.maxP = this.pix.n + 4096 + this.q.dust; this.P = new Float32Array(this.maxP * PSTRIDE);
-    this.maxL = 4096; this.L = new Float32Array(this.maxL * 2 * LSTRIDE);
+    this.sweepF = new Float32Array(N); this.flowF = new Float32Array(N);
+    this.maxP = this.pix.n + 4096 + this.q.dust + this.fxExtra(); this.P = new Float32Array(this.maxP * PSTRIDE);
+    this.maxL = 8192; this.L = new Float32Array(this.maxL * 2 * LSTRIDE);
     return births;
   }
 
@@ -113,6 +116,9 @@ export class DiscScene {
     for (const n of m.nodes) { src[n.src]++; if (n.flagged) fl++; rel += n.rel; if (n.rel >= 0.95) hi++; }
     let top = -1; m.wells.forEach((w, i) => { if (w.opp && (top < 0 || w.opp.score > m.wells[top].opp.score)) top = i; });
     this.stats = { N, src, flagged: fl, meanRel: rel / N, high: hi / N, top };
+    const cnt = new Map(); this.srcColors = m.sources.map(() => null);
+    for (const n of m.nodes) { const kk = n.src * 8 + n.primary; cnt.set(kk, (cnt.get(kk) ?? 0) + 1); if (!this.srcColors[n.src]) this.srcColors[n.src] = n.color; }
+    this.flowPairs = [...cnt].map(([kk, c]) => ({ s: Math.floor(kk / 8), w: kk % 8, c })).sort((a, b) => a.s - b.s || a.w - b.w); this.flowMax = Math.max(1, ...this.flowPairs.map((p) => p.c));
   }
 
   /* ------------------------------------------------------------ setters (same surface as scene.js) */
@@ -120,7 +126,8 @@ export class DiscScene {
   setRoles(states, oppId, active) { this.roleState = states; this.activeRun = active; this.runWell = oppId ? WELLS.indexOf(String(oppId).replace(/^opp_/, '')) : -1; }
   setFilter(f) { this.filter = f; this.applyFilter(); }
   applyFilter() { if (!this.model) return; const { srcOff, topicOff } = this.filter; this.model.nodes.forEach((n, i) => { this.visT[i] = srcOff.has(this.model.sources[n.src]?.id) || topicOff.has(WELLS[n.primary]) ? 0.07 : 1; }); }
-  setQuality(q) { this.q = { ...this.q, ...q }; if (this.model) { const need = this.pix.n + 4096 + this.q.dust; if (this.P.length < need * PSTRIDE) { this.maxP = need; this.P = new Float32Array(need * PSTRIDE); } } }
+  fxExtra() { return fxBudget(this.q.fx) + flowBudget(this.q.fx); }
+  setQuality(q) { this.q = { ...this.q, ...q }; if (this.model) { const need = this.pix.n + 4096 + this.q.dust + this.fxExtra(); if (this.P.length < need * PSTRIDE) { this.maxP = need; this.P = new Float32Array(need * PSTRIDE); } } }
   settle() {}
   resize(W, H) { this.W = W; this.H = H; }
   onResize() { this.sized = true; }
@@ -136,6 +143,8 @@ export class DiscScene {
   seek(pos) { const N = this.model.nodes.length; const p = clamp(pos, 0, N); this.replay.pos = p; const n = Math.floor(p); this.lastReplayN = n; this.model.nodes.forEach((x, i) => { this.app[i] = this.rank[i] < n ? 1 : 0; this.born[i] = -1; }); this.sparks.length = 0; }
   replayCurrent() { const n = Math.floor(this.replay.pos); return n > 0 ? this.model.nodes[this.order[Math.min(n, this.model.nodes.length) - 1]] : null; }
   spark(ni, now, replay) { const s = this.model.nodes[ni].src; if (this.sparks.length > 220) this.sparks.shift(); this.sparks.push({ ni, s, t0: now }); if (now - (this.srcFlash[s]?.t ?? -9) > 0.38) this.srcFlash[s] = { t: now, replay: Boolean(replay) }; }
+
+  ripple(x, y) { if (!this.calm) { if (this.ripples.length > 6) this.ripples.shift(); this.ripples.push({ x, y, t0: this.t }); } }
 
   /* ------------------------------------------------------------ camera: zoom + pan (+ mouse parallax for the starfield) */
   fitDist() { return 1; }
@@ -163,7 +172,8 @@ export class DiscScene {
     const m = this.model; if (!m) return; this.t = now; const c = this.cam; const calm = this.calm; const N = m.nodes.length;
     const k = calm ? 1 : 1 - Math.exp(-dt * 8); c.zoom += (c.tzoom - c.zoom) * k; c.px += (c.tpx - c.px) * k; c.py += (c.tpy - c.py) * k;
     c.par[0] += (c.tpar[0] - c.par[0]) * k * 0.4; c.par[1] += (c.tpar[1] - c.par[1]) * k * 0.4;
-    this.intro = calm ? 1 : Math.min(1, this.intro + dt / 2.4);
+    this.intro = calm ? 1 : Math.min(1, this.intro + dt / 2.4); if (!calm && this.auto) this.fxT += dt;
+    if (this.ptr && !calm) { const lt = this.lastTrail; if (!lt || Math.hypot(this.ptr.x - lt.x, this.ptr.y - lt.y) > 7) { this.trail.push({ x: this.ptr.x, y: this.ptr.y, t: now }); this.lastTrail = { x: this.ptr.x, y: this.ptr.y }; if (this.trail.length > 40) this.trail.shift(); } } else this.lastTrail = null;
     const rp = this.replay;
     if (rp.active) {
       if (rp.playing) { rp.pos = Math.min(N, rp.pos + rp.speed * dt); if (rp.pos >= N) rp.playing = false; }
@@ -207,6 +217,8 @@ export class DiscScene {
     // ---- warm halo behind the disc (decorative bloom) + core glow
     if (!this.q.flat) { pushP(cx, cy, R * 3.8, 1, 0.72, 0.32, 0.16, 0.5); pushP(cx, cy, R * 2.4, 1, 0.78, 0.4, 0.14, 0.3); } pushP(cx, cy, R * 0.5, 1, 0.85, 0.5, 0.12, 0.2);
 
+    const fxo = { pushP, pushL, cx, cy, R, k, W, H }; buildFx(this, fxo);
+
     // ---- focus (hover > pinned > keyboard)
     const fk = this.hover ?? this.pinned ?? this.focus; let fNode = -1; let fSec = -1; let fSrc = -1;
     if (fk?.t === 'ev') fNode = fk.i; else if (fk?.t === 'well') fSec = fk.i; else if (fk?.t === 'src') fSrc = fk.i;
@@ -229,8 +241,10 @@ export class DiscScene {
       ov.sats.push({ i: s, x: sat.x, y: sat.y, a: sat.a, b: sat.b, phi: sat.phi, tod: sat.tod, col, info, flash, off, fl: this.srcFlash[s] });
     }
 
+    buildFlow(this, fxo);
+
     // ---- glyph pixels
-    const pix = this.pix; const pu = this.pu; this.pixStart = np; let busy = this.intro < 1 || this.replay.active || this.sparks.length > 0; if (this.q.flat === false) busy = true; const psz = Math.max(0.9, pu * k * 0.95); const nodes = m.nodes;
+    const pix = this.pix; const pu = this.pu; this.pixStart = np; let busy = this.intro < 1 || this.replay.active || this.sparks.length > 0; if (this.q.flat === false || (this.q.fx ?? 0) >= 0.5 || this.flow?.tours?.length || this.ripples.length || this.trail.length) busy = true; const psz = Math.max(0.9, pu * k * 0.95); const nodes = m.nodes;
     const x0 = -40; const y0 = -40; const x1 = W + 40; const y1 = H + 40;
     for (let p = 0; p < pix.n; p++) {
       const i = pix.i[p]; const sx = cx + pix.x[p] * k; const sy = cy + pix.y[p] * k;
@@ -242,9 +256,9 @@ export class DiscScene {
       const hot = this.hover && this.hover.t === 'ev' && this.hover.i === i; const pinned = this.pinned?.t === 'ev' && this.pinned.i === i;
       let dim = 1;
       if (focusing) { if (fNode >= 0) dim = i === fNode ? 1.5 : (fnode.wells.some((l) => n.wells.some((q) => q.w === l.w)) ? 0.55 : 0.3); else if (fSec >= 0) dim = n.wells.some((l) => l.w === fSec) ? 1.15 : 0.25; else if (fSrc >= 0) dim = n.src === fSrc ? 1.2 : 0.3; }
-      const shimmer = calm || this.q.flat ? 1 : 0.93 + 0.07 * Math.sin(this.t * 0.8 + n.h * 0.001 + pix.x[p] * 0.05);
+      const shimmer = calm || this.q.flat ? 1 : 0.84 + 0.16 * Math.sin(this.fxT * 0.9 + pix.thr[p] * 18.85 + n.h * 0.001); const boost = 1 + 1.3 * this.sweepF[i] + 2.1 * this.flowF[i];
       if (pix.kind[p] === 1) { pushP(sx, sy, psz * 1.6, RISK[0], RISK[1], RISK[2], 0.9 * al * this.vis[i] * Math.min(1, dim + 0.2), -1); continue; }
-      const level = [0.5, 0.75, 1, 1.35][lv]; const a = clamp(rel * level * 0.7 * al * this.vis[i] * dim * shimmer, 0, 1.4);
+      const level = [0.5, 0.75, 1, 1.35][lv]; const a = clamp(rel * level * 0.7 * al * this.vis[i] * dim * shimmer * boost, 0, 2.1);
       const hotMix = lv === 3 ? 0.25 : 0; const base = mix(n.color, WARM, 0.06); const c = hotMix ? mix(base, [1, 0.96, 0.88], hotMix) : base;
       pushP(sx, sy, psz * 1.55, c[0], c[1], c[2], a, -1);
       if (pinned || hot) { /* bright glyph handled by overlay frame */ }

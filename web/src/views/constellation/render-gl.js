@@ -46,16 +46,24 @@ void main(){
   o = vec4(c, 1.0);
 }`;
 const FS_COMP = `#version 300 es
-precision highp float; in vec2 v_uv; uniform sampler2D u_s; uniform sampler2D u_b1; uniform sampler2D u_b2; uniform sampler2D u_b3; uniform vec3 u_w; uniform float u_exp; uniform vec2 u_res; out vec4 o;
+precision highp float; in vec2 v_uv; uniform sampler2D u_s; uniform sampler2D u_b1; uniform sampler2D u_b2; uniform sampler2D u_b3; uniform vec3 u_w; uniform float u_exp; uniform vec2 u_res; uniform float u_t; out vec4 o;
 float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main(){
-  vec3 c = texture(u_s, v_uv).rgb;
+  vec2 q = v_uv - 0.5; float r2 = dot(q, q);
+  vec2 ca = q * (0.0035 + 0.011 * r2);                       // chromatic aberration, stronger toward the edges
+  vec3 c = vec3(texture(u_s, v_uv + ca).r, texture(u_s, v_uv).g, texture(u_s, v_uv - ca).b);
   vec3 bl = texture(u_b1, v_uv).rgb * u_w.x + texture(u_b2, v_uv).rgb * u_w.y + texture(u_b3, v_uv).rgb * u_w.z;
   c += bl * mix(vec3(1.0), vec3(1.0, 0.8, 0.55), 0.4);
+  if (u_w.y > 0.0) { // anamorphic streak: a horizontal smear of the half-resolution bloom, cool-tinted
+    vec3 st = vec3(0.0); for (int i = -6; i <= 6; i++) { float w = exp(-float(i * i) / 14.0); st += texture(u_b2, v_uv + vec2(float(i) * 0.011, 0.0)).rgb * w; }
+    c += st * 0.05 * vec3(0.55, 0.8, 1.0);
+  }
   c = 1.0 - exp(-c * u_exp);
-  vec2 q = v_uv - 0.5; float vig = 1.0 - smoothstep(0.35, 0.95, length(q * vec2(1.0, 1.15)));
+  float vig = 1.0 - smoothstep(0.35, 0.95, length(q * vec2(1.0, 1.15)));
   c *= mix(0.55, 1.0, vig);
-  c += (hash(gl_FragCoord.xy) - 0.5) / 255.0;
+  vec3 aur = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + u_t * 0.015 + q.x * 0.5));   // slow colour-shifting aurora in the margins
+  c += aur * aur * 0.055 * smoothstep(0.18, 0.85, length(q));
+  float g = hash(gl_FragCoord.xy + floor(u_t * 24.0) * 17.0) - 0.5; c += g * 0.016 * (1.0 - min(1.0, max(c.r, max(c.g, c.b))) * 0.6);   // fine film grain
   float a = max(c.r, max(c.g, c.b));
   o = vec4(c, a);
 }`;
@@ -75,7 +83,7 @@ export class GLRenderer {
     this.u = {};
     const U = (p, names) => Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(p, n)]));
     this.u.P = U(this.pP, ['u_res']); this.u.L = U(this.pL, ['u_res']); this.u.D = U(this.pDown, ['u_t', 'u_px', 'u_thr']); this.u.B = U(this.pBlur, ['u_t', 'u_dir']);
-    this.u.C = U(this.pComp, ['u_s', 'u_b1', 'u_b2', 'u_b3', 'u_w', 'u_exp', 'u_res']);
+    this.u.C = U(this.pComp, ['u_s', 'u_b1', 'u_b2', 'u_b3', 'u_w', 'u_exp', 'u_res', 'u_t']);
     this.vaoP = gl.createVertexArray(); this.bufP = gl.createBuffer();
     gl.bindVertexArray(this.vaoP); gl.bindBuffer(gl.ARRAY_BUFFER, this.bufP);
     const sP = PSTRIDE * 4; [[0, 2, 0], [1, 1, 8], [2, 3, 12], [3, 1, 24], [4, 1, 28]].forEach(([loc, n, off]) => { gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, n, gl.FLOAT, false, sP, off); gl.vertexAttribDivisor(loc, 1); });
@@ -130,7 +138,7 @@ export class GLRenderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, this.w, this.h);
     gl.useProgram(this.pComp); this.tex(0, S); this.tex(1, this.t.a1); this.tex(2, this.t.a2); this.tex(3, this.t.a3);
     gl.uniform1i(this.u.C.u_s, 0); gl.uniform1i(this.u.C.u_b1, 1); gl.uniform1i(this.u.C.u_b2, 2); gl.uniform1i(this.u.C.u_b3, 3);
-    gl.uniform3f(this.u.C.u_w, lv >= 1 ? 0.6 : 0, lv >= 2 ? 0.8 : 0, lv >= 3 ? 1.0 : 0); gl.uniform1f(this.u.C.u_exp, 1.35); gl.uniform2f(this.u.C.u_res, this.w, this.h);
+    gl.uniform3f(this.u.C.u_w, lv >= 1 ? 0.6 : 0, lv >= 2 ? 0.8 : 0, lv >= 3 ? 1.0 : 0); gl.uniform1f(this.u.C.u_exp, 1.35); gl.uniform2f(this.u.C.u_res, this.w, this.h); gl.uniform1f(this.u.C.u_t, f.t || 0);
     this.quad(this.pComp);
   }
   destroy() { try { this.freeTargets(); this.gl.getExtension('WEBGL_lose_context')?.loseContext(); } catch { /* already gone */ } }

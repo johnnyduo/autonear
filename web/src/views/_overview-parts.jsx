@@ -45,7 +45,7 @@ export function ConstellationPanel({ status, opps, evidenceCount }) {
         )}
       </div>
       <div className="co-caption">
-        <p className="co-cap-main"><b>Layout is computed from {loaded ?? '…'} stored evidence records{typeof total === 'number' && loaded < total ? ` (of ${total})` : ''}; not a simulation.</b> Each glyph is a fingerprint of one record&rsquo;s stored content hash; the starfield, glow and slow drift are decorative and carry no data. No swarm or prediction engine is running.</p>
+        <p className="co-cap-main"><b>Layout is computed from {loaded ?? '…'} stored evidence records{typeof total === 'number' && loaded < total ? ` (of ${total})` : ''}; not a simulation.</b> Each glyph is a fingerprint of one record&rsquo;s stored content hash; ribbons show how many stored records each source contributed to each topic, and the pop-up cards step through real stored records (a tour, not a live feed). The nebula, dust arms, turning rings, shockwaves, radar sweep, comets and glow are decorative and carry no data. No swarm or prediction engine is running.</p>
         <ul className="co-leg" aria-label="Sources">
           {src.map((x) => (
             <li key={x.id}><i style={{ background: srcColor(x.id) }} aria-hidden="true" /><b>{srcShort(x.id)}</b>

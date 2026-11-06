@@ -14,7 +14,7 @@ import { ROLES, isRecent, lastIngest, roleStates } from './shared.js';
 import './hero.css';
 
 const TIERS = [
-  { dpr: 2, dust: 700, prov: true, bloom: 3 }, { dpr: 1.5, dust: 450, prov: true, bloom: 2 }, { dpr: 1, dust: 250, prov: false, bloom: 1 }, { dpr: 1, dust: 120, prov: false, bloom: 0 },
+  { dpr: 2, dust: 700, prov: true, bloom: 3, fx: 1 }, { dpr: 1.5, dust: 450, prov: true, bloom: 2, fx: 0.6 }, { dpr: 1, dust: 250, prov: false, bloom: 1, fx: 0.3 }, { dpr: 1, dust: 120, prov: false, bloom: 0, fx: 0.12 },
 ];
 const keyStr = (k) => (k ? `${k.t}:${k.i}` : '');
 const sameKey = (a, b) => keyStr(a) === keyStr(b);
@@ -170,12 +170,12 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     let renderer;
     try { renderer = rk === 'gl' ? new GLRenderer(glCv.current, { onLost: () => setRk('2d') }) : new Canvas2DRenderer(glCv.current); } catch { if (rk === 'gl') { setRk('2d'); return undefined; } setErr(new Error('Canvas is unavailable in this browser.')); return undefined; }
     const ovx = ovCv.current.getContext('2d');
-    let W = 0; let H = 0; let tier = R.tier ?? (st.clientWidth < 640 || matchMedia('(pointer: coarse)').matches ? 1 : 0); let reserved = []; let raf = 0; let last = 0; let ema = 16.7; let nF = 0; let visible = true; let stopped = false; let fpsT = 0; let fpsN = 0; let uiT = 0; let resT = 0; let cooldown = 0;
+    let W = 0; let H = 0; const forceTier = Number.isInteger(window.__coTier); /* test hook: pins the quality tier so headless software GL cannot step it down */ let tier = forceTier ? window.__coTier : R.tier ?? (st.clientWidth < 640 || matchMedia('(pointer: coarse)').matches ? 1 : 0); let reserved = []; let raf = 0; let last = 0; let ema = 16.7; let nF = 0; let visible = true; let stopped = false; let fpsT = 0; let fpsN = 0; let uiT = 0; let resT = 0; let cooldown = 0;
     const apply = () => {
       const T = TIERS[tier]; const dpr = Math.min(T.dpr, window.devicePixelRatio || 1);
       renderer.resize(W, H, dpr); renderer.bloom = rk === 'gl' ? T.bloom : (tier === 0 ? 1 : 0);
       ovCv.current.width = Math.round(W * dpr); ovCv.current.height = Math.round(H * dpr); R.dpr = dpr;
-      sc.setQuality({ dust: calm ? Math.min(T.dust, 500) : T.dust, prov: T.prov, flat: rk !== 'gl' }); R.tier = tier; st.dataset.tier = String(tier);
+      sc.setQuality({ dust: calm ? Math.min(T.dust, 500) : T.dust, prov: T.prov, flat: rk !== 'gl', fx: rk === 'gl' ? T.fx : Math.min(T.fx, 0.3) }); R.tier = tier; st.dataset.tier = String(tier);
     };
     const measure = () => {
       const r = st.getBoundingClientRect(); W = Math.max(2, Math.round(r.width)); H = Math.max(2, Math.round(r.height));
@@ -188,9 +188,9 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
       reserved = [...wrapEl.querySelectorAll('[data-reserve]')].map((el) => { const b = el.getBoundingClientRect(); return { x: b.left - r0.left - 6, y: b.top - r0.top - 4, w: b.width + 12, h: b.height + 8 }; });
     };
     const drawNow = (now, dt) => {
-      sc.hover = R.hover; sc.pinned = R.pinned; sc.focus = R.focus;
+      sc.hover = R.hover; sc.pinned = R.pinned; sc.focus = R.focus; sc.ptr = R.pointer && !R.touch ? R.pointer : null;
       sc.frame(now, dt);
-      renderer.draw({ P: sc.P, nP: sc.np, L: sc.L, nL: sc.nl, layerKey: renderer.kind === 'canvas2d' ? sc.layerKey : null, pixStart: sc.pixStart, pixEnd: sc.pixEnd });
+      renderer.draw({ P: sc.P, nP: sc.np, L: sc.L, nL: sc.nl, t: calm ? 0 : sc.fxT ?? now, layerKey: renderer.kind === 'canvas2d' ? sc.layerKey : null, pixStart: sc.pixStart, pixEnd: sc.pixEnd });
       sc.drawOverlay(ovx, { W, H, dpr: R.dpr, reserved, calm, narrow: W < 640 });
       positionTip();
     };
@@ -211,7 +211,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
       drawNow(now, dt);
       // adaptive quality: step down when the smoothed frame time stays above ~24 ms (< 42 fps)
       ema = ema * 0.94 + dtMs * 0.06; nF++; fpsN++; if (ms - fpsT > 1000) { R.fps = Math.round((fpsN * 1000) / (ms - fpsT)); st.dataset.fps = String(R.fps); fpsT = ms; fpsN = 0; }
-      if (nF > 90 && ema > 24 && tier < TIERS.length - 1 && ms > cooldown) { tier++; cooldown = ms + 2500; apply(); ema = 16.7; nF = 0; }
+      if (!forceTier && nF > 90 && ema > 24 && tier < TIERS.length - 1 && ms > cooldown) { tier++; cooldown = ms + 2500; apply(); ema = 16.7; nF = 0; }
       if (ms - uiT > 130 && sc.replay.active) { uiT = ms; const cur = sc.replayCurrent(); setReplay((r) => ({ ...r, playing: sc.replay.playing, pos: sc.replay.pos, cur: cur ? { src: srcShort(cur.e.source_id), t: sc.replay.mode === 'ingest' ? cur.t : cur.p, title: cur.e.title } : null })); }
       if (ms - resT > 700) { resT = ms; readReserved(); }
     };
@@ -236,7 +236,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     R.pin = pin; R.unpin = unpin;
     const onDown = (e) => {
       if (ui(e)) return; R.touch = e.pointerType === 'touch'; R.engaged = true;
-      st.setPointerCapture?.(e.pointerId); const p = local(e); ptrs.set(e.pointerId, p); moved = 0; down = { ...p };
+      st.setPointerCapture?.(e.pointerId); const p = local(e); ptrs.set(e.pointerId, p); moved = 0; down = { ...p }; S().ripple?.(p.x, p.y);
       if (ptrs.size === 1) { S().dragging = true; R.dragging = true; } else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
     };
     const onMove = (e) => {
@@ -364,13 +364,13 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
 
       <div className="co-chips" data-ui data-reserve aria-label="Filters">
         <div className="co-chiprow" role="group" aria-label="Filter by source">
-          {model.sources.map((s) => { const off = filter.srcOff.has(s.id); return (
-            <button type="button" key={s.id} className="chip co-chip" aria-pressed={!off} onClick={() => setFilter((f) => ({ ...f, srcOff: toggle(f.srcOff, s.id) }))}><i style={{ background: srcColor(s.id) }} aria-hidden="true" />{srcShort(s.id)}<span className="num">{counts.src[s.id] ?? 0}</span></button>
+          {model.sources.map((s, si) => { const off = filter.srcOff.has(s.id); return (
+            <button type="button" key={s.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view !== 'list' && setFocusK({ t: 'src', i: si })} onMouseLeave={() => setFocusK((f) => (f?.t === 'src' && f.i === si ? null : f))} onClick={() => setFilter((f) => ({ ...f, srcOff: toggle(f.srcOff, s.id) }))}><i style={{ background: srcColor(s.id) }} aria-hidden="true" />{srcShort(s.id)}<span className="num">{counts.src[s.id] ?? 0}</span></button>
           ); })}
         </div>
         <div className="co-chiprow" role="group" aria-label="Filter by topic">
-          {model.wells.map((w) => { const off = filter.topicOff.has(w.id); return (
-            <button type="button" key={w.id} className="chip co-chip" aria-pressed={!off} onClick={() => setFilter((f) => ({ ...f, topicOff: toggle(f.topicOff, w.id) }))}>{w.label}<span className="num">{counts.top[w.id] ?? 0}</span></button>
+          {model.wells.map((w, wi) => { const off = filter.topicOff.has(w.id); return (
+            <button type="button" key={w.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view === 'disc' && setFocusK({ t: 'well', i: wi })} onMouseLeave={() => setFocusK((f) => (f?.t === 'well' && f.i === wi ? null : f))} onClick={() => setFilter((f) => ({ ...f, topicOff: toggle(f.topicOff, w.id) }))}>{w.label}<span className="num">{counts.top[w.id] ?? 0}</span></button>
           ); })}
         </div>
       </div>
@@ -383,7 +383,8 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
               <li><b>Sectors</b> = primary topic; the rim arc fills to that opportunity&rsquo;s stored score. Newer records sit nearer the rim.</li>
               <li><b>Orbits</b> = sources. The satellite&rsquo;s angle is the UTC time of day of that source&rsquo;s last real ingest; it pulses only if that was under 20 minutes ago. Light shafts fade with the age of that ingest.</li>
               <li><b>Gauges</b> = stored aggregates: top opportunity score (solid) and confidence (dashed), share of records per source, share with relevance of 0.95 or more.</li>
-              <li><b>Agent roles</b> orbit dark and light only from real run events. Starfield, glow and slow drift are decorative.</li>
+              <li><b>Ribbons</b> run from each source to the topic it fed; width = stored record count, dots flow source to topic. <b>Pop-up cards</b> tour real stored records (round-robin over sources, most relevant first): a tour of stored data, not a live feed. Hover or pin a glyph for its source and every stored opportunity link (colour = relation); hover a source or topic chip for its records and counts.</li>
+              <li><b>Agent roles</b> orbit dark and light only from real run events. The nebula, dust arms, turning and hash rings, shockwaves, radar sweep, comets, pointer sparks and glow are decorative and carry no data (the hash ring shows real hash prefixes, but its motion means nothing).</li>
             </ul>
           ) : (
             <ul>

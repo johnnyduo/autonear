@@ -3,6 +3,7 @@
 import { fmt } from '../../api.js';
 import { srcShort } from '../_evidence-parts.jsx';
 import { COL, placeLabels, srcLines } from './overlay.js';
+import { drawFlowOverlay, drawHudRings } from './overlay-flow.js';
 
 const TAU = Math.PI * 2;
 const MONO = (px, w = 500) => `${w} ${px}px "JetBrains Mono Variable","JetBrains Mono",ui-monospace,Menlo,monospace`;
@@ -25,7 +26,8 @@ export function drawDiscOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, narro
   // ---- decorative ornament rings (no data): hairlines + slowly turning dashes
   ctx.lineWidth = 1; ctx.strokeStyle = rgb(GOLD, 0.1); arc(ctx, cx, cy, R * 1.015, 0, TAU);
   ctx.setLineDash([1.5, 7]); ctx.lineDashOffset = -spin * 5; ctx.strokeStyle = rgb(GOLD, 0.22); arc(ctx, cx, cy, R * 1.62, 0, TAU); ctx.setLineDash([]);
-  ctx.strokeStyle = rgb(GOLD, 0.08); 
+  ctx.strokeStyle = rgb(GOLD, 0.08);
+  drawHudRings(ctx, sc, { cx, cy, R, narrow, calm });
 
   // ---- orbits + satellites (source rings; angle = UTC time of day of the last real ingest)
   const clockR = R * 1.36;
@@ -112,5 +114,6 @@ export function drawDiscOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, narro
   }
   ctx.globalAlpha = 1;
   placeLabels(ctx, sc, items, { W, H, reserved, narrow, labelsOn });
+  drawFlowOverlay(ctx, sc, { W, H, reserved, narrow, calm });
   void fmt; void srcShort;
 }
