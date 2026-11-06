@@ -98,3 +98,35 @@
 .hm-bar-fuel { font: 500 12px var(--f-mono); color: var(--chalk-2); } .hm-bar-fuel b { color: var(--chalk); font-weight: 500; }
 .hm-rest { padding-top: 24px; }
 @media (max-width: 760px) { .hm-bar-t { flex-basis: 100%; white-space: normal; } }
+
+/* Council page */
+.cn-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 18px; }
+.cn-mode { display: grid; gap: 2px; text-align: right; } .cn-mode b { font: 500 13px var(--f-mono); color: var(--signal); }
+.cn-card { border: 1px solid var(--line-hi); border-radius: 18px; background: color-mix(in srgb, var(--ink-0) 80%, transparent); padding: 18px; margin-bottom: 16px; }
+.cn-card h2 { margin: 2px 0 8px; font-size: 18px; } .cn-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.cn-chamber { position: relative; max-width: 760px; margin: 0 auto; } .cn-chamber svg { width: 100%; height: auto; display: block; }
+.cn-track { stroke: #232c34; } .cn-fill { transition: stroke-dashoffset .55s cubic-bezier(.2,.8,.2,1), stroke .3s; filter: drop-shadow(0 0 6px rgba(198,244,50,.55)); }
+.cn-t { font: 500 9.5px var(--f-mono); fill: #b4b2a8; letter-spacing: .06em; } .cn-t.dim { fill: #77766e; }
+.cn-num { font: 400 40px 'Instrument Serif', serif; fill: #ece9df; } .cn-seatn { font: 500 12px var(--f-mono); }
+.cn-seat circle:first-child { transition: stroke .3s, stroke-width .3s; }
+.cn-pulse { transform-box: fill-box; transform-origin: center; animation: cnp 1.6s ease-out infinite; }
+@keyframes cnp { from { transform: scale(1); opacity: .7; } to { transform: scale(1.9); opacity: 0; } }
+.cn-tok { animation: cnt .5s cubic-bezier(.5,0,.8,.4) forwards; filter: drop-shadow(0 0 5px currentColor); }
+@keyframes cnt { from { transform: translate(var(--x0), var(--y0)); opacity: 1; } to { transform: translate(var(--x1), var(--y1)); opacity: 0; } }
+.cn-tok { cx: 0; cy: 0; }
+.cn-stamp { margin: 4px auto 0; max-width: 640px; text-align: center; opacity: .55; transition: opacity .4s, transform .4s; display: grid; gap: 4px; }
+.cn-stamp.on { opacity: 1; transform: scale(1); } .cn-stamp b { font: 600 22px var(--f-mono); letter-spacing: .18em; color: var(--c); text-shadow: 0 0 18px color-mix(in srgb, var(--c) 60%, transparent); } .cn-stamp span { color: var(--chalk-2); font-size: 13px; }
+.cn-note { margin: 12px 0 0; font-size: 12.5px; } .cn-veto { color: #ff6a3d; font-size: 13px; }
+.cn-reasons { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; } .cn-reasons li { display: grid; grid-template-columns: 10px 84px 40px 1fr; gap: 10px; align-items: baseline; font-size: 13px; }
+.cn-reasons i { width: 8px; height: 8px; border-radius: 50%; align-self: center; } .cn-reasons b { font: 500 11.5px var(--f-mono); text-transform: uppercase; letter-spacing: .05em; }
+.cn-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.cn-step { position: relative; border: 1px solid var(--line-hi); border-radius: 12px; padding: 10px; display: grid; gap: 3px; background: color-mix(in srgb, var(--ink-0) 60%, transparent); }
+.cn-step i { width: 9px; height: 9px; border-radius: 50%; background: #3a423f; } .cn-step b { font: 600 12px var(--f-mono); } .cn-step small { color: var(--chalk-3); font-size: 11.5px; }
+.cn-step.done { border-color: color-mix(in srgb, #c6f432 45%, transparent); } .cn-step.done i { background: #c6f432; box-shadow: 0 0 8px #c6f432; }
+.cn-step.active { border-color: #f2b84b; } .cn-step.active i { background: #f2b84b; animation: cnp2 1.2s ease-in-out infinite; } .cn-step.blocked { border-color: #ff6a3d; } .cn-step.blocked i { background: #ff6a3d; }
+@keyframes cnp2 { 50% { box-shadow: 0 0 0 6px rgba(242,184,75,0); transform: scale(1.35); } }
+.cn-table { width: 100%; border-collapse: collapse; font-size: 13.5px; } .cn-table th { text-align: left; font: 500 11px var(--f-mono); color: var(--chalk-3); text-transform: uppercase; padding: 6px 8px; }
+.cn-table td { padding: 9px 8px; border-top: 1px solid var(--line); } .cn-table tr[aria-selected='true'] { background: color-mix(in srgb, #c6f432 7%, transparent); } .cn-table tbody tr { cursor: pointer; }
+.cn-link { background: none; border: 0; color: var(--chalk); font: inherit; text-align: left; padding: 0; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .cn-pulse, .cn-tok, .cn-step.active i { animation: none; } .cn-fill { transition: none; } }
+@media (max-width: 640px) { .cn-reasons li { grid-template-columns: 10px 70px 36px 1fr; } .cn-mode { text-align: left; } }

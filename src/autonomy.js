@@ -22,6 +22,7 @@ import { autonomyEnabled, autonomyMaxPerDay } from './config.js';
 import { findNetwork } from './protocols.js';
 import { PolicyError } from './policy.js';
 import { getMode, TOPUP_DEFAULTS, topUpConfig } from './autonomy-mode.js';
+import { councilGate } from './council.js';
 import { describeBudget } from './vault-model.js';
 import { approveUnderMandate, recordDeployment, releaseToHuman } from './decisions.js';
 import {
@@ -215,6 +216,8 @@ async function parity(ctx, { vault, adapter, net, state, kind, args, decisionId 
 async function runDecision(ctx, { vault, adapter, net, agent, cand, grantTemplates, epoch }) {
   const { db } = ctx;
   const leave = async (detail) => { await appendLedgerOnce(db, vault.id, `left:${cand.id}`, { kind: 'refused', status: 'refused', decisionId: cand.id, detail: `left for a human: ${detail}` }, { redact: ctx.redact }); return { leftForHuman: true, refused: detail }; };
+  const gate = await councilGate(db, cand, ctx.env ?? process.env); // the decision layer: Auto only acts on a product the council backs
+  if (!gate.ok) return leave(gate.reason);
   const payload = parse(cand.payload, {});
   const att = await db.get('SELECT * FROM artifacts WHERE hash=? AND kind=?', [cand.artifact_hash, `contract-build:${net.protocol}`]);
   if (!att) return leave('attested artifact for this decision not found');

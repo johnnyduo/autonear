@@ -2,7 +2,7 @@
 // Jargon map (internal -> shown): mandate -> limits, dossier -> finding, run -> check, circuit open -> paused, retrying, decision -> request, ledger -> history.
 export const BANNED = ['mandate', 'dossier', 'circuit', 'hash', 'epoch', 'calldata', 'ledger', 'nonce', 'payload', 'allowlist'];
 
-export const ROUTES = { home: 'Home', approvals: 'Approvals', watch: 'Watch', vault: 'Vault' };
+export const ROUTES = { home: 'Home', council: 'Council', approvals: 'Approvals', watch: 'Watch', vault: 'Vault' };
 
 export const T = {
   brand: 'AutoNEAR',
@@ -28,7 +28,7 @@ export const T = {
   modeManualTitle: 'I approve each action',
   modeManualBody: 'The agent never acts on its own. Anything it wants to publish waits for your OK.',
   modeAutoTitle: 'Let it act within my limits',
-  modeAutoBody: 'The agent acts on its own, but only inside the limits on the Vault page. It also keeps its fuel topped up.',
+  modeAutoBody: 'The agent acts on its own, but only on a product the Council backs and only inside the limits on the Vault page. It also keeps its fuel topped up.',
   hold: 'Hold to approve',
   holding: 'Keep holding…',
   reject: 'Reject',

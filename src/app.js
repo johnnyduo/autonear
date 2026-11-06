@@ -16,6 +16,7 @@ import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from
 import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant } from './vault/index.js';
 import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
+import { currentCouncil, journeyFor } from './council.js';
 import { getWatch, setWatch } from './watch.js';
 import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 import { buildChallenge, checkSignedChallenge, consumeNonce, deriveSecret, issueSession, readSession, resolveOwner, SESSION_TTL_MS } from './owner-session.js';
@@ -60,6 +61,7 @@ const ALLOW = [
   [/^\/api\/auth\/(challenge|session)$/, 'POST'],
   [/^\/api\/auth\/me$/, 'GET, HEAD'],
   [/^\/api\/autonomy$/, 'GET, HEAD'],
+  [/^\/api\/council$/, 'GET, HEAD'],
   [/^\/api\/watch$/, 'GET, HEAD, PUT'],
   [/^\/api\/autonomy\/mode$/, 'PUT'],
 ];
@@ -146,6 +148,10 @@ export function createApp(deps) {
     if (p === '/api/watch' && m === 'PUT') {
       const who = await needOwner(req);
       return out(await setWatch(db, await body(req), who.actor, { sourceIds: CONNECTORS.map((c) => c.id) }));
+    }
+    if (p === '/api/council' && m === 'GET') {
+      const council = await currentCouncil(db); const focusId = (council.opportunities.find((o) => o.oppId === council.winner) ?? council.opportunities.find((o) => o.buildable) ?? council.opportunities[0])?.oppId;
+      return out({ council, journey: focusId ? await journeyFor(db, focusId) : null, mode: await getMode(db) });
     }
     if (p === '/api/autonomy' && m === 'GET') {
       const evm = topUpConfig(process.env, 'evm'); const near = topUpConfig(process.env, 'near');

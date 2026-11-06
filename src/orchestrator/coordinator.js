@@ -5,6 +5,7 @@ import { oppEvidence, getOpp } from '../store.js';
 import { ROLES } from './agents.js';
 import { refreshOpportunities } from '../scoring.js';
 import { monitorDeployments } from '../monitor.js';
+import { convene } from '../council.js';
 
 const STAGE_LABEL = { signal_collector: 'collect', evidence_analyst: 'analyse', skeptic: 'challenge', product_architect: 'design', builder: 'build', security_reviewer: 'secure', launch_planner: 'plan' };
 
@@ -133,11 +134,12 @@ export async function pipelineTick(db, { trigger = 'scheduler', fetchImpl, inges
   const t0 = now();
   const ing = await ingest(db, { trigger, fetchImpl });
   const opps = await refreshOpportunities(db);
+  const council = await convene(db, { trigger }).catch((e) => ({ error: e.message }));
   const recovered = await recoverRuns(db);
   const auto = await autoPropose(db, { fetchImpl });
   const monitored = await monitorDeployments(db, { fetchImpl }).catch((e) => [{ error: e.message }]);
   await db.run("INSERT INTO kv(k,v) VALUES('tick:last',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v", [j({ at: now(), trigger, ms: now() - t0, sources: ing.map((i) => ({ id: i.sourceId, status: i.status })), opportunities: opps.length, recovered, auto, monitored: monitored.length })]);
-  return { ingest: ing, opportunities: opps.length, recovered, auto, monitored };
+  return { ingest: ing, opportunities: opps.length, council: council.winner ?? null, recovered, auto, monitored };
 }
 
 export { getBlob };

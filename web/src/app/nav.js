@@ -2,7 +2,7 @@
 export const hashParts = () => { const [path, q = ''] = (location.hash || '#/').replace(/^#\/?/, '').split('?'); return { segs: path.split('/').filter(Boolean), q: new URLSearchParams(q) }; };
 export const href = (path, { demo = false, activity = false } = {}) => { const q = new URLSearchParams(); if (demo) q.set('fixture', '1'); if (activity) q.set('activity', '1'); const s = q.toString(); return `#/${path}${s ? `?${s}` : ''}`; };
 export const goto = (path, opts) => { location.hash = href(path, opts); };
-export const APP_ROUTES = ['home', 'approvals', 'watch', 'vault'];
+export const APP_ROUTES = ['home', 'council', 'approvals', 'watch', 'vault'];
 export const parseRoute = () => {
   const { segs, q } = hashParts();
   let name = segs[0] ?? 'home'; if (name === 'overview') name = 'home';
