@@ -7,6 +7,8 @@ const LABELS = {
   dev_tooling: 'Privacy', data_indexing: 'Prediction markets', ai_agents: 'AI trading', untagged: 'RWA',
 };
 
+export const TOPIC_LABELS = Object.values(LABELS); // the eight illustrated topics, in the engine's order
+
 const TITLES = {
   treasury: ['Payroll moves from bank wires to a dollar token', 'Yield-bearing dollar passes another supply high', 'Local-currency stablecoin goes live in Brazil', 'Treasury teams ask for per-seat spend limits', 'Cross-border payout settles in seconds, not days', 'Merchant checkout accepts stablecoins without a card network', 'Stablecoin float earns on a vault instead of idling', 'Remittance app drops fees to a flat cent'],
   intents: ['Perp venue ships cross-margin with sub-second fills', 'Funding rates flip negative across the majors', 'Order book moves fully onchain, no keeper needed', 'Solvers compete to fill a perp order at best price', 'One-click leverage from any chain via intents', 'Liquidation engine rewritten for tighter bands', 'Perp traders ask for a kill switch on agents', 'Open interest climbs while spot volume sleeps'],

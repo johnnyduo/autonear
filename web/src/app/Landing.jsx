@@ -1,5 +1,5 @@
 // One page, one promise, one button. Real numbers only.
-import { lazy, Suspense, useState } from 'react';
+import { Fragment, lazy, Suspense, useRef, useState } from 'react';
 import { makeLandingDemo } from './landing-demo.js';
 import { fmt } from '../api.js';
 import { useCalm } from '../ui.jsx';
@@ -8,11 +8,17 @@ import { href } from './nav.js';
 import '../views/constellation/panel.css';
 import WalletButton from './WalletButton.jsx';
 import LandingCard from './LandingCard.jsx';
+import LandingFx from './LandingFx.jsx';
 
 const Hero = lazy(() => import('../views/constellation/ConstellationHero.jsx'));
 
+const HEAD_A = 'An agent that works for you,'; const HEAD_B = 'on a leash you hold.';
+// each word sits in a mask and rises into it; the heading stays one sentence for screen readers (aria-label on the h1)
+const Words = ({ text, from }) => text.split(' ').map((w, i, all) => <Fragment key={w + i}><span className="ln-word" aria-hidden="true" style={{ '--i': from + i }}><span>{w}</span></span>{i < all.length - 1 ? ' ' : null}</Fragment>);
+
 export default function Landing({ data, connected = false }) {
   const calm = useCalm();
+  const heroRef = useRef(null);
   const s = data.status.data;
   const sources = s?.sources ?? [];
   const [ready, setReady] = useState(false);
@@ -26,16 +32,17 @@ export default function Landing({ data, connected = false }) {
         <a className="ap-brand" href={href('welcome')} aria-label={`${T.brand} home`}><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0f1317" stroke="#232c34" /><path d="M8 24V8l16 16V8" fill="none" stroke="#c6f432" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" /></svg><b>{T.brand}</b></a>
         <span className="chip warn">{T.testnet}</span>
       </header>
-      <section className="ln-hero co-stagewrap" aria-label="Illustration: topics the agent reads, drawn as a sphere of example records">
+      <section className={`ln-hero co-stagewrap${calm ? '' : ' fx'}`} ref={heroRef} aria-label="Illustration: topics the agent reads, drawn as a sphere of example records">
         <div className={`ln-poster ${ready ? 'gone' : ''}`} aria-hidden="true"><i /></div>
-        <div className="ln-bg">
+        <div className={`ln-bg${ready || calm ? ' in' : ''}`}>
           <Suspense fallback={null}>
             <Hero status={null} sources={demo.sources} activeRun={null} opps={demo.opps} demo={demo} demoCouncil={cc} onStar={setStar} calm={calm} onReady={() => setReady(true)} />
           </Suspense>
         </div>
+        <LandingFx heroRef={heroRef} calm={calm} />
         {star === 'council' && <LandingCard onStory={setCc} />}
         <div className="ln-copy" data-reserve>
-          <h1>An agent that works for you, <em>on a leash you hold.</em></h1>
+          <h1 aria-label={`${HEAD_A} ${HEAD_B}`}><Words text={HEAD_A} from={0} />{' '}<em><Words text={HEAD_B} from={HEAD_A.split(' ').length} /></em></h1>
           <p className="ln-sub">{T.tagline}</p>
           <div className="ln-cta">
             {connected ? <a className="btn primary lg" href={href('')}>Open the app</a> : <WalletButton big hint={false} />}
