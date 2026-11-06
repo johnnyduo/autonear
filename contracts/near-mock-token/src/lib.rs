@@ -5,8 +5,14 @@
 //! decimals are set at `new`.
 //!
 //! Non-negotiables:
-//! - `new` aborts unless `network_id` is exactly `testnet` or `localnet`, so this contract cannot be
-//!   initialised on mainnet (or anywhere else) by accident.
+//! - `new` aborts unless `network_id` is exactly `testnet` or `localnet` AND the account the contract
+//!   is deployed on matches that network: `testnet` requires a current account ending in `.testnet`;
+//!   `localnet` requires `test.near` or an account ending in `.test.near` (the nearcore sandbox root).
+//!   The `network_id` argument is only a label chosen by the initializer; the account suffix is what is
+//!   actually enforced. This is a best-effort guard that keeps a labelled testnet mock from being
+//!   initialised on mainnet by accident or by a casual deployer. It is NOT a security boundary for real
+//!   value: nothing on-chain stops someone from deploying a different contract on mainnet, and this one
+//!   must never be given real value or treated as a real stablecoin.
 //! - `mint` is open to ANYONE, capped per call (10,000 whole tokens). That is the point of a faucet
 //!   token; it is also why the name returned by `ft_metadata` must say so.
 //! - No owner, no upgrade method, no `AddKey`/`DeleteAccount`, no arbitrary calls.
@@ -40,6 +46,15 @@ use near_sdk::{
 
 /// Networks on which `new` may run.
 pub const ALLOWED_NETWORKS: [&str; 2] = ["testnet", "localnet"];
+
+/// Whether `account` is a legitimate home for a token labelled `network_id`.
+fn account_matches_network(network_id: &str, account: &str) -> bool {
+    match network_id {
+        "testnet" => account.ends_with(".testnet"),
+        "localnet" => account == "test.near" || account.ends_with(".test.near"),
+        _ => false,
+    }
+}
 /// Per-call mint ceiling, in whole tokens.
 pub const MAX_MINT_WHOLE_TOKENS: u128 = 10_000;
 /// Largest `decimals` accepted (keeps `10_000 * 10^decimals` far below `u128::MAX`).
@@ -74,6 +89,13 @@ impl Contract {
             fail(
                 "E_BadNetwork",
                 "this mock token only initialises on testnet or localnet",
+            );
+        }
+        let account = env::current_account_id();
+        if !account_matches_network(&network_id, account.as_str()) {
+            fail(
+                "E_BadNetwork",
+                "network_id testnet requires a contract account ending in .testnet; network_id localnet requires test.near or an account ending in .test.near",
             );
         }
         if name.is_empty() || name.len() > MAX_TEXT_BYTES {

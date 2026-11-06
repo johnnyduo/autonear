@@ -65,13 +65,54 @@ fn mint_to(c: &mut Contract, to: &str, amount: u128) {
 
 // ---- init ----------------------------------------------------------------------------------------
 
+/// Runs `new` with the contract deployed on `account` and the given `network_id` label.
+fn init_on(account: &str, net: &str) -> Contract {
+    testing_env!(VMContextBuilder::new()
+        .current_account_id(acct(account))
+        .signer_account_id(acct(ALICE))
+        .predecessor_account_id(acct(ALICE))
+        .build());
+    Contract::new(NAME.to_string(), "USDC".to_string(), 6, net.to_string())
+}
+
 #[test]
-fn init_accepts_testnet_and_localnet() {
-    for net in ["testnet", "localnet"] {
-        ctx(ALICE);
-        let c = Contract::new(NAME.to_string(), "USDC".to_string(), 6, net.to_string());
-        assert_eq!(c.network_id(), net);
+fn init_accepts_the_three_valid_account_network_pairs() {
+    for (account, net) in [
+        ("usdc.testnet", "testnet"),
+        ("test.near", "localnet"),
+        ("usdc.test.near", "localnet"),
+    ] {
+        let c = init_on(account, net);
+        assert_eq!(c.network_id(), net, "{account}");
     }
+}
+
+#[test]
+fn init_refuses_every_mismatched_account_network_pair() {
+    for (account, net) in [
+        ("usdc.near", "testnet"),
+        ("x.near", "testnet"),
+        ("usdc.near", "localnet"),
+        ("usdc.testnet", "localnet"),
+        ("usdc.test.near", "testnet"),
+        ("test.near", "testnet"),
+        ("testnet", "testnet"),
+        ("usdctestnet", "testnet"),
+        ("usdc.testnet.near", "testnet"),
+        ("usdc.testnet", "mainnet"),
+        ("usdc.near", "mainnet"),
+    ] {
+        let r = std::panic::catch_unwind(|| init_on(account, net));
+        assert!(r.is_err(), "{account} + {net} must abort");
+    }
+}
+
+#[test]
+#[should_panic(
+    expected = "E_BadNetwork: network_id testnet requires a contract account ending in .testnet"
+)]
+fn init_on_mainnet_style_account_names_the_rule() {
+    let _ = init_on("usdc.near", "testnet");
 }
 
 fn init_with_network(net: &str) {
@@ -142,9 +183,9 @@ fn views() {
 #[test]
 fn ceiling_scales_with_decimals() {
     ctx(ALICE);
-    let c = Contract::new("T".to_string(), "T".to_string(), 0, "localnet".to_string());
+    let c = Contract::new("T".to_string(), "T".to_string(), 0, "testnet".to_string());
     assert_eq!(c.max_mint_per_call(), U128(10_000));
-    let c = Contract::new("T".to_string(), "T".to_string(), 24, "localnet".to_string());
+    let c = Contract::new("T".to_string(), "T".to_string(), 24, "testnet".to_string());
     assert_eq!(c.max_mint_per_call().0, 10_000 * 10u128.pow(24));
 }
 
