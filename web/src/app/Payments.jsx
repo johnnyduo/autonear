@@ -7,6 +7,7 @@ import { secsLabel } from '../views/vault/format.js';
 import { P, payError, pfill } from './copy.js';
 import { href } from './nav.js';
 import { payFuelWarning } from './vaultView.js';
+import MintCard from './MintCard.jsx';
 import { payBody, payFormOff, paymentRows, shortAccount, tokenView, validatePay } from './pay.js';
 
 const tone = (f) => (f > 0.9 ? 'risk' : f > 0.7 ? 'warn' : '');
@@ -61,6 +62,7 @@ export default function Payments({ v, data, owner, canWrite, demo, opts, toast, 
           <div className="row sp"><h3><span className="mono-v" title={tk.token}>{tk.symbol ?? shortAccount(tk.token)}</span></h3>
             <span className="pay-bal" title={tk.balanceExact ?? undefined}>{P.balance}: <b>{tk.balance ?? P.balanceUnknown}</b></span></div>
           {tk.usable ? <Limits tv={tk} periodSecs={v.mandate?.periodSecs} /> : <p className="faint">{P.notApproved}</p>}
+          <MintCard v={v} tk={tk} owner={owner} canWrite={canWrite} demo={demo} toast={toast} onDone={() => data.reload()} />
         </div>
       ))}
       {!tokens.length && <p className="faint">{P.noTokens}</p>}

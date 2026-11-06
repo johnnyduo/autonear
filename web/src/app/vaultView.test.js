@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { vaultStatus, fuelState, budgetUse, withdrawCheck, maxText, shortAddr, payFuelWarning, payoutsNeedNote, LOW_FUEL } from './vaultView.js';
+import { vaultStatus, fuelState, budgetUse, withdrawCheck, maxText, shortAddr, payFuelWarning, payoutsNeedNote, mintCheck, mintCall, isMockToken, MINT_MAX_WHOLE, MINT_PRESETS, LOW_FUEL } from './vaultView.js';
 
 const NEAR = 10n ** 24n;
 test('vaultStatus: the most urgent thing wins, in a fixed order, and each state names the next step', () => {
@@ -44,4 +44,25 @@ test('payFuelWarning: only a paying vault with NO spendable NEAR is warned; unkn
 test('payoutsNeedNote: shown only for a grant with at least one payout token', () => {
   assert.match(payoutsNeedNote({ payouts: { tokens: [{ token: 'usdc.testnet' }] } }), /1 NEAR reserve/);
   for (const p of [null, {}, { payouts: {} }, { payouts: { tokens: [] } }, { payouts: { tokens: 'x' } }]) assert.equal(payoutsNeedNote(p), '', JSON.stringify(p));
+});
+
+test('mintCheck: quiet when empty, explains every bad input, accepts up to the contract ceiling and no further', () => {
+  assert.deepEqual(mintCheck('', 6), { base: null, error: '' });
+  for (const bad of ['abc', '-5', '1e3', '1,000']) assert.match(mintCheck(bad, 6).error, /number/, bad);
+  assert.match(mintCheck('0', 6).error, /more than zero/); assert.match(mintCheck('1.1234567', 6).error, /6 decimals/);
+  assert.deepEqual(mintCheck('100', 6), { base: 100_000_000n, error: '' }); assert.deepEqual(mintCheck('12.5', 6), { base: 12_500_000n, error: '' });
+  assert.equal(mintCheck('10000', 6).base, MINT_MAX_WHOLE * 10n ** 6n, 'exactly the ceiling is allowed'); assert.match(mintCheck('10000.000001', 6).error, /at most 10,000/); assert.match(mintCheck('10001', 6).error, /at most 10,000/);
+  assert.ok(MINT_PRESETS.every((n) => mintCheck(String(n), 6).base !== null));
+});
+test('isMockToken: only a token whose own metadata says "Mock ..." counts; anything else gets no faucet card', () => {
+  assert.equal(isMockToken({ name: 'Mock USDC (testnet, anyone can mint)' }), true); assert.equal(isMockToken({ name: 'mock usdc' }), true);
+  for (const m of [null, {}, { name: 'USD Coin' }, { name: 'Not a Mockup' }, { name: 'Mockingbird' }, { name: 5 }]) assert.equal(isMockToken(m), false, JSON.stringify(m));
+});
+
+test('mintCall: the exact call for the mint button; storage is paid only for a receiver that is not registered; impossible amounts never become a call', () => {
+  const c = mintCall({ token: 'usdc.testnet', to: 'vault.testnet', base: 100_000_000n, decimals: 6, registered: { total: '1' } });
+  assert.deepEqual(c, { receiver: 'usdc.testnet', method: 'mint', args: { account_id: 'vault.testnet', amount: '100000000' }, deposit: 0n });
+  assert.equal(mintCall({ token: 'usdc.testnet', to: 'v.testnet', base: 1n, decimals: 6, registered: null }).deposit, 25n * 10n ** 20n);
+  for (const base of [0n, -1n, 10_000n * 10n ** 6n + 1n, null, undefined, 5]) assert.throws(() => mintCall({ token: 't', to: 'v', base, decimals: 6, registered: null }), /./, String(base));
+  assert.equal(mintCall({ token: 't', to: 'v', base: 10_000n * 10n ** 6n, decimals: 6, registered: {} }).args.amount, '10000000000');
 });

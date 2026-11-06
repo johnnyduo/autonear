@@ -1,0 +1,139 @@
+{
+  "network": "near-testnet",
+  "startedAt": "2026-11-06T17:12:40.677Z",
+  "vault": "vault-v2.autonear-owner-1106.testnet",
+  "token": "usdc-v2.autonear-owner-1106.testnet",
+  "txs": [
+    {
+      "label": "fund scratch wallet 0.15 NEAR",
+      "hash": "4idLJXiYLqeAdASqysVXRPBJ1Dbzw3qnNEZz6t7uau1C"
+    },
+    {
+      "label": "scratch mint 100 USDC -> vault",
+      "hash": "0x0f1b5a91bf449513e541188c9360aa822c3f12ec04f1c74fc582606c116b035f",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x0f1b5a91bf449513e541188c9360aa822c3f12ec04f1c74fc582606c116b035f",
+      "ok": true
+    },
+    {
+      "label": "scratch mint 5 USDC -> unregistered account",
+      "hash": "0xf33e393e72cffd2bf006b9ed8f1929ed2795ba54d16315553b0550c6c453481a",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xf33e393e72cffd2bf006b9ed8f1929ed2795ba54d16315553b0550c6c453481a",
+      "ok": true
+    },
+    {
+      "label": "scratch mint 10,001 USDC (over the ceiling)",
+      "hash": "0xc89b3cf55dbe81e595e704c381a00f44f704e11ab516d27abeb924646e87bd11",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0xc89b3cf55dbe81e595e704c381a00f44f704e11ab516d27abeb924646e87bd11",
+      "ok": false
+    },
+    {
+      "label": "owner set_mandate (2 h)",
+      "hash": "7vb56i98C3SnWRkixDid4YVWssZ8aWnmhzei8np1ZEJP"
+    },
+    {
+      "label": "agent pay 5 USDC -> alice (from the minted funds)",
+      "hash": "579Ay5UMPY5GJ6PByjLYS6eGA1EzpgoJAN86TpyX8M9t",
+      "explorer": "https://testnet.nearblocks.io/txns/579Ay5UMPY5GJ6PByjLYS6eGA1EzpgoJAN86TpyX8M9t",
+      "ok": true
+    },
+    {
+      "label": "owner revoke (leave the vault safe)",
+      "hash": "4qB4FFLRGQXNnjfie5wSwibjeHPNdsKTMdizjepkThzB"
+    },
+    {
+      "label": "scratch sweeps spare NEAR to the demo owner",
+      "hash": "0x7ddf31a4a2253a8fe047d9722956b81e73dd749e12e420caf87fa2b9d4a41739",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x7ddf31a4a2253a8fe047d9722956b81e73dd749e12e420caf87fa2b9d4a41739",
+      "ok": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "token metadata: mock USDC, 6 decimals (what the button reads)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "scratch wallet funded",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the vault is registered on the token, so no storage deposit is attached",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the call is exactly mint(account_id = vault, amount = 100 USDC) with no deposit",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "mint accepted through the relayer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the vault holds exactly 100 USDC more",
+      "ok": true,
+      "detail": "0.00 USDC -> 100.00 USDC"
+    },
+    {
+      "name": "the wallet that pressed the button received nothing (the tokens went to the vault)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "an unregistered receiver gets 0.0025 NEAR attached",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "mint to an unregistered account accepted",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "it now holds 5 USDC and is registered",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "above the per-call ceiling the chain refuses and nothing is added",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "owner set a short mandate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the agent paid alice 5 USDC from the minted funds",
+      "ok": true,
+      "detail": "alice +5.00 USDC, vault 95.00 USDC"
+    },
+    {
+      "name": "verifyPay ok on the real receipts (23 checks)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "owner revoked the mandate again; the vault keeps the remaining USDC",
+      "ok": true,
+      "detail": "95.00 USDC"
+    }
+  ],
+  "signers": {
+    "scratchWallet": "throw-away key (not a human, not MetaMask)",
+    "owner": "autonear-owner-1106.testnet (demo owner key, automated)",
+    "agent": "d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34 (agent keystore, call-limited: vault pay only)"
+  },
+  "scratchWallet": "0x62a58b047f0560e89fa4894239043a8e3a25cace",
+  "finishedAt": "2026-11-06T17:13:55.295Z",
+  "result": {
+    "pass": 15,
+    "fail": 0
+  },
+  "scope": "NEAR public testnet. Wallet key is a throw-away test key (not a human, not MetaMask). The token is a MOCK (open faucet, no value). Not an independent audit; no mainnet."
+}

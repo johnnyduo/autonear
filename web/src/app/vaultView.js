@@ -66,3 +66,26 @@ export function payoutsNeedNote(payload) {
   const n = Array.isArray(payload?.payouts?.tokens) ? payload.payouts.tokens.length : 0; if (!n) return '';
   return 'This grant lets the agent pay people. Besides the tokens, the vault also needs NEAR it can spend: it keeps back its storage cost (about 3.4 NEAR) and a 1 NEAR reserve, and every payment uses a tiny NEAR deposit. Fund the vault with NEAR above that, or no payment can go out.';
 }
+
+/** The mock token's own per-call mint ceiling (contracts/near-mock-token: 10,000 whole tokens). */
+export const MINT_MAX_WHOLE = 10_000n;
+export const MINT_PRESETS = Object.freeze([10, 100, 1000]);
+/** { base: bigint|null, error: string } for the amount typed in the mint box: a whole or decimal number above zero, at most the per-call ceiling. Empty is quiet. */
+export function mintCheck(text, decimals) {
+  const s = String(text ?? '').trim(); if (!s) return { base: null, error: '' };
+  const base = parseUnits(s, decimals);
+  if (base === null) return { base: null, error: decimals === 0 ? 'Use a whole number.' : `Use a number with at most ${decimals} decimals, like 100 or 12.5.` };
+  if (base <= 0n) return { base: null, error: 'Enter more than zero.' };
+  if (base > MINT_MAX_WHOLE * 10n ** BigInt(decimals)) return { base: null, error: `One mint can add at most ${MINT_MAX_WHOLE.toLocaleString('en-US')}.` };
+  return { base, error: '' };
+}
+/** The mock faucet token is recognised by its own name, exactly like the server does it (ft_metadata.name starts with "Mock"). */
+export const isMockToken = (meta) => typeof meta?.name === 'string' && /^mock\b/i.test(meta.name);
+
+/** The exact NEAR call the mint button sends (also used by the real-chain e2e). An unregistered receiver gets its storage paid: 0.0025 NEAR attached, the token refunds the excess. */
+export function mintCall({ token, to, base, decimals, registered }) {
+  const chk = mintCheck(base === undefined || base === null ? '' : exactUnits(base, decimals), decimals);
+  if (chk.base === null || chk.base !== base) throw new Error(chk.error || 'That amount cannot be minted.');
+  return { receiver: token, method: 'mint', args: { account_id: to, amount: String(base) }, deposit: registered ? 0n : 25n * 10n ** 20n };
+}
+const exactUnits = (b, d) => exactDecimal(b, d);
