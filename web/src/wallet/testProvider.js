@@ -14,6 +14,7 @@ export function testProvider(privateKey, { rpc = NEAR_EVM.rpc, fetchImpl = fetch
       if (method === 'eth_chainId') return chainId;
       if (method === 'wallet_switchEthereumChain') { if (params[0].chainId !== NEAR_EVM.chainIdHex) { const e = new Error('Unrecognized chain ID'); e.code = 4902; throw e; } chainId = params[0].chainId; return null; }
       if (method === 'wallet_addEthereumChain') { chainId = params[0].chainId; return null; }
+      if (method === 'eth_sign') return account.sign({ hash: params[1] }); // raw 32-byte hash, no prefix: what MetaMask does when Eth_sign requests are switched on
       if (method === 'personal_sign') return account.signMessage({ message: { raw: params[0] } });
       if (method === 'eth_sendTransaction') {
         const t = params[0]; const raw = await account.signTransaction({ type: 'legacy', chainId: Number(t.chainId), nonce: Number(BigInt(t.nonce)), to: t.to, value: BigInt(t.value), data: t.data, gas: BigInt(t.gas), gasPrice: BigInt(t.gasPrice) });
