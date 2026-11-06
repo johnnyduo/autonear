@@ -63,11 +63,21 @@ const big = (v, what) => {
   throw new Error(`adapter state: ${what} is not an integer`);
 };
 const low = (s) => String(s ?? '').toLowerCase();
+function normalizePayouts(p) {
+  return {
+    tokens: (p.tokens ?? []).map((t) => ({ token: String(t.token), perPayCap: big(t.perPayCap, 'payouts.perPayCap'), periodCap: big(t.periodCap, 'payouts.periodCap'), totalCap: big(t.totalCap, 'payouts.totalCap'),
+      usage: { total: big(t.usage?.total ?? 0, 'payouts.usage.total'), period: big(t.usage?.period ?? 0, 'payouts.usage.period'), periodIndex: big(t.usage?.periodIndex ?? 0, 'payouts.usage.periodIndex') } })),
+    payees: (p.payees ?? []).map(String),
+  };
+}
 /** Canonical in-memory state: every amount/time a BigInt. Throws when the adapter's output is missing a field the model needs. */
 export function normalizeState(raw) {
   if (!raw || typeof raw !== 'object' || !raw.config) throw new Error('adapter state: missing config');
   const c = raw.config; const m = raw.mandate; const u = raw.usage ?? {};
   return {
+    // payouts build (NEAR 1.1.x): which attested build is on chain and its token / payee configuration. Absent for v1 and EVM, so their state keeps its exact shape.
+    ...(raw.build ? { build: String(raw.build) } : {}),
+    ...(raw.payouts ? { payouts: normalizePayouts(raw.payouts) } : {}),
     config: { owner: String(c.owner), pendingOwner: c.pendingOwner ? String(c.pendingOwner) : null, paused: Boolean(c.paused), networkId: String(c.networkId ?? ''), epoch: big(c.epoch ?? 0, 'config.epoch') },
     mandate: m ? {
       agent: String(m.agent), expiresAt: big(m.expiresAt, 'mandate.expiresAt'), perDrawCap: big(m.perDrawCap, 'mandate.perDrawCap'), periodSecs: big(m.periodSecs, 'mandate.periodSecs'),
@@ -84,12 +94,19 @@ export function normalizeState(raw) {
 export const stateToJSON = (s) => jsonSafe(s);
 
 /** Rebuild the JS reference model from chain state (what the spec calls "the JS VaultModel is rebuilt from chain state"). */
-export function modelFromState(state, chain) {
-  const model = new VaultModel({ chain, owner: state.config.owner, balance: state.available, networkId: state.config.networkId });
+export function modelFromState(state, chain, { vaultId } = {}) {
+  const model = new VaultModel({ chain, owner: state.config.owner, balance: state.available, networkId: state.config.networkId, ...(vaultId ? { vaultId } : {}) });
   model.config.paused = state.config.paused; model.config.epoch = state.config.epoch; model.config.pendingOwner = state.config.pendingOwner;
   model.mandate = state.mandate ? { ...state.mandate } : null;
   model.usage = { ...state.usage };
   for (const t of state.templates) model.templates.set(t.id, { id: t.id, label: t.label, deposit: t.deposit });
+  // Payouts build: tokens, payees and this epoch's token usage (readState returns the CURRENT epoch's figures, so they are stamped with config.epoch).
+  // Pass `vaultId` (the vault's own account) so the model refuses the vault as token / payee exactly like the contract.
+  for (const t of state.payouts?.tokens ?? []) {
+    model.tokens.set(t.token, { perPayCap: t.perPayCap, periodCap: t.periodCap, totalCap: t.totalCap });
+    model.tokenUsage.set(t.token, { epoch: state.config.epoch, total: t.usage.total, periodIndex: t.usage.periodIndex, period: t.usage.period });
+  }
+  for (const a of state.payouts?.payees ?? []) model.payees.add(a);
   return model;
 }
 
@@ -145,6 +162,30 @@ export function verifyMandate(state, payload, { protocol = 'evm', adapter = null
   }
   const extra = [...onChain.keys()].filter((id) => !approved.has(id));
   add('no template allowlisted that this decision did not approve', extra.length === 0, extra.length ? `unapproved: ${extra.map((x) => x.slice(0, 12)).join(', ')}` : 'none', 'none', extra.length ? extra.map((x) => x.slice(0, 12)).join(', ') : 'none');
+  // ---- token payouts: tokens (with their caps) and payees on-chain must equal the grant's `payouts` section, in both directions
+  const wantPay = payload.payouts;
+  if (wantPay) {
+    const isPay = state.build === 'pay' && Boolean(state.payouts);
+    add('vault is the payouts build (v1.1)', isPay, `build ${state.build ?? 'unknown'}`, 'pay', state.build ?? 'unknown');
+    if (state.payouts) {
+      const onTok = new Map(state.payouts.tokens.map((t) => [t.token, t]));
+      for (const t of wantPay.tokens ?? []) {
+        const o = onTok.get(t.token);
+        add(`payout token ${t.token} allowlisted on-chain`, Boolean(o), o ? 'allowlisted' : 'missing', 'allowlisted', o ? 'allowlisted' : 'missing');
+        if (o) for (const k of ['perPayCap', 'periodCap', 'totalCap']) add(`payout token ${t.token} ${k} == approved`, o[k] === BigInt(t[k]), `${o[k]} vs ${t[k]}`, t[k], o[k]);
+      }
+      const approvedTok = new Set((wantPay.tokens ?? []).map((t) => t.token));
+      const extraTok = [...onTok.keys()].filter((x) => !approvedTok.has(x));
+      add('no payout token allowlisted that this decision did not approve', extraTok.length === 0, extraTok.length ? `unapproved: ${extraTok.join(', ')}` : 'none', 'none', extraTok.length ? extraTok.join(', ') : 'none');
+      const onPayees = new Set(state.payouts.payees); const approvedPayees = new Set(wantPay.payees ?? []);
+      const missingPayees = [...approvedPayees].filter((x) => !onPayees.has(x)); const extraPayees = [...onPayees].filter((x) => !approvedPayees.has(x));
+      add('every approved payee is allowlisted on-chain', missingPayees.length === 0, missingPayees.length ? `missing: ${missingPayees.join(', ')}` : `${approvedPayees.size} payees`, 'all allowlisted', missingPayees.length ? `missing ${missingPayees.join(', ')}` : 'all allowlisted');
+      add('no payee allowlisted that this decision did not approve', extraPayees.length === 0, extraPayees.length ? `unapproved: ${extraPayees.join(', ')}` : 'none', 'none', extraPayees.length ? extraPayees.join(', ') : 'none');
+    }
+  } else if (state.payouts) { // a v1 grant (no payouts section) on a payouts-build vault: fine while NOTHING is configured, a mismatch as soon as the owner allowlisted a token or payee the grant never named
+    const n = state.payouts.tokens.length + state.payouts.payees.length;
+    add('no payout token or payee configured on-chain (this grant has no payouts section)', n === 0, n ? `${state.payouts.tokens.length} tokens, ${state.payouts.payees.length} payees not in the grant` : 'none', 'none', n ? `${state.payouts.tokens.length} tokens, ${state.payouts.payees.length} payees` : 'none');
+  }
   const fieldsOk = checks.every((c) => c.ok);
   const live = !m.revoked && state.blockTime < m.expiresAt;
   let epochOk = true;
@@ -189,7 +230,7 @@ export async function readVault(db, vault, { fetchImpl, maxAgeMs = 15_000, force
   const t = now();
   let next;
   if (!adapter || adapterProblems(adapter, VAULT_REQUIRED_READ).length) {
-    next = { state: cache?.state ?? null, codeOk: false, codeChecked: false, codeChecks: [], readError: safeMsg(adapter ? `adapter incomplete: missing ${adapterProblems(adapter, VAULT_REQUIRED_READ).join(', ')}` : reason, redact), readAt: cache?.readAt ?? null, errorAt: t };
+    next = { state: cache?.state ?? null, codeOk: false, codeChecked: false, codeBuild: null, codeChecks: [], readError: safeMsg(adapter ? `adapter incomplete: missing ${adapterProblems(adapter, VAULT_REQUIRED_READ).join(', ')}` : reason, redact), readAt: cache?.readAt ?? null, errorAt: t };
   } else {
     const [st, cd] = await Promise.allSettled([
       adapter.readState({ net, vault: vault.address, now: Math.floor(t / 1000), agent: vault.agent ?? undefined, fetchImpl }).then(normalizeState),
@@ -199,8 +240,10 @@ export async function readVault(db, vault, { fetchImpl, maxAgeMs = 15_000, force
     const codeChecked = verdict !== 'unknown';
     const codeOk = verdict === 'ok';
     const codeChecks = cd.status === 'fulfilled' ? (cd.value.checks ?? []) : [{ name: 'vault code readable', ok: false, detail: safeMsg(cd.reason, redact) }];
-    if (st.status === 'fulfilled') next = { state: stateToJSON(st.value), codeOk, codeChecked, codeChecks, readError: null, readAt: t };
-    else next = { state: cache?.state ?? null, codeOk, codeChecked, codeChecks, readError: safeMsg(st.reason, redact), readAt: cache?.readAt ?? null, errorAt: t };
+    // codeBuild = the attested build the on-chain CODE HASH matched ('v1' | 'pay'); null for adapters without builds or when the code did not verify.
+    const codeBuild = codeOk && cd.status === 'fulfilled' ? (cd.value.build ?? null) : null;
+    if (st.status === 'fulfilled') next = { state: stateToJSON(st.value), codeOk, codeChecked, codeBuild, codeChecks, readError: null, readAt: t };
+    else next = { state: cache?.state ?? null, codeOk, codeChecked, codeBuild, codeChecks, readError: safeMsg(st.reason, redact), readAt: cache?.readAt ?? null, errorAt: t };
   }
   await db.run('UPDATE vaults SET last_state=?, last_read_at=? WHERE id=?', [j(next), t, vault.id]);
   vault.cache = next; vault.last_read_at = t;
@@ -316,6 +359,11 @@ export const runtimeSupportsSigning = () => typeof process !== 'undefined' && Bo
 
 // ------------------------------------------------------------------ attach / activate
 const attestedRef = (adapter) => adapter?.attested?.sha256 ?? adapter?.attested?.codeHash ?? null;
+/** `vaults.attested_ref` = sha256 of the attested build that is ACTUALLY on chain ('v1' = the historical value, 'pay' = the payouts build). It doubles as the record of
+ *  the vault's build, so no schema change is needed: the hash is stronger than a label and `buildOfAttestedRef` maps it back. Falls back to the adapter's default hash. */
+export const attestedRefFor = (adapter, build) => (build && adapter?.attested?.builds?.[build]?.sha256) || attestedRef(adapter);
+/** 'v1' | 'pay' | null for a stored `attested_ref`. */
+export const buildOfAttestedRef = (adapter, ref) => (ref ? (Object.values(adapter?.attested?.builds ?? {}).find((b) => b.sha256 === ref)?.build ?? null) : null);
 
 export async function attachVault(db, { chainId, address, fetchImpl, keystore, actor = 'operator' }) {
   const net = netFor(chainId);
@@ -333,11 +381,11 @@ export async function attachVault(db, { chainId, address, fetchImpl, keystore, a
   const t = now();
   if (!existing) {
     await db.run('INSERT INTO vaults(id,chain_id,address,owner,agent,attested_ref,status,created_at,last_state,last_read_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
-      [id, chainId, address, state.config.owner, null, attestedRef(adapter), 'attached', t, j({ state: stateToJSON(state), codeOk: true, codeChecks: code.checks, readError: null, readAt: t }), t]);
+      [id, chainId, address, state.config.owner, null, attestedRefFor(adapter, code.build), 'attached', t, j({ state: stateToJSON(state), codeOk: true, codeBuild: code.build ?? null, codeChecks: code.checks, readError: null, readAt: t }), t]);
     await audit(db, actor, 'vault.attached', { id, chainId, address, owner: state.config.owner });
     await appendLedger(db, id, { kind: 'loop', status: 'confirmed', detail: `vault attached (${net.id}); code == attested build` });
   } else {
-    await db.run('UPDATE vaults SET owner=?, last_state=?, last_read_at=? WHERE id=?', [state.config.owner, j({ state: stateToJSON(state), codeOk: true, codeChecks: code.checks, readError: null, readAt: t }), t, id]);
+    await db.run('UPDATE vaults SET owner=?, last_state=?, last_read_at=? WHERE id=?', [state.config.owner, j({ state: stateToJSON(state), codeOk: true, codeBuild: code.build ?? null, codeChecks: code.checks, readError: null, readAt: t }), t, id]);
   }
   const vault = await getVault(db, id);
   const activation = await activateVault(db, vault, { fetchImpl, keystore });
@@ -366,7 +414,8 @@ export async function activateVault(db, vault, { fetchImpl, keystore, redact } =
     try { assertDecisionAllowed(d); checks.push({ name: 'decision passes policy (testnet, spend ceiling)', ok: true, detail: '' }); } catch (e) { checks.push({ name: 'decision passes policy (testnet, spend ceiling)', ok: false, detail: e.message }); }
     checks.push({ name: 'approved by the vault owner (bound signer == owner)', ok: low(d.bound_signer) === low(read.state.config.owner), detail: `${d.bound_signer} vs ${read.state.config.owner}` });
     checks.push({ name: 'payload names this vault', ok: low(d.payload.vault?.address) === low(vault.address), detail: String(d.payload.vault?.address) });
-    const vm = verifyMandate(read.state, d.payload, { protocol: net.protocol, adapter: (await adapterFor(net.protocol)).adapter });
+    // The build is taken from the verified CODE HASH (not from the version string the contract reports about itself).
+    const vm = verifyMandate(read.codeBuild ? { ...read.state, build: read.codeBuild } : read.state, d.payload, { protocol: net.protocol, adapter: (await adapterFor(net.protocol)).adapter });
     checks.push(...vm.checks);
     const ok = checks.every((c) => c.ok);
     best = best ?? { decisionId: d.id, checks, ok };
@@ -374,17 +423,52 @@ export async function activateVault(db, vault, { fetchImpl, keystore, redact } =
     const claim = await db.run("UPDATE decisions SET status='executed' WHERE id=? AND status='approved'", [d.id]);
     if (!claim.changes) continue;
     const agent = net.protocol === 'near' ? d.payload.agent.account : d.payload.agent.address;
-    await db.run("UPDATE vaults SET status='active', agent=?, mandate_decision_id=?, owner=?, attested_ref=? WHERE id=?", [agent, d.id, read.state.config.owner, attestedRef((await adapterFor(net.protocol)).adapter), vault.id]);
+    await db.run("UPDATE vaults SET status='active', agent=?, mandate_decision_id=?, owner=?, attested_ref=? WHERE id=?", [agent, d.id, read.state.config.owner, attestedRefFor((await adapterFor(net.protocol)).adapter, read.codeBuild), vault.id]);
     await setPinnedEpoch(db, vault.id, read.state.config.epoch);
     await appendLedger(db, vault.id, { kind: 'activate', status: 'confirmed', decisionId: d.id, detail: `loop activated: on-chain mandate == approved ${d.id} (epoch ${read.state.config.epoch})` });
     await audit(db, 'vault', 'vault.activated', { vaultId: vault.id, decisionId: d.id, epoch: String(read.state.config.epoch), agent });
-    return { activated: true, decisionId: d.id, epoch: String(read.state.config.epoch), checks };
+    return { activated: true, decisionId: d.id, epoch: String(read.state.config.epoch), ...(read.codeBuild ? { build: read.codeBuild } : {}), checks };
   }
   return { activated: false, reason: 'on-chain state does not (yet) equal the approved grant_mandate payload', decisionId: best?.decisionId, checks: best?.checks ?? [] };
 }
 
 // ------------------------------------------------------------------ propose a grant_mandate
 const DAY = 86_400;
+const SYMBOL_OK = /^[\x21-\x7e]{1,32}$/;
+/**
+ * The `payouts` section of a grant payload from the owner's request. The server NEVER trusts the client for what a token IS: symbol and decimals come from the
+ * token's own ft_metadata (a client-sent symbol / decimals / mock flag is ignored), and the vault must be the attested payouts build. Caps stay the owner's choice
+ * (policy.assertGrantPayload bounds them by the per-token ceiling in the token's own base units).
+ * input = { tokens: [{ token, perPayCap, periodCap, totalCap }], payees: [account...], fund?: { token, amount } }
+ */
+async function payoutsSection(inp, { adapter, net, vault, fetchImpl }) {
+  const bad = (m, code = 'input') => { throw new PolicyError(`payouts: ${m}`, code); };
+  if (net.protocol !== 'near') bad('token payouts exist only on NEAR vaults');
+  if (!inp || typeof inp !== 'object' || Array.isArray(inp)) bad('must be an object { tokens, payees, fund? }');
+  for (const k of Object.keys(inp)) if (!['tokens', 'payees', 'fund'].includes(k)) bad(`unexpected field "${k.slice(0, 40)}"`);
+  const missing = ['detectVaultBuild', 'ftMetadata'].filter((m) => typeof adapter[m] !== 'function');
+  if (missing.length) throw new PolicyError(`vault adapter for ${net.protocol} cannot do token payouts: missing ${missing.join(', ')}`, 'unavailable');
+  if (!Array.isArray(inp.tokens) || inp.tokens.length < 1 || inp.tokens.length > 8) bad('tokens must list 1..8 entries');
+  if (!Array.isArray(inp.payees) || inp.payees.length < 1 || inp.payees.length > 64) bad('payees must list 1..64 accounts');
+  let det;
+  try { det = await adapter.detectVaultBuild({ net, vault: vault.address, fetchImpl }); } catch (e) { throw new PolicyError(`payouts: cannot read which build the vault runs: ${safeMsg(e)}`, 'unavailable'); }
+  if (det.build !== 'pay') throw new PolicyError(det.build === 'v1' ? 'payouts: this vault is the v1 build (NEAR only). Token payouts need the payouts build (config version 1.1.0): attach a vault deployed from autonear_vault_pay.wasm' : 'payouts: this vault does not run an attested vault build', 'state');
+  const tokens = [];
+  for (const t of inp.tokens) {
+    if (!t || typeof t !== 'object' || Array.isArray(t) || typeof t.token !== 'string') bad('each token needs a "token" account id');
+    let meta;
+    try { meta = await adapter.ftMetadata({ net, token: t.token, fetchImpl }); } catch (e) { throw new PolicyError(`payouts: ${t.token.slice(0, 70)} is not a readable NEP-141 token (ft_metadata failed: ${safeMsg(e)})`, 'input'); }
+    const decimals = Number(meta?.decimals);
+    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 36) bad(`${t.token}: the token reports no usable decimals`);
+    const symbol = typeof meta?.symbol === 'string' ? meta.symbol : '';
+    if (!SYMBOL_OK.test(symbol)) bad(`${t.token}: the token reports no usable symbol (1..32 printable characters, no spaces)`);
+    const mock = net.id === 'near-testnet' && typeof meta?.name === 'string' && /^mock\b/i.test(meta.name);
+    tokens.push({ token: t.token, symbol, decimals, perPayCap: String(t.perPayCap), periodCap: String(t.periodCap), totalCap: String(t.totalCap), ...(mock ? { mock: true } : {}) });
+  }
+  const fund = inp.fund === undefined || inp.fund === null ? null : inp.fund;
+  if (fund && (typeof fund !== 'object' || Array.isArray(fund) || typeof fund.token !== 'string')) bad('fund must be { token, amount }');
+  return { tokens, payees: inp.payees.map(String), ...(fund && String(fund.amount ?? '') !== '0' ? { fund: { token: fund.token, amount: String(fund.amount) } } : {}) };
+}
 export async function proposeGrant(db, input, { keystore, fetchImpl, actor = 'operator' } = {}) {
   const net = netFor(input.chainId);
   const { adapter, reason } = await adapterFor(net.protocol);
@@ -419,6 +503,7 @@ export async function proposeGrant(db, input, { keystore, fetchImpl, actor = 'op
     if (wantDep !== undefined && wantDep !== deposit) throw new PolicyError(`template_mismatch: deposit ${spec.deposit} differs from the computed ${deposit}`, 'input');
     templates.push({ artifactHash: att.hash, templateId, label: String(spec.label ?? exp_.label).slice(0, 64), deposit, initMaterial: jsonSafe(exp_.initMaterial ?? null) });
   }
+  const payouts = input.payouts === undefined || input.payouts === null ? null : await payoutsSection(input.payouts, { adapter, net, vault, fetchImpl });
   const payload = {
     kind: 'grant_mandate',
     vault: { chainId: net.id, address: vault.address, owner: chainOwner },
@@ -427,6 +512,7 @@ export async function proposeGrant(db, input, { keystore, fetchImpl, actor = 'op
     templates,
     fund: { amount: String(input.fund?.amount ?? '0') },
     loop: { maxPerDay: Number(input.loop?.maxPerDay ?? Math.min(autonomyMaxPerDay(), 5)) },
+    ...(payouts ? { payouts } : {}),
   };
   const d = { action: 'grant_mandate', chain_id: net.id, target: vault.address, method: 'grant_mandate', max_spend: payload.mandate.totalCap, expiry: now() + 24 * 36e5 };
   assertDecisionAllowed({ ...d, payload: j(payload) });
@@ -472,6 +558,7 @@ export async function buildPlan(db, decisionId, { fetchImpl } = {}) {
   else if (typeof adapter.planSteps !== 'function') steps.push({ who: 'human', title: `${net.protocol} steps not available`, note: 'this adapter has no planSteps()' });
   else steps.push(...await adapter.planSteps({ net, payload, vault: payload.vault.address, decision: d }));
   steps.push({ who: 'server', title: 'Activation check', note: 'After your transactions confirm, POST /api/vault/attach (or wait for the next autonomy tick) re-reads the vault. The loop is activated ONLY if the on-chain mandate and the allowlisted templates equal this decision field by field; anything else leaves it inactive.' });
+  if (payload.payouts) steps.push({ who: 'server', title: 'Payout check', note: `Activation also requires the vault's on-chain tokens (with their caps) and payees to equal this grant's payouts section exactly (${payload.payouts.tokens.length} token(s), ${payload.payouts.payees.length} payee(s)); a token or payee you add or leave out makes the activation check fail.` });
   steps.push({ who: 'agent', title: 'Autonomous operation (off unless AUTONOMY_ENABLED=1)', note: `Draws only the gas it needs (3x fee headroom) and deploys only allowlisted templates, at most ${payload.loop?.maxPerDay ?? '?'} per day, never when paused/blocked/revoked/expired. You can revoke, pause or withdraw at any time.` });
   return { decisionId: d.id, status: d.status, chainId: net.id, network: net.label, ...(net.chainId ? { evmChainId: net.chainId } : {}), steps };
 }
@@ -490,6 +577,36 @@ export async function verificationFor(db, vault, state, adapter, protocol, decis
 }
 
 const strOrNull = (v) => (v === null || v === undefined ? null : v.toString());
+/** ft_balance_of(vault) per token, cached per database for a few seconds so a polling UI does not turn into one RPC per token per poll. */
+const balanceCaches = new WeakMap();
+async function vaultTokenBalance(db, vault, token, adapter, net, deps) {
+  if (typeof adapter?.ftBalance !== 'function') return { balance: null };
+  const ttl = deps.balanceMaxAgeMs ?? 10_000;
+  let cache = balanceCaches.get(db); if (!cache) { cache = new Map(); balanceCaches.set(db, cache); }
+  const key = `${vault.id}|${token}`; const hit = cache.get(key);
+  if (hit && now() - hit.at < ttl) return { balance: hit.balance };
+  try { const balance = await adapter.ftBalance({ net, token, account: vault.address, fetchImpl: deps.fetchImpl }); cache.set(key, { at: now(), balance }); return { balance }; } catch (e) { return { balance: hit?.balance ?? null, balanceError: safeMsg(e, deps.redact) }; }
+}
+/** Token payouts block of a vault (payouts build only): the on-chain tokens with caps, this epoch's usage, what is left, the vault's own token balance, and the payees. */
+async function payoutsView(db, vault, s, grant, adapter, net, deps) {
+  const model = modelFromState(s, net?.protocol ?? 'near', { vaultId: vault.address });
+  const g = new Map((grant?.payouts?.tokens ?? []).map((t) => [t.token, t])); const gPayees = new Set(grant?.payouts?.payees ?? []);
+  const min = (...v) => v.reduce((a, b) => (b < a ? b : a));
+  const tokens = await Promise.all(s.payouts.tokens.map(async (t) => {
+    const ps = s.mandate ? model.tokenPeriodState(t.token, s.blockTime) : null;
+    const spentTotal = ps ? ps.totalSpent : t.usage.total; const spentPeriod = ps ? ps.periodSpent : t.usage.period;
+    const remPeriod = ps ? ps.periodRemaining : t.periodCap; const remTotal = ps ? ps.totalRemaining : t.totalCap;
+    const bal = await vaultTokenBalance(db, vault, t.token, adapter, net, deps);
+    return {
+      token: t.token, symbol: g.get(t.token)?.symbol ?? null, decimals: g.get(t.token)?.decimals ?? null,
+      perPayCap: t.perPayCap.toString(), periodCap: t.periodCap.toString(), totalCap: t.totalCap.toString(),
+      usage: { totalSpent: spentTotal.toString(), periodSpent: spentPeriod.toString() },
+      remaining: { period: remPeriod.toString(), total: remTotal.toString(), maxPayment: min(t.perPayCap, remPeriod, remTotal).toString() },
+      balance: bal.balance, ...(bal.balanceError ? { balanceError: bal.balanceError } : {}), matches: g.has(t.token),
+    };
+  }));
+  return { tokens, payees: s.payouts.payees.map((a) => ({ account: a, matches: gPayees.has(a) })) };
+}
 async function vaultView(db, vault, deps) {
   const net = findNetwork(vault.chain_id);
   const { adapter } = await adapterFor(net?.protocol);
@@ -500,8 +617,10 @@ async function vaultView(db, vault, deps) {
   const s = read.state;
   const unit = adapter?.unit ?? UNITS[net?.protocol] ?? UNITS.evm;
   const chain = net?.protocol ?? 'evm';
+  const build = read.codeBuild ?? s?.build ?? buildOfAttestedRef(adapter, vault.attested_ref);
   return {
     id: vault.id, chainId: vault.chain_id, network: net?.label ?? vault.chain_id, address: vault.address, owner: s?.config.owner ?? vault.owner, status: vault.status,
+    build: build ?? null,
     paused: s?.config.paused ?? false, codeOk: Boolean(read.codeOk),
     mandate: s?.mandate ? { agent: s.mandate.agent, expiresAt: Number(s.mandate.expiresAt), perDrawCap: s.mandate.perDrawCap.toString(), periodSecs: Number(s.mandate.periodSecs), periodCap: s.mandate.periodCap.toString(), totalCap: s.mandate.totalCap.toString(), maxDeploys: Number(s.mandate.maxDeploys), revoked: s.mandate.revoked, epoch: Number(s.config.epoch) } : null,
     usage: s ? { totalSpent: s.usage.totalSpent.toString(), periodSpent: (s.mandate ? modelFromState(s, chain).periodState(s.blockTime).spent : s.usage.periodSpent).toString(), deploys: Number(s.usage.deploys), periodResetsAt: s.mandate ? Number(modelFromState(s, chain).periodState(s.blockTime).endsAt) : null } : null,
@@ -512,6 +631,7 @@ async function vaultView(db, vault, deps) {
     agentExists: s?.agentExists ?? null,
     explorer: { vault: net && adapter ? adapter.explorerAddress(net, vault.address) : '', agent: net && adapter && vault.agent ? adapter.explorerAddress(net, vault.agent) : '', owner: net && adapter && s ? adapter.explorerAddress(net, s.config.owner) : '' },
     verification: await verificationFor(db, vault, read.stale ? null : s, adapter, chain),
+    ...(s?.payouts ? { payouts: await payoutsView(db, vault, s, grant, adapter, net, deps) } : {}),
   };
 }
 

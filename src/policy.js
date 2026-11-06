@@ -99,7 +99,7 @@ export function promptSafeEvidence(evidence, { maxItems = 40, maxChars = 360, in
 
 /** Constraints on any consequential decision this system may propose. Checked in code, never by prompt. */
 export const DECISION_LIMITS = {
-  allowedActions: ['deploy_testnet', 'grant_mandate'],       // upgrade / spend / liquidity / outreach are separate, not yet enabled
+  allowedActions: ['deploy_testnet', 'grant_mandate', 'pay_testnet'],       // upgrade / liquidity / outreach are separate, not yet enabled; pay_testnet = a token payout from the vault (NEAR testnet only)
   allowedNetworks: evmEnabled() ? ['near-testnet', 'evm:11155111', 'evm:84532', 'evm:421614', 'evm:11155420', 'evm:10143', 'evm:97', 'evm:31337'] : ['near-testnet'],
   maxExpiryMs: 7 * 864e5,
   maxSpendCeiling: '0',                     // the registry itself never moves funds: spend ceiling is zero for deployments
@@ -123,10 +123,88 @@ export function grantCeiling(protocol, env = process.env) {
   return requested > c.hardMax ? c.hardMax : requested;
 }
 
+/** Token payout ceilings, in WHOLE tokens (the token's own unit, so USDC's 6 decimals and a mock with 24 are treated alike).
+ *  VAULT_MAX_TOKEN_TOTAL_WHOLE lowers/raises the per-token totalCap ceiling and PAY_MAX_PER_PAYMENT_WHOLE the per-payment ceiling; both are
+ *  clamped by the compiled-in hardMax (the env can never go above it). Testnet-only: the ceilings apply to the test tokens the vault can hold. */
+export const TOKEN_CEILINGS = Object.freeze({
+  totalWhole: Object.freeze({ defaultWhole: 1000n, hardMaxWhole: 100_000n }),
+  perPaymentWhole: Object.freeze({ defaultWhole: 100n, hardMaxWhole: 100_000n }),
+});
+export const MAX_PAY_TOKENS = 8;
+export const MAX_PAY_PAYEES = 64;
+export const MAX_PAY_MEMO_BYTES = 128;
+export const MAX_TOKEN_DECIMALS = 36;
+const U128_MAX = (1n << 128n) - 1n;
+const wholeFromEnv = (raw, c) => {
+  const t = String(raw ?? '').trim();
+  if (!/^[1-9][0-9]{0,9}$/.test(t)) return c.defaultWhole;
+  const n = BigInt(t);
+  return n > c.hardMaxWhole ? c.hardMaxWhole : n;
+};
+const pow10 = (d) => 10n ** BigInt(d);
+/** Largest totalCap (and fund amount) one token may be granted, in the token's base units: whole tokens x 10^decimals. */
+export function tokenTotalCeiling(decimals, env = process.env) {
+  if (!Number.isInteger(decimals) || decimals < 0 || decimals > MAX_TOKEN_DECIMALS) throw new PolicyError('token decimals must be an integer 0..36', 'schema');
+  return wholeFromEnv(env.VAULT_MAX_TOKEN_TOTAL_WHOLE, TOKEN_CEILINGS.totalWhole) * pow10(decimals);
+}
+/** Largest single payment, in base units: min(PAY_MAX_PER_PAYMENT_WHOLE x 10^decimals, the token total ceiling). */
+export function payPerPaymentCeiling(decimals, env = process.env) {
+  const per = wholeFromEnv(env.PAY_MAX_PER_PAYMENT_WHOLE, TOKEN_CEILINGS.perPaymentWhole) * pow10(decimals);
+  const tot = tokenTotalCeiling(decimals, env);
+  return per < tot ? per : tot;
+}
+
 const DEC = /^(0|[1-9][0-9]{0,77})$/;
 const EVM_ADDR = /^0x[0-9a-fA-F]{40}$/;
 const NEAR_ACCT = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
 const addrOk = (protocol, a) => typeof a === 'string' && (protocol === 'near' ? a.length <= 64 && NEAR_ACCT.test(a) : EVM_ADDR.test(a));
+
+const bytesOf = (t) => new TextEncoder().encode(t).length;
+const RESERVED_ACCOUNT = (a) => a === 'system' || /^0{64}$/.test(a);
+const SYMBOL_RE = /^[\x21-\x7e]{1,32}$/; // printable ASCII, no spaces: shown to a human next to an amount
+/** The optional `payouts` section of a grant_mandate payload (NEAR payouts build only). Throws PolicyError; every figure is in base units. */
+function assertPayoutsSection(payouts, vaultAddress, env) {
+  const bad = (m, code = 'grant') => { throw new PolicyError(`grant_mandate payouts: ${m}`, code); };
+  if (!payouts || typeof payouts !== 'object' || Array.isArray(payouts)) bad('payouts must be an object', 'schema');
+  for (const k of Object.keys(payouts)) if (!['tokens', 'payees', 'fund'].includes(k)) bad(`unexpected field "${k.slice(0, 40)}"`, 'schema');
+  const { tokens, payees, fund } = payouts;
+  if (!Array.isArray(tokens) || tokens.length < 1 || tokens.length > MAX_PAY_TOKENS) bad(`tokens must list 1..${MAX_PAY_TOKENS} entries`, 'schema');
+  if (!Array.isArray(payees) || payees.length < 1 || payees.length > MAX_PAY_PAYEES) bad(`payees must list 1..${MAX_PAY_PAYEES} accounts`, 'schema');
+  const acct = (a, what) => { if (!addrOk('near', a)) bad(`${what} "${String(a).slice(0, 70)}" is not a valid NEAR account id`, 'schema'); if (a.length < 2 || RESERVED_ACCOUNT(a) || a === vaultAddress) bad(`${what} "${a.slice(0, 70)}" cannot be the vault, "system" or the zero account`, 'schema'); return a; };
+  const seenTokens = new Set();
+  for (const t of tokens) {
+    if (!t || typeof t !== 'object' || Array.isArray(t)) bad('each token must be an object', 'schema');
+    for (const k of Object.keys(t)) if (!['token', 'symbol', 'decimals', 'perPayCap', 'periodCap', 'totalCap', 'mock'].includes(k)) bad(`unexpected token field "${k.slice(0, 40)}"`, 'schema');
+    acct(t.token, 'token');
+    if (seenTokens.has(t.token)) bad(`token ${t.token} is listed twice`);
+    seenTokens.add(t.token);
+    if (typeof t.symbol !== 'string' || !SYMBOL_RE.test(t.symbol)) bad(`token ${t.token}: symbol is missing (the server reads it from the token's ft_metadata)`, 'schema');
+    if (!Number.isInteger(t.decimals) || t.decimals < 0 || t.decimals > MAX_TOKEN_DECIMALS) bad(`token ${t.token}: decimals is missing or out of range (the server reads it from the token's ft_metadata)`, 'schema');
+    if (t.mock !== undefined && typeof t.mock !== 'boolean') bad(`token ${t.token}: mock must be true or false`, 'schema');
+    for (const k of ['perPayCap', 'periodCap', 'totalCap']) if (!DEC.test(String(t[k] ?? '')) || typeof t[k] !== 'string') bad(`token ${t.token}: ${k} must be a decimal integer string`, 'schema');
+    const per = BigInt(t.perPayCap), period = BigInt(t.periodCap), total = BigInt(t.totalCap);
+    if (!(0n < per && per <= period && period <= total)) bad(`token ${t.token}: need 0 < perPayCap <= periodCap <= totalCap`);
+    if (total > U128_MAX) bad(`token ${t.token}: totalCap does not fit in 128 bits`);
+    const ceiling = tokenTotalCeiling(t.decimals, env);
+    if (total > ceiling) throw new PolicyError(`grant_mandate payouts: token ${t.token} totalCap ${total} exceeds the ceiling ${ceiling} (${t.decimals} decimals); raise VAULT_MAX_TOKEN_TOTAL_WHOLE only up to the compiled-in maximum of ${TOKEN_CEILINGS.totalWhole.hardMaxWhole} whole tokens`, 'spend');
+  }
+  const seenPayees = new Set();
+  for (const a of payees) {
+    acct(a, 'payee');
+    if (seenPayees.has(a)) bad(`payee ${a} is listed twice`);
+    seenPayees.add(a);
+    if (seenTokens.has(a)) bad(`${a} cannot be both a token and a payee`);
+  }
+  if (fund !== undefined) {
+    if (!fund || typeof fund !== 'object' || Array.isArray(fund)) bad('fund must be an object { token, amount }', 'schema');
+    for (const k of Object.keys(fund)) if (!['token', 'amount'].includes(k)) bad(`unexpected fund field "${k.slice(0, 40)}"`, 'schema');
+    const t = tokens.find((x) => x.token === fund.token);
+    if (!t) bad('fund.token must be one of the listed tokens', 'schema');
+    if (typeof fund.amount !== 'string' || !DEC.test(fund.amount) || BigInt(fund.amount) <= 0n) bad('fund.amount must be a positive decimal integer string', 'schema');
+    const ceiling = tokenTotalCeiling(t.decimals, env);
+    if (BigInt(fund.amount) > ceiling) throw new PolicyError(`grant_mandate payouts: fund.amount ${fund.amount} exceeds the token ceiling ${ceiling}`, 'spend');
+  }
+}
 
 /** Structural + limit validation of a grant_mandate payload. Throws PolicyError; returns the parsed payload. */
 export function assertGrantPayload(payload, protocol, env = process.env) {
@@ -154,6 +232,33 @@ export function assertGrantPayload(payload, protocol, env = process.env) {
     if (!DEC.test(String(t.deposit ?? ''))) bad('template.deposit must be a decimal integer string', 'schema');
     if (protocol === 'evm' && BigInt(t.deposit) !== 0n) bad('EVM template deposit must be 0');
   }
+  if (payload.payouts !== undefined) { // token payouts: NEAR payouts-build vaults only
+    if (protocol !== 'near') bad('token payouts exist only on NEAR vaults', 'schema');
+    assertPayoutsSection(payload.payouts, vault.address, env);
+  }
+  return payload;
+}
+
+/** Structural + limit validation of a pay_testnet payload against its decision row. Throws PolicyError; amounts are in the token's base units.
+ *  payload = { action:'pay_testnet', protocol:'near', network:'near-testnet', vault, token, symbol, decimals, payee, amount, memo, reference? } */
+export function assertPayPayload(payload, d, env = process.env) {
+  const bad = (m, code = 'pay') => { throw new PolicyError(`pay_testnet: ${m}`, code); };
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.action !== 'pay_testnet') bad('payload.action must be "pay_testnet"', 'schema');
+  for (const k of Object.keys(payload)) if (!['action', 'protocol', 'network', 'vault', 'token', 'symbol', 'decimals', 'payee', 'amount', 'memo', 'reference'].includes(k)) bad(`unexpected field "${k.slice(0, 40)}"`, 'schema');
+  if (payload.protocol !== 'near' || payload.network !== 'near-testnet' || d.chain_id !== 'near-testnet') throw new PolicyError('pay_testnet: only NEAR testnet is allowed (mainnet is blocked)', 'network_blocked');
+  for (const k of ['vault', 'token', 'payee']) if (!addrOk('near', payload[k]) || payload[k].length < 2 || RESERVED_ACCOUNT(payload[k])) bad(`${k} is not a valid NEAR account id`, 'schema');
+  if (payload.token === payload.vault || payload.payee === payload.vault) bad('token and payee cannot be the vault itself', 'schema');
+  if (payload.token === payload.payee) bad('token and payee must differ', 'schema');
+  if (typeof payload.symbol !== 'string' || !SYMBOL_RE.test(payload.symbol)) bad('symbol is missing', 'schema');
+  if (!Number.isInteger(payload.decimals) || payload.decimals < 0 || payload.decimals > MAX_TOKEN_DECIMALS) bad('decimals is missing or out of range', 'schema');
+  if (typeof payload.amount !== 'string' || !DEC.test(payload.amount) || BigInt(payload.amount) <= 0n || BigInt(payload.amount) > U128_MAX) bad('amount must be a positive whole number of the token\'s smallest unit', 'schema');
+  const ceiling = payPerPaymentCeiling(payload.decimals, env);
+  if (BigInt(payload.amount) > ceiling) throw new PolicyError(`pay_testnet: amount ${payload.amount} exceeds the per-payment ceiling ${ceiling} (${payload.decimals} decimals); raise PAY_MAX_PER_PAYMENT_WHOLE only up to the compiled-in maximum`, 'spend');
+  if (typeof payload.memo !== 'string' || bytesOf(payload.memo) > MAX_PAY_MEMO_BYTES) bad(`memo must be text of at most ${MAX_PAY_MEMO_BYTES} bytes (it may be empty)`, 'schema');
+  if (payload.reference !== undefined && (typeof payload.reference !== 'string' || bytesOf(payload.reference) > MAX_PAY_MEMO_BYTES)) bad(`reference must be text of at most ${MAX_PAY_MEMO_BYTES} bytes`, 'schema');
+  if (String(d.target).toLowerCase() !== payload.vault.toLowerCase()) bad('decision target must be the vault', 'schema');
+  if (d.method !== 'pay') bad('decision method must be "pay"', 'schema');
+  if (String(d.max_spend) !== payload.amount) throw new PolicyError('pay_testnet: max_spend must equal the payment amount', 'spend');
   return payload;
 }
 
@@ -169,11 +274,18 @@ export function assertDecisionAllowed(d) {
     if (String(d.max_spend) !== String(payload.mandate.totalCap)) throw new PolicyError('max_spend must equal mandate.totalCap', 'spend');
     return;
   }
+  if (d.action === 'pay_testnet') { // a token payout from the vault: testnet only, own per-payment ceiling (in the token's units), memo <= 128 bytes
+    if (d.chain_id !== 'near-testnet') throw new PolicyError('pay_testnet: only NEAR testnet is allowed (mainnet is blocked)', 'network_blocked');
+    let payload; try { payload = typeof d.payload === 'string' ? JSON.parse(d.payload) : d.payload; } catch { payload = null; }
+    assertPayPayload(payload, d);
+    return;
+  }
   if (BigInt(d.max_spend) > BigInt(DECISION_LIMITS.maxSpendCeiling)) throw new PolicyError('max_spend above ceiling', 'spend');
 }
 
 /** Published in /api/security: the grant_mandate spend ceilings in force (base units as decimal strings) and the loop's compiled-in limits. */
 export function vaultLimits(env = process.env) {
   const row = (proto) => ({ unit: UNITS[proto], default: GRANT_CEILINGS[proto].defaultCap.toString(), compiledMax: GRANT_CEILINGS[proto].hardMax.toString(), effective: grantCeiling(proto, env).toString() });
-  return { grantTotalCapCeiling: { evm: row('evm'), near: row('near') }, envVar: 'VAULT_MAX_TOTAL_CAP', maxPerDayHardCap: AUTONOMY_HARD_MAX_PER_DAY, mainnet: 'blocked', note: 'enforced in code on propose, approve and activation; the effective value is min(env or default, compiled-in maximum)' };
+  const tok = (c, envVar, e) => ({ defaultWhole: c.defaultWhole.toString(), compiledMaxWhole: c.hardMaxWhole.toString(), effectiveWhole: wholeFromEnv(e[envVar], c).toString(), envVar });
+  return { grantTotalCapCeiling: { evm: row('evm'), near: row('near') }, tokenPayouts: { totalCap: tok(TOKEN_CEILINGS.totalWhole, 'VAULT_MAX_TOKEN_TOTAL_WHOLE', env), perPayment: tok(TOKEN_CEILINGS.perPaymentWhole, 'PAY_MAX_PER_PAYMENT_WHOLE', env), maxTokens: MAX_PAY_TOKENS, maxPayees: MAX_PAY_PAYEES, maxMemoBytes: MAX_PAY_MEMO_BYTES, unit: 'whole tokens of the token itself (x 10^decimals)' }, envVar: 'VAULT_MAX_TOTAL_CAP', maxPerDayHardCap: AUTONOMY_HARD_MAX_PER_DAY, mainnet: 'blocked', note: 'enforced in code on propose, approve and activation; the effective value is min(env or default, compiled-in maximum)' };
 }

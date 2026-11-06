@@ -15,6 +15,7 @@ import { PROTOCOLS, findNetwork } from './protocols.js';
 import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from './policy.js';
 import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant, activateVault, getVault } from './vault/index.js';
+import { createPayment, listPayments } from './payments.js';
 import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
 import { currentCouncil, journeyFor } from './council.js';
 import { getWatch, setWatch } from './watch.js';
@@ -57,6 +58,7 @@ const ALLOW = [
   [/^\/api\/security\/(pause|resume)$/, 'POST'],
   [/^\/api\/ingest$/, 'POST'],
   [/^\/api\/vault(\/ledger|\/plan|\/verify)?$/, 'GET, HEAD'],
+  [/^\/api\/payments$/, 'GET, HEAD, POST'],
   [/^\/api\/vault\/(loop\/(pause|resume)|mandates\/propose|attach|activate)$/, 'POST'],
   [/^\/api\/auth\/(challenge|session)$/, 'POST'],
   [/^\/api\/auth\/me$/, 'GET, HEAD'],
@@ -342,6 +344,13 @@ export function createApp(deps) {
         properties: { chainId: { type: 'string', maxLength: 32 }, mandate: { type: 'object' }, templates: { type: 'array', minItems: 1, maxItems: 8, items: { type: 'object', required: ['artifactHash'] } }, fund: { type: 'object', required: ['amount'] }, loop: { type: 'object' } },
       });
       const d = await proposeGrant(db, b, { keystore, fetchImpl });
+      return out({ ...d, decision: d }, d.created ? 201 : 200);
+    }
+    if (p === '/api/payments' && m === 'GET') return out(await listPayments(db, { limit: intParam(url.searchParams.get('limit'), 50, 1, 200) }));
+    if (p === '/api/payments' && m === 'POST') { // a token payout request: becomes a pending pay_testnet decision (approve / reject with the normal decision routes)
+      const who = await needOwner(req);
+      const b = await body(req, { type: 'object', required: ['token', 'payee', 'amount'], properties: { token: { type: 'string', maxLength: 64 }, payee: { type: 'string', maxLength: 64 }, memo: { type: 'string', maxLength: 400 }, reference: { type: 'string', maxLength: 400 }, vault: { type: 'string', maxLength: 96 } } });
+      const d = await createPayment(db, b, { fetchImpl, actor: who.actor });
       return out({ ...d, decision: d }, d.created ? 201 : 200);
     }
     if (p === '/api/deployments' && m === 'GET') {

@@ -4,7 +4,7 @@
 import { createHash, createPrivateKey, createPublicKey, sign as nodeSign, verify as nodeVerify, randomBytes } from 'node:crypto';
 import { base58Encode, base58Decode } from './base58.js';
 import { jsonRpc } from '../chains/common.js';
-import { enforceCall, enforceFee, normalizeLimits, LimitError, asBigInt } from './limits.js';
+import { enforceCall, enforceFee, normalizeLimits, LimitError, asBigInt, isPayAccount, MAX_PAY_MEMO_BYTES } from './limits.js';
 
 // ---------- ed25519 ----------
 const PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
@@ -134,7 +134,8 @@ export function summarizeTxResult(res) {
 
 // ---------- Signer ----------
 const TGAS = 10n ** 12n;
-const DEFAULT_GAS = { draw: 50n * TGAS, deploy: 300n * TGAS };
+// `pay` = vault.pay -> token.ft_transfer (30 Tgas) -> vault.on_paid (10 Tgas) with headroom: the contract documents >= 100 Tgas attached.
+const DEFAULT_GAS = { draw: 50n * TGAS, deploy: 300n * TGAS, pay: 100n * TGAS };
 const MAX_GAS = 300n * TGAS;
 const TESTNET_CHAINS = new Set(['testnet', 'sandbox', 'localnet']);
 
@@ -147,6 +148,18 @@ export function defaultEncodeArgs(method, args) {
     if (amount <= 0n) throw new LimitError('bad_call', 'draw amount must be > 0');
     return { amount: amount.toString() };
   }
+  if (method === 'pay') { // payouts build: pay(token: AccountId, to: AccountId, amount: U128, memo: Option<String>)
+    if (!isPayAccount(args.token) || !isPayAccount(args.to)) throw new LimitError('bad_call', 'pay needs token and to as NEAR account ids');
+    const amount = asBigInt(args.amount, 'amount');
+    if (amount <= 0n || amount >= 1n << 128n) throw new LimitError('bad_call', 'pay amount must be > 0 and fit u128');
+    const out = { token: args.token, to: args.to, amount: amount.toString() };
+    if (args.memo !== undefined && args.memo !== null) {
+      if (typeof args.memo !== 'string' || new TextEncoder().encode(args.memo).length > MAX_PAY_MEMO_BYTES) throw new LimitError('bad_call', `pay memo must be text of at most ${MAX_PAY_MEMO_BYTES} bytes`);
+      out.memo = args.memo;
+    }
+    return out;
+  }
+  if (method !== 'deploy') throw new LimitError('bad_call', `no argument encoding for method "${String(method).slice(0, 40)}"`);
   if (!(args.code instanceof Uint8Array) || args.code.length === 0) throw new LimitError('bad_call', 'deploy code must be non-empty bytes');
   if (typeof args.name !== 'string' || !args.name || typeof args.template !== 'string' || !args.template) throw new LimitError('bad_call', 'deploy needs template and name');
   return { template: args.template.replace(/^0x/, ''), name: args.name, code: Buffer.from(args.code).toString('base64') };

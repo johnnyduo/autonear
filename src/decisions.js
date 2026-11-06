@@ -7,6 +7,7 @@ import { verifyNearDeploy } from './chains/near.js';
 import { verifyEvmDeploy } from './chains/evm.js';
 import { isPaused } from './orchestrator/coordinator.js';
 import { adapterFor, adapterProblems, VAULT_REQUIRED_LOOP } from './vault/index.js';
+import { formatUnits } from './vault/units.js';
 
 export const CONFIRM_PHRASE = (id) => `approve ${id}`;
 /** Who approved this decision, in a form the API/UI can show verbatim. A decision approved by `mandate:<vaultId>:<epoch>` was executed by the
@@ -28,7 +29,8 @@ export async function getDecision(db, id) {
   const d = await db.get('SELECT * FROM decisions WHERE id=?', [id]);
   if (!d) return null;
   const dep = await db.get('SELECT * FROM deployments WHERE decision_id=?', [id]);
-  return { ...hydrate(d), effectiveStatus: effective(d), confirmPhrase: CONFIRM_PHRASE(d.id), deployment: dep ? { ...dep, verification: parse(dep.verification, {}) } : null };
+  const pay = d.action === 'pay_testnet' ? await db.get('SELECT * FROM payments WHERE decision_id=?', [id]) : undefined;
+  return { ...hydrate(d), effectiveStatus: effective(d), confirmPhrase: CONFIRM_PHRASE(d.id), deployment: dep ? { ...dep, verification: parse(dep.verification, {}) } : null, ...(d.action === 'pay_testnet' ? { payment: pay ? { ...pay, verification: parse(pay.verification, {}) } : null } : {}) };
 }
 const effective = (d) => (d.status === 'pending' && d.expiry < now() ? 'expired' : d.status);
 
@@ -44,7 +46,7 @@ export async function approveDecision(db, id, { nonce, payloadHash, confirm, sig
   if (confirm !== CONFIRM_PHRASE(id)) throw new PolicyError(`type the exact confirmation phrase: ${CONFIRM_PHRASE(id)}`, 'confirm');
   assertDecisionAllowed(d);
   const proto = findNetwork(d.chain_id)?.protocol;
-  if (!signer || !SIGNER_RE[proto]?.test(signer) || signer.length > 64) throw new PolicyError(`approval must name the ${proto === 'near' ? 'NEAR account id' : 'EVM address'} that will sign the ${d.action === 'grant_mandate' ? 'mandate' : 'deployment'}`, 'signer');
+  if (!signer || !SIGNER_RE[proto]?.test(signer) || signer.length > 64) throw new PolicyError(`approval must name the ${proto === 'near' ? 'NEAR account id' : 'EVM address'} that will sign the ${d.action === 'grant_mandate' ? 'mandate' : d.action === 'pay_testnet' ? 'payment approval' : 'deployment'}`, 'signer');
   if (d.action === 'grant_mandate') { // a mandate is the vault OWNER's grant: nobody else can be the bound signer
     const owner = parse(d.payload, {})?.vault?.owner;
     if (String(owner).toLowerCase() !== signer.toLowerCase()) throw new PolicyError('a grant_mandate must be approved with the vault OWNER as the signer', 'signer');
@@ -67,7 +69,22 @@ export async function rejectDecision(db, id, { actor, reason = '' }) {
 }
 
 /**
- * Approve a pending deploy_testnet decision UNDER A VERIFIED MANDATE (called only by src/autonomy.js). Re-runs every check approveDecision
+ * A pay_testnet decision may run under a vault's mandate only if THIS vault's activated grant approved the token and the payee and the amount fits the
+ * granted per-payment cap. (The chain re-checks all of it; this keeps a stray or stale request from ever reaching the signer.) Throws PolicyError.
+ */
+async function assertPayMatchesGrant(db, d, vault) {
+  const payload = parse(d.payload, {});
+  if (String(payload.vault ?? '').toLowerCase() !== String(vault.address).toLowerCase()) throw new PolicyError('this payment names a different vault', 'state');
+  const grant = vault.mandate_decision_id ? parse((await db.get('SELECT payload FROM decisions WHERE id=?', [vault.mandate_decision_id]))?.payload, null) : null;
+  const t = grant?.payouts?.tokens?.find((x) => x.token === payload.token);
+  if (!t) throw new PolicyError('the owner\'s approved grant for this vault does not include this token: no payment can run', 'state');
+  if (!(grant.payouts.payees ?? []).includes(payload.payee)) throw new PolicyError('the owner\'s approved grant for this vault does not include this payee: no payment can run', 'state');
+  if (t.decimals !== payload.decimals || t.symbol !== payload.symbol) throw new PolicyError('the token\'s symbol or decimals differ from the approved grant: refusing to pay', 'state');
+  if (BigInt(payload.amount) > BigInt(t.perPayCap)) throw new PolicyError(`the amount is above the per-payment cap the owner set (${formatUnits(t.perPayCap, t.decimals)} ${t.symbol})`, 'state');
+}
+
+/**
+ * Approve a pending deploy_testnet OR pay_testnet decision UNDER A VERIFIED MANDATE (called only by src/autonomy.js). Re-runs every check approveDecision
  * runs except the human-only ones (nonce, typed phrase, human-named signer), then:
  *   - approver = `mandate:<vaultId>:<epoch>`  (the API/UI render this as "no human signed this deployment")
  *   - bound_signer = the vault address (the deployer of record is the vault, which creates the contract via CREATE2/promise batch)
@@ -77,7 +94,7 @@ export async function approveUnderMandate(db, id, { vault, epoch, byOwner = fals
   if (await isPaused(db)) throw new PolicyError('kill switch engaged', 'paused');
   const d = await db.get('SELECT * FROM decisions WHERE id=?', [id]);
   if (!d) throw new PolicyError('unknown decision', 'not_found');
-  if (d.action !== 'deploy_testnet') throw new PolicyError(`only deploy_testnet decisions can run under a mandate (got "${d.action}")`, 'action_blocked');
+  if (d.action !== 'deploy_testnet' && d.action !== 'pay_testnet') throw new PolicyError(`only deploy_testnet and pay_testnet decisions can run under a mandate (got "${d.action}")`, 'action_blocked');
   // Two entry points. Auto: a pending decision nobody has touched. byOwner: a decision the OWNER already approved (Manual mode's execution step):
   // the human approval is kept in the approver string (`mandate:<vault>:<epoch>+<owner actor>`), so the record never claims the owner signed the tx.
   if (byOwner) {
@@ -94,6 +111,7 @@ export async function approveUnderMandate(db, id, { vault, epoch, byOwner = fals
   if (!net || net.mainnet) throw new PolicyError('mainnet is blocked', 'network_blocked');
   assertDecisionAllowed(d);
   if (sha256(d.payload) !== d.payload_hash) throw new PolicyError('stored payload does not match its hash: refusing to execute', 'payload_hash');
+  if (d.action === 'pay_testnet') await assertPayMatchesGrant(db, d, vault);
   if (!Number.isSafeInteger(Number(epoch))) throw new PolicyError('mandate epoch required', 'input');
   const approver = `mandate:${vault.id}:${Number(epoch)}${byOwner ? `+${d.approver}` : ''}`;
   const receipt = sha256(`${d.id}|${d.payload_hash}|${d.nonce}|${approver}|${now()}`);
@@ -106,7 +124,7 @@ export async function approveUnderMandate(db, id, { vault, epoch, byOwner = fals
     });
   } catch (e) {
     if (e instanceof PolicyError) throw e;
-    if (/UNIQUE|constraint/i.test(String(e.message))) throw new PolicyError(/mandate_runs\.vault_id|inflight/i.test(String(e.message)) ? 'another agent deployment is already in flight for this vault' : 'this decision was already executed (or attempted) by the agent', 'state');
+    if (/UNIQUE|constraint/i.test(String(e.message))) throw new PolicyError(/mandate_runs\.vault_id|inflight/i.test(String(e.message)) ? d.action === 'pay_testnet' ? 'another agent action is already in flight for this vault' : 'another agent deployment is already in flight for this vault' : 'this decision was already executed (or attempted) by the agent', 'state');
     throw e;
   }
   await audit(db, approver, byOwner ? 'decision.owner_approved_executed_under_mandate' : 'decision.approved_under_mandate', { id, vaultId: vault.id, epoch: Number(epoch), grantDecisionId: vault.mandate_decision_id ?? null, payloadHash: d.payload_hash, signer: vault.address, humanSigned: false, ...(byOwner ? { approvedBy: d.approver, ownerSigner: d.bound_signer } : {}) });

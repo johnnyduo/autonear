@@ -527,6 +527,93 @@ async function verifyDeploy({ net, txHash, vault, agent, decision, manifest, exp
   }
 }
 
+// ------------------------------------------------------------------ verifyPay (payouts build)
+const parseNep141 = (outcome) => (outcome?.outcome?.logs ?? []).filter((l) => l.startsWith('EVENT_JSON:')).map((l) => { try { return JSON.parse(l.slice(11)); } catch { return null; } }).filter((e) => e?.standard === 'nep141');
+
+/**
+ * Transaction-level proof that the bound agent made the VAULT pay exactly `amount` of `token` to `to`, and that the token moved the funds.
+ *   - the tx: signed by `agent`, to `vault`, ONE FunctionCall `pay` with 0 deposit and args exactly the approved { token, to, amount [, memo] }
+ *   - nothing failed anywhere in the receipt tree (a failed ft_transfer is a Failure outcome even though the callback itself succeeds)
+ *   - the vault's own `paid` event names that agent / token / payee / amount, and there is NO `pay_failed` event
+ *   - the vault -> token receipt is a single `ft_transfer(receiver_id = to, amount)` with 1 yocto and executed successfully on the token
+ *   - the `on_paid` callback ran and succeeded for the same token / payee / amount
+ *   - if the token emitted NEP-141 events, an `ft_transfer` vault -> payee for that amount is among them
+ * `memo`: when non-empty it must equal the memo that was sent. -> { ok, checks, observedAt, paid }
+ */
+async function verifyPay({ net, txHash, vault, agent, token, to, amount, memo, fetchImpl, role } = {}) {
+  const checks = [];
+  const fail = (extra) => ({ ok: false, checks: [...checks, ...extra], observedAt: Date.now(), paid: null });
+  const c = ctx({ fetchImpl, role });
+  if (net?.mainnet) return fail([check('mainnet is blocked', false, net.id ?? '')]);
+  try {
+    const want = big(amount);
+    if (!validAccount(vault) || !validAccount(agent) || !validAccount(token) || !validAccount(to) || want === null || want <= 0n || want > U128_MAX) return fail([check('expected vault / agent / token / payee / amount are valid', false, '')]);
+    const wantMemo = typeof memo === 'string' && memo !== '' ? memo : null;
+    if (!/^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(String(txHash))) return fail([check('tx hash is base58', false, String(txHash).slice(0, 60))]);
+    const tx = await fetchTx(net, c, txHash, agent);
+    const t = tx.transaction ?? {};
+    checks.push(check('tx hash returned by the node == requested', t.hash === txHash, String(t.hash)));
+    checks.push(check('tx finalized', tx.final_execution_status === 'FINAL', tx.final_execution_status));
+    checks.push(check('signer == the agent', t.signer_id === agent, `${t.signer_id} vs ${agent}`));
+    checks.push(check('receiver == the vault', t.receiver_id === vault, `${t.receiver_id} vs ${vault}`));
+    const acts = t.actions ?? [];
+    const fc = acts.length === 1 ? acts[0].FunctionCall : null;
+    checks.push(check('exactly one action: FunctionCall `pay` with 0 attached deposit', Boolean(fc) && fc.method_name === 'pay' && String(fc.deposit) === '0', acts.map((a) => Object.keys(a)[0]).join(',') + (fc ? `:${fc.method_name}:${fc.deposit}` : '')));
+    const args = fc ? b64json(fc.args) : null;
+    const keys = args ? Object.keys(args).sort() : [];
+    checks.push(check('pay args are exactly { token, to, amount [, memo] }', Boolean(args) && keys.every((k) => ['amount', 'memo', 'to', 'token'].includes(k)) && ['amount', 'to', 'token'].every((k) => keys.includes(k)), keys.join(',') || 'unparsable'));
+    checks.push(check('pay token == approved token', args?.token === token, `${args?.token} vs ${token}`));
+    checks.push(check('pay payee == approved payee', args?.to === to, `${args?.to} vs ${to}`));
+    checks.push(check('pay amount == approved amount', String(args?.amount) === want.toString(), `${args?.amount} vs ${want}`));
+    checks.push(check('pay memo == approved memo', wantMemo === null ? (args?.memo === undefined || args?.memo === null || args?.memo === '') : args?.memo === wantMemo, String(args?.memo ?? '').slice(0, 60)));
+
+    const status = tx.status ?? {};
+    checks.push(check('top-level tx status is SuccessValue', status.SuccessValue !== undefined && !status.Failure, status.Failure ? JSON.stringify(status.Failure).slice(0, 160) : 'SuccessValue'));
+    const outcomes = [tx.transaction_outcome, ...(tx.receipts_outcome ?? [])].filter(Boolean);
+    const failed = outcomes.filter((o) => failureOf(o));
+    checks.push(check('no failed receipt anywhere in the receipt tree (a failed ft_transfer shows up here)', failed.length === 0 && outcomes.length >= 3, failed.length ? `${failed[0].outcome.executor_id}: ${JSON.stringify(failureOf(failed[0])).slice(0, 160)}` : `${outcomes.length} outcomes ok`));
+
+    const receipts = tx.receipts ?? [];
+    const outcomeById = new Map((tx.receipts_outcome ?? []).map((o) => [o.id, o]));
+    const callsOf = (r) => (r.receipt?.Action?.actions ?? []).filter((a) => a?.FunctionCall).map((a) => a.FunctionCall);
+    const ftReceipts = receipts.filter((r) => r.predecessor_id === vault && r.receiver_id === token && callsOf(r).some((f) => f.method_name === 'ft_transfer'));
+    checks.push(check('exactly one vault -> token ft_transfer receipt', ftReceipts.length === 1, `${ftReceipts.length} found`));
+    const ftr = ftReceipts[0];
+    if (ftr) {
+      const acts2 = ftr.receipt?.Action?.actions ?? [];
+      const f = acts2.length === 1 ? acts2[0].FunctionCall : null;
+      const fa = f ? b64json(f.args) : null;
+      checks.push(check('ft_transfer is the receipt\'s only action, with exactly 1 yoctoNEAR', Boolean(f) && f.method_name === 'ft_transfer' && String(f.deposit) === '1', f ? `${f.method_name}:${f.deposit}` : 'none'));
+      checks.push(check('ft_transfer receiver_id == approved payee', fa?.receiver_id === to, `${fa?.receiver_id} vs ${to}`));
+      checks.push(check('ft_transfer amount == approved amount', String(fa?.amount) === want.toString(), `${fa?.amount} vs ${want}`));
+      const fo = outcomeById.get(ftr.receipt_id);
+      checks.push(check('token executed ft_transfer successfully', Boolean(fo) && fo.outcome?.executor_id === token && fo.outcome?.status?.SuccessValue !== undefined, fo ? JSON.stringify(fo.outcome.status).slice(0, 120) : 'no outcome'));
+      const ev = parseNep141(fo);
+      if (ev.length) checks.push(check('token event ft_transfer vault -> payee for the approved amount', ev.some((e) => e.event === 'ft_transfer' && (e.data ?? []).some((d) => d.old_owner_id === vault && d.new_owner_id === to && String(d.amount) === want.toString())), ev.map((e) => e.event).join(',')));
+      else checks.push({ name: 'INFO: the token emitted no NEP-141 event (balance change not cross-checked)', ok: true, detail: '', info: true });
+    }
+    const cb = receipts.find((r) => r.receiver_id === vault && r.predecessor_id === vault && callsOf(r).some((f) => f.method_name === 'on_paid'));
+    checks.push(check('on_paid callback receipt present', Boolean(cb), ''));
+    const cbo = cb ? outcomeById.get(cb.receipt_id) : null;
+    checks.push(check('on_paid callback executed successfully', Boolean(cbo) && cbo.outcome?.status?.SuccessValue !== undefined, cbo ? JSON.stringify(cbo.outcome.status).slice(0, 120) : 'no outcome'));
+    const cba = cb ? b64json(callsOf(cb).find((f) => f.method_name === 'on_paid')?.args) : null;
+    checks.push(check('on_paid names the same token / payee / amount', Boolean(cba) && cba.token === token && cba.to === to && String(cba.amount) === want.toString(), cba ? `${cba.token} ${cba.to} ${cba.amount}` : 'none'));
+
+    // Only logs emitted by the vault itself count (a token or payee contract could print anything).
+    const vaultEvents = outcomes.filter((o) => o.outcome?.executor_id === vault).flatMap(parseEvents);
+    const paid = vaultEvents.filter((e) => e.event === 'paid');
+    const p0 = paid[0]?.data;
+    checks.push(check('vault emitted exactly one `paid` for this agent / token / payee / amount', paid.length === 1 && p0?.agent === agent && p0?.token === token && p0?.to === to && String(p0?.amount) === want.toString(), paid.length ? `${paid.length}x ${p0?.token} -> ${p0?.to} ${p0?.amount}` : 'none'));
+    const pf = vaultEvents.find((e) => e.event === 'pay_failed');
+    checks.push(check('no `pay_failed` event (the callback did not reverse the charge)', !pf, pf ? JSON.stringify(pf.data).slice(0, 160) : 'none'));
+    const ok = checks.every((x) => x.ok);
+    return { ok, checks, observedAt: Date.now(), paid: ok ? { token, to, amount: want.toString() } : null };
+  } catch (e) {
+    // Unknown tx, RPC error, unreachable node: a verification failure, never a pass.
+    return fail([check('transaction found and verifiable on this network', false, String(e.message).slice(0, 240))]);
+  }
+}
+
 // ------------------------------------------------------------------ extensions required by src/vault/index.js (VAULT_REQUIRED_LOOP)
 function loadAttestedBuild(path, build, version) {
   const source = path.replace(/^.*\/contracts\//, 'contracts/');
@@ -642,6 +729,7 @@ function planSteps({ net, payload, vault }) {
       cli: `near tokens ${shq(owner)} send-near ${shq(vault)} '${formatNear(fund)} NEAR' network-config ${network} sign-with-keychain send`,
     });
   }
+  if (payload.payouts) steps.push(...grantPayoutSteps({ net, payload, vault }));
   steps.push({
     who: 'human', title: 'Seed the agent account with a little gas (once)', note: `The agent pays the gas of its OWN first draw, and a NEAR implicit account does not exist until it receives a transfer. Send ~1 NEAR to ${agent} once; after that the vault funds its gas. (Sandbox: one deploy tx cost ~0.014 NEAR and needs ~0.045 NEAR of balance as worst-case prepaid gas.)`,
     call: { receiverId: agent, method: null, args: null, deposit: String(NEAR_YOCTO) },
@@ -709,6 +797,44 @@ function payoutPlanSteps({ net, vault, owner, tokens = [], payees = [], register
   return steps;
 }
 
+const MOCK_MINT_MAX_WHOLE = 10_000n;
+/** Owner step: `mint(account_id, amount)` on the TESTNET MOCK token (open faucet, <= 10,000 whole tokens per call). `deposit` (default 0.0025 NEAR) is the token's storage
+ *  fee for an account that is not registered yet; it is REQUIRED then (E_StorageDeposit otherwise) and the token refunds the excess, so a registered receiver loses nothing. */
+function mintStep({ net, owner, token, account, amount, deposit = STORAGE_DEPOSIT_DEFAULT, label, decimals } = {}) {
+  if (!validAccount(owner) || !validAccount(token) || !validAccount(account)) throw new Error('mintStep: owner, token and account must be NEAR account ids');
+  const a = needAmount('mint amount', amount); const d = big(deposit);
+  if (d === null || d < 0n) throw new Error('mintStep: deposit must be a yoctoNEAR amount');
+  const shown = decimals === undefined ? a.toString() : formatUnitsStr(a, decimals);
+  return humanStep({ net, owner, receiver: token, method: 'mint', args: { account_id: account, amount: a.toString() }, gas: 30n * TGAS, deposit: d,
+    title: `mint ${shown} ${label ?? token} to ${account} (test faucet)`,
+    note: `Open faucet of the testnet mock token: anyone may mint, up to ${MOCK_MINT_MAX_WHOLE} whole tokens per call. ${formatNear(d)} NEAR is attached for the token's storage fee: it is needed when ${account} is not registered on the token yet, and the excess is refunded to you.` });
+}
+/** Owner step: `ft_transfer(receiver_id, amount)` from the owner to the vault, 1 yoctoNEAR (NEP-141). The vault must already be registered on the token. */
+function ftTransferStep({ net, owner, token, receiver, amount, label, decimals, memo } = {}) {
+  if (!validAccount(owner) || !validAccount(token) || !validAccount(receiver)) throw new Error('ftTransferStep: owner, token and receiver must be NEAR account ids');
+  const a = needAmount('ft_transfer amount', amount);
+  const shown = decimals === undefined ? a.toString() : formatUnitsStr(a, decimals);
+  return humanStep({ net, owner, receiver: token, method: 'ft_transfer', args: { receiver_id: receiver, amount: a.toString(), ...(memo ? { memo } : {}) }, gas: 30n * TGAS, deposit: 1n,
+    title: `Fund the vault with ${shown} ${label ?? token}`,
+    note: `Plain NEP-141 transfer of ${shown} ${label ?? token} from you to ${receiver} (1 yoctoNEAR attached, as the standard requires). Funding changes no budget: only allow_token limits do. withdraw_token returns it to you at any time.` });
+}
+/** The payouts part of a grant plan: registrations, allow_token, allow_payee (payoutPlanSteps) and the token funding (mint for the testnet mock token, then the transfer to the vault). */
+function grantPayoutSteps({ net, payload, vault }) {
+  const p = payload.payouts; const owner = payload.vault?.owner;
+  const tokens = p.tokens.map((t) => ({ token: t.token, perPayCap: t.perPayCap, periodCap: t.periodCap, totalCap: t.totalCap, label: t.symbol, decimals: t.decimals }));
+  const steps = payoutPlanSteps({ net, vault, owner, tokens, payees: p.payees });
+  const fund = p.fund;
+  if (fund && BigInt(fund.amount) > 0n) {
+    const t = p.tokens.find((x) => x.token === fund.token);
+    if (t?.mock) {
+      const chunk = MOCK_MINT_MAX_WHOLE * 10n ** BigInt(t.decimals);
+      for (let left = BigInt(fund.amount); left > 0n; left -= chunk) steps.push(mintStep({ net, owner, token: t.token, account: owner, amount: left > chunk ? chunk : left, label: t.symbol, decimals: t.decimals }));
+    }
+    steps.push(ftTransferStep({ net, owner, token: fund.token, receiver: vault, amount: fund.amount, label: t?.symbol, decimals: t?.decimals, memo: 'fund vault' }));
+  }
+  return steps;
+}
+
 // ------------------------------------------------------------------ explorers
 const explorerBase = (net) => String(net?.explorer ?? '').replace(/\/txns\/?$/, '');
 /** testnet: https://testnet.nearblocks.io/txns/<hash>. A local network (no explorer) returns ''. */
@@ -729,5 +855,7 @@ export const adapter = Object.freeze({
   builds: ATTESTED_BUILDS, detectVaultBuild, buildOfCodeHash, previewPay,
   ftBalance, storageBalanceOf, ftRegistered, storageBalanceBounds, ftMetadata,
   payoutPlanSteps, storageDepositStep, allowTokenStep, allowPayeeStep,
+  // payouts build (phase 2b): verify a pay transaction, funding plan steps
+  verifyPay, mintStep, ftTransferStep, grantPayoutSteps,
 });
 export default adapter;
