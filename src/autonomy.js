@@ -30,6 +30,7 @@ import { autonomyEnabled, autonomyMaxPerDay, autonomyMaxPaymentsPerDay } from '.
 import { findNetwork } from './protocols.js';
 import { PolicyError } from './policy.js';
 import { getMode, TOPUP_DEFAULTS, topUpConfig } from './autonomy-mode.js';
+import { sponsorGas } from './gas-sponsor.js';
 import { councilGate } from './council.js';
 import { describeBudget } from './vault-model.js';
 import { approveUnderMandate, recordDeployment, releaseToHuman } from './decisions.js';
@@ -175,6 +176,12 @@ async function processVault(ctx, vault) {
   const out = { done: [], left: [] };
   const tu = !auto ? null : await topUp(ctx, { vault, adapter, net, agent }).catch(async (e) => { ctx.errors.push(ctx.redact(e)); await appendLedgerOnce(db, vault.id, 'topup-error', { kind: 'refused', status: 'refused', detail: `gas top-up failed: ${ctx.redact(e)}` }, { redact: ctx.redact }).catch(() => {}); return { refused: 'top-up failed' }; });
   if (tu?.blocked) return { blocked: true, refused: tu.refused };
+  // Rule (m): gas sponsor, a fallback AFTER the owner's own top-up and only with real work pending. OFF by default; allowlisted agents only; testnet only. See src/gas-sponsor.js.
+  let gs = null;
+  if (candidates.length && net.protocol === 'near' && !tu?.pending && (await getLoop(db)).state === 'running' && !(await killSwitch(db))) {
+    gs = await (async () => { const bal = (await freshState(ctx, vault)).agentBalance; return sponsorGas(ctx, { vault, net, agent, balance: BigInt(bal), killed: () => killSwitch(db) }); })()
+      .catch(async (e) => { ctx.errors.push(ctx.redact(e)); await appendLedgerOnce(db, vault.id, 'gassponsor-error', { kind: 'refused', status: 'refused', detail: `gas sponsor failed: ${ctx.redact(e)}` }, { redact: ctx.redact }).catch(() => {}); return null; });
+  }
   if (!candidates.length) return tu?.toppedUp ? { idle: true, toppedUp: tu.amount } : { idle: true };
   const maxPayments = autonomyMaxPaymentsPerDay(ctx.env);
   let paysStopped = false;
