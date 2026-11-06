@@ -52,9 +52,10 @@ function findSandboxBin() {
   return null;
 }
 const freePort = () => new Promise((res, rej) => { const s = createServer(); s.once('error', rej); s.listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => res(port)); }); });
+const rpcNorm = (j) => (j?.result && typeof j.result === 'object' && typeof j.result.error === 'string' ? { jsonrpc: j.jsonrpc, id: j.id, error: { message: j.result.error } } : j); // fastnear answers a failed query as { result: { error } }
 async function rpcRaw(url, method, params = []) {
   const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
-  return (await r.json());
+  return rpcNorm(await r.json());
 }
 
 let CHILD = null; let HOME = null;

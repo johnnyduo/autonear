@@ -1,0 +1,87 @@
+{
+  "network": "near-testnet",
+  "startedAt": "2026-11-06T15:10:07.645Z",
+  "vault": "vault-v2.autonear-owner-1106.testnet",
+  "txs": [
+    {
+      "label": "owner funds scratch wallet 0.25 NEAR",
+      "hash": "J4qFAPddn7MLA6vUs23kFteEK8DUx4bCCL98rU8qAE6B"
+    },
+    {
+      "label": "owner transfer_ownership -> scratch wallet",
+      "hash": "6jMFmMVycJM3LDAYZKKDoKNJPFaW8fPYw5LwgMAG5RcQ"
+    },
+    {
+      "label": "scratch wallet accept_ownership (via relayer)",
+      "hash": "0x16d41b9209516aebb2e29bbc9c55badc0febf614630a74b4f88e65f34e4d01ac",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x16d41b9209516aebb2e29bbc9c55badc0febf614630a74b4f88e65f34e4d01ac"
+    },
+    {
+      "label": "scratch wallet transfer_ownership -> demo owner",
+      "hash": "0x366ef244bc111bdda86c3f16c91f9e1019b02453adb10b83af2cd2585569c2ff",
+      "explorer": "https://eth-explorer-testnet.near.org/tx/0x366ef244bc111bdda86c3f16c91f9e1019b02453adb10b83af2cd2585569c2ff"
+    },
+    {
+      "label": "owner accept_ownership",
+      "hash": "HsUZDhc6oNMWqgWfjMxbmzDjvfWM5sac6xui76krmoHa"
+    }
+  ],
+  "checks": [
+    {
+      "name": "scratch wallet funded (account created by the transfer)",
+      "ok": true,
+      "detail": "J4qFAPddn7MLA6vUs23kFteEK8DUx4bCCL98rU8qAE6B"
+    },
+    {
+      "name": "vault shows the scratch wallet as pending_owner",
+      "ok": true,
+      "detail": "0x8d24445f4caa3baaf081afcb0f4b337f65555d26"
+    },
+    {
+      "name": "onboardingStatus is FALSE for an account whose relayer key is missing (the node answers { result: { error } })",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the relayer accepted and the NEAR action succeeded",
+      "ok": true,
+      "detail": "0x16d41b9209516aebb2e29bbc9c55badc0febf614630a74b4f88e65f34e4d01ac"
+    },
+    {
+      "name": "the relayer key is now on the account",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault owner is now the scratch wallet; no pending owner",
+      "ok": true,
+      "detail": "0x8d24445f4caa3baaf081afcb0f4b337f65555d26"
+    },
+    {
+      "name": "provider asked the wallet to sign exactly twice (setup + call)",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "scratch wallet offered the vault back",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "vault is owned by the demo owner again",
+      "ok": true,
+      "detail": "autonear-owner-1106.testnet"
+    }
+  ],
+  "signers": {
+    "scratchWallet": "throw-away key, injected provider (not a human, not MetaMask)",
+    "owner": "autonear-owner-1106.testnet (demo owner key, automated)"
+  },
+  "scratchWallet": "0x8d24445f4caa3baaf081afcb0f4b337f65555d26",
+  "finishedAt": "2026-11-06T15:10:48.861Z",
+  "result": {
+    "pass": 9,
+    "fail": 0
+  },
+  "scope": "NEAR public testnet. The wallet key is a throw-away test key (not a human, not MetaMask). Not an independent audit; no mainnet."
+}

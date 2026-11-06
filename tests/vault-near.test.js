@@ -93,7 +93,7 @@ function rpc(w) {
     }
     if (method === 'query') {
       if (params.request_type === 'view_account') { const a = w.accounts[params.account_id]; return a ? ok({ code_hash: '11111111111111111111111111111111', storage_usage: 100, ...a }) : err(`account ${params.account_id} does not exist while viewing`); }
-      if (params.request_type === 'view_access_key_list') return ok({ keys: w.keys[params.account_id] ?? [] });
+      if (params.request_type === 'view_access_key_list') return w.fastnearKeyListError ? ok({ block_hash: 'x', block_height: 1, error: 'node cannot serve the key list for this block', logs: [] }) : ok({ keys: w.keys[params.account_id] ?? [] });
       if (params.request_type === 'call_function') {
         const v = w.views[params.account_id]?.[params.method_name];
         if (v === undefined) return err(`method ${params.method_name} not found on ${params.account_id}`);
@@ -329,6 +329,11 @@ describe('verifyDeploy: transaction-level proof', () => {
       const w = makeWorld(); w.keys[TARGET] = [{ public_key: 'ed25519:K', access_key: { nonce: 0, permission } }];
       const r = await verify(w); assert.equal(r.ok, false); assert.ok(failedOf(r).includes('sub-account has NO access keys (immutable)'));
     }
+  });
+  test('fastnear-style { result: { error } } on the key list is a FAILED check, never "zero keys" (fail-closed)', async () => {
+    const w = makeWorld(); w.fastnearKeyListError = true;
+    const r = await verify(w); assert.equal(r.ok, false); assert.ok(failedOf(r).includes('sub-account has NO access keys (immutable)'));
+    assert.match(r.checks.find((c) => c.name === 'sub-account has NO access keys (immutable)').detail, /unreadable.*cannot serve/);
   });
   test('wrong code hash on the sub-account', async () => {
     const w = makeWorld(); w.accounts[TARGET].code_hash = base58(hexToBytes(sha('something else')));

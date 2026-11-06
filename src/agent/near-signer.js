@@ -110,7 +110,9 @@ export function nearRpc(url, { fetchImpl, role = 'launch' } = {}) {
     chainId: async () => (await call('status', [])).chain_id,
     gasPrice: async () => BigInt((await call('gas_price', [null])).gas_price),
     async accessKey(accountId, publicKeyStr) {
-      const r = await call('query', { request_type: 'view_access_key', finality: 'final', account_id: accountId, public_key: publicKeyStr });
+      let r;
+      try { r = await call('query', { request_type: 'view_access_key', finality: 'final', account_id: accountId, public_key: publicKeyStr }); } // jsonRpc raises both the JSON-RPC error and fastnear's { result: { error } }
+      catch (e) { throw new Error(`access key lookup failed: ${String(e?.message ?? e).slice(0, 200)}`); }
       if (r?.error) throw new Error(`access key lookup failed: ${String(r.error).slice(0, 200)}`);
       return { nonce: BigInt(r.nonce), blockHash: base58Decode(r.block_hash), permission: r.permission };
     },

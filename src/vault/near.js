@@ -511,8 +511,9 @@ async function verifyDeploy({ net, txHash, vault, agent, decision, manifest, exp
     if (!acct) return { ok: false, account: target, checks, observedAt: Date.now() };
     const wantB58 = base58(hexToBytes(wantCodeHex));
     checks.push(check('sub-account code hash == attested wasm sha256', acct.code_hash === wantB58, `${acct.code_hash} vs ${wantB58}`));
-    const keys = await rpcCall(net, c, 'query', { request_type: 'view_access_key_list', finality: 'final', account_id: target });
-    checks.push(check('sub-account has NO access keys (immutable)', (keys.keys ?? []).length === 0, `${(keys.keys ?? []).length} keys`));
+    let nKeys = null; let keyErr = '';
+    try { nKeys = ((await rpcCall(net, c, 'query', { request_type: 'view_access_key_list', finality: 'final', account_id: target })).keys ?? []).length; } catch (e) { keyErr = String(e.message).slice(0, 160); }
+    checks.push(check('sub-account has NO access keys (immutable)', nKeys === 0, nKeys === null ? `key list unreadable: ${keyErr}` : `${nKeys} keys`)); // an unreadable list is a failure, never "zero keys
     try {
       const cfg = await view(net, c, { finality: 'final' }, target, 'config');
       checks.push(check('registry owner == approved owner', cfg.owner_id === wantOwner, `${cfg.owner_id} vs ${wantOwner}`));

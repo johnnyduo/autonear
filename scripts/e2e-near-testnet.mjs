@@ -40,7 +40,8 @@ const R = { pass: 0, fail: 0, failed: [] }; const evidence = RESUME && existsSyn
 const step = (n, m) => console.log(`\n[${n}] ${m}`);
 function t(name, ok, detail = '') { evidence.checks.push({ name, ok: Boolean(ok), detail: String(detail).slice(0, 200) }); if (ok) { R.pass++; console.log(`   PASS  ${name}${detail ? `  (${detail})` : ''}`); } else { R.fail++; R.failed.push(name); console.log(`   FAIL  ${name}${detail ? `  (${detail})` : ''}`); } return ok; }
 const rec = (label, r, who) => { if (r?.txHash) evidence.txs.push({ label, signer: who, hash: r.txHash, ok: r.ok ?? null, explorer: tx(r.txHash) }); return r; };
-const rpcRaw = async (method, params) => (await (await fetch(RPC, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) })).json());
+const rpcNorm = (j) => (j?.result && typeof j.result === 'object' && typeof j.result.error === 'string' ? { jsonrpc: j.jsonrpc, id: j.id, error: { message: j.result.error } } : j); // fastnear answers a failed query as { result: { error } }
+const rpcRaw = async (method, params) => rpcNorm(await (await fetch(RPC, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) })).json());
 
 const vaultWasm = new Uint8Array(readFileSync(VAULT_WASM_PATH)); const registryWasm = new Uint8Array(readFileSync(REGISTRY_WASM_PATH));
 const vaultSha = sha256Hex(vaultWasm); const registrySha = sha256Hex(registryWasm);
