@@ -2,321 +2,273 @@
   "mode": "gemini",
   "model": "gemini-2.5-pro-preview-tts",
   "voice": "Puck",
-  "generatedAt": "2026-11-05T14:00:58.832Z",
+  "generatedAt": "2026-11-06T15:49:07.979Z",
   "scenes": [
     {
-      "id": "hook",
-      "hash": "2221f3f4a02f37d8",
-      "file": "audio/hook.mp3",
-      "durationSec": 3.530975,
-      "spoken": "Would you let an AI agent touch your treasury? Neither would we.",
-      "display": "Would you let an AI agent touch your treasury? Neither would we.",
+      "id": "night",
+      "hash": "c7026f0e1433fe24",
+      "file": "audio/night.mp3",
+      "durationSec": 5.450975,
+      "spoken": "Your phone lights up at midnight. Your new hire wants to spend. Would you hand them the company card?",
+      "display": "Your phone lights up at midnight. Your new hire wants to spend. Would you hand them the company card?",
       "tag": null,
       "cal": {
         "speech": {
-          "start": 0.230385,
-          "end": 3.530975
+          "start": 0.203084,
+          "end": 5.450975
         },
         "pauses": [
           {
-            "start": 2.509,
-            "end": 2.746
+            "start": 1.45,
+            "end": 1.703
+          },
+          {
+            "start": 3.124,
+            "end": 3.58
           }
         ]
       }
     },
     {
-      "id": "problem",
-      "hash": "9cabdbfac54227a5",
-      "file": "audio/problem.mp3",
-      "durationSec": 8.610975,
-      "spoken": "Public posts show what builders need. They can also hide poisoned instructions. So our rule is simple: agents propose. Humans approve.",
-      "display": "Public posts show what builders need. They can also hide poisoned instructions. So our rule is simple: agents propose. Humans approve.",
-      "tag": null,
+      "id": "poison",
+      "hash": "2cfe5d9f2e7eff5e",
+      "file": "audio/poison.mp3",
+      "durationSec": 7.890975,
+      "spoken": "A public post looks useful. Hidden inside: an order to send the budget away. That is the trap.",
+      "display": "A public post looks useful. Hidden inside: an order to send the budget away. That is the trap.",
+      "tag": "RECORDED RUN · FIXTURE INPUTS",
       "cal": {
         "speech": {
-          "start": 0.20517,
-          "end": 8.610975
+          "start": 0.227959,
+          "end": 7.890975
         },
         "pauses": [
           {
-            "start": 2.193,
-            "end": 2.513
+            "start": 2.055,
+            "end": 2.239
           },
           {
-            "start": 4.559,
-            "end": 4.802
+            "start": 5.99,
+            "end": 6.322
           },
           {
-            "start": 6.174,
-            "end": 6.43
-          },
-          {
-            "start": 7.349,
-            "end": 7.62
+            "start": 6.901,
+            "end": 7.096
           }
         ]
       }
     },
     {
-      "id": "solution",
-      "hash": "05055cc161c46d49",
-      "file": "audio/solution.mp3",
-      "durationSec": 11.250975,
-      "spoken": "This is AutoNEAR. It collects evidence, scores every opportunity in the open, and prepares one allowed action: a testnet deployment with a spend cap of zero. A human must approve it.",
-      "display": "This is AutoNEAR. It collects evidence, scores every opportunity in the open, and prepares one allowed action: a testnet deployment with a spend cap of zero. A human must approve it.",
-      "tag": null,
+      "id": "owner",
+      "hash": "bc3cd6539c5380ed",
+      "file": "audio/owner.mp3",
+      "durationSec": 6.531678,
+      "spoken": "Here is AutoNEAR. You choose what it watches. You set the card's limit, and you can stop it.",
+      "display": "Here is AutoNEAR. You choose what it watches. You set the card's limit, and you can stop it.",
+      "tag": "APP SCREENSHOTS · DEMO DATA",
       "cal": {
         "speech": {
-          "start": 0.246304,
-          "end": 11.250975
+          "start": 0,
+          "end": 6.264717
         },
         "pauses": [
           {
-            "start": 1.161,
-            "end": 1.359
+            "start": 0.088,
+            "end": 0.266
           },
           {
-            "start": 9.374,
-            "end": 9.568
+            "start": 1.618,
+            "end": 2.035
+          },
+          {
+            "start": 3.399,
+            "end": 3.757
+          },
+          {
+            "start": 5.062,
+            "end": 5.379
           }
         ]
       }
     },
     {
       "id": "evidence",
-      "hash": "75871b3e5404c99b",
+      "hash": "2996aac9e59263c3",
       "file": "audio/evidence.mp3",
-      "durationSec": 14.130975,
-      "spoken": "Live snapshot: three hundred and six public records. Treasury tooling scores point seven zero, from ninety-four posts by fifty-eight authors. But only two demand sources. So AutoNEAR flags it: low confidence. It tells you when not to trust it.",
-      "display": "Live snapshot: 306 public records. Treasury tooling scores 0.70, from 94 posts by 58 authors. But only 2 demand sources. So AutoNEAR flags it: low confidence. It tells you when not to trust it.",
+      "durationSec": 8.810975,
+      "spoken": "It reads public signals and shows its work. This snapshot has three hundred and six records. One promising idea still gets a low-confidence warning.",
+      "display": "It reads public signals and shows its work. This snapshot has 306 records. One promising idea still gets a low-confidence warning.",
       "tag": "LIVE SNAPSHOT",
       "cal": {
         "speech": {
-          "start": 0.259751,
-          "end": 14.130975
+          "start": 0.235102,
+          "end": 8.641111
         },
         "pauses": [
           {
-            "start": 2.958,
-            "end": 3.17
+            "start": 2.566,
+            "end": 2.9
           },
           {
-            "start": 5.491,
-            "end": 5.673
-          },
-          {
-            "start": 7.922,
-            "end": 8.154
-          },
-          {
-            "start": 11.35,
-            "end": 11.559
-          },
-          {
-            "start": 12.43,
-            "end": 12.681
+            "start": 5.42,
+            "end": 5.581
           }
         ]
       }
     },
     {
-      "id": "pipeline",
-      "hash": "5c472f0f5ed6535d",
-      "file": "audio/pipeline.mp3",
-      "durationSec": 10.410975,
-      "spoken": "Seven roles turn evidence into a brief. Code limits their tools and the run budget. Citations must point to evidence they were given. Suspected injection text is withheld from model prompts.",
-      "display": "7 roles turn evidence into a brief. Code limits their tools and the run budget. Citations must point to evidence they were given. Suspected injection text is withheld from model prompts.",
+      "id": "council",
+      "hash": "76a1e845a8f7b45d",
+      "file": "audio/council.mp3",
+      "durationSec": 7.090975,
+      "spoken": "The council weighs the evidence. Seven roles prepare a brief, check the build, and leave a request for the owner.",
+      "display": "The council weighs the evidence. 7 roles prepare a brief, check the build, and leave a request for the owner.",
       "tag": "RECORDED RUN · FIXTURE INPUTS",
       "cal": {
         "speech": {
-          "start": 0.206984,
-          "end": 10.410975
+          "start": 0.228753,
+          "end": 7.090975
         },
         "pauses": [
           {
-            "start": 2.391,
-            "end": 2.697
+            "start": 2.026,
+            "end": 2.314
           },
           {
-            "start": 4.605,
-            "end": 4.893
+            "start": 3.967,
+            "end": 4.333
           },
           {
-            "start": 7.171,
-            "end": 7.564
+            "start": 5.146,
+            "end": 5.337
           }
         ]
       }
     },
     {
-      "id": "gate",
-      "hash": "330dc617b1ef7207",
-      "file": "audio/gate.mp3",
-      "durationSec": 10.210975,
-      "spoken": "Now the human gate. Wrong nonce: rejected. Changed payload: rejected. No named signer: rejected. Kill switch on: rejected. Only the exact confirmation phrase gets through.",
-      "display": "Now the human gate. Wrong nonce: rejected. Changed payload: rejected. No named signer: rejected. Kill switch on: rejected. Only the exact confirmation phrase gets through.",
+      "id": "approval",
+      "hash": "a976014c0186f187",
+      "file": "audio/approval.mp3",
+      "durationSec": 8.490975,
+      "spoken": "The owner reviews the exact request and holds to approve. Approval is a decision. The next action still has to pass its checks.",
+      "display": "The owner reviews the exact request and holds to approve. Approval is a decision. The next action still has to pass its checks.",
       "tag": "RECORDED RUN · FIXTURE INPUTS",
       "cal": {
         "speech": {
-          "start": 0.178027,
-          "end": 10.210975
+          "start": 0.263107,
+          "end": 8.384558
         },
         "pauses": [
           {
-            "start": 1.203,
-            "end": 1.483
+            "start": 1.899,
+            "end": 2.005
           },
           {
-            "start": 2.788,
-            "end": 3.042
+            "start": 3.78,
+            "end": 4.152
           },
           {
-            "start": 3.736,
-            "end": 3.854
+            "start": 4.661,
+            "end": 4.763
           },
           {
-            "start": 4.424,
-            "end": 4.664
+            "start": 5.518,
+            "end": 5.647
           },
           {
-            "start": 6.032,
-            "end": 6.26
-          },
-          {
-            "start": 7.229,
-            "end": 7.325
-          },
-          {
-            "start": 7.561,
-            "end": 7.7
-          },
-          {
-            "start": 7.829,
-            "end": 7.947
+            "start": 5.749,
+            "end": 5.878
           }
         ]
       }
     },
     {
-      "id": "verify",
-      "hash": "c42a53c53376b8bb",
-      "file": "audio/verify.mp3",
-      "durationSec": 13.330975,
-      "spoken": "Approval is not execution. You sign in your own wallet. AutoNEAR records a deployment only after the chain checks out: signer, account, and code hash. Wrong hash? Refused. Mocked RPC in this recording.",
-      "display": "Approval is not execution. You sign in your own wallet. AutoNEAR records a deployment only after the chain checks out: signer, account, and code hash. Wrong hash? Refused. Mocked RPC in this recording.",
+      "id": "refusal",
+      "hash": "1ea3d1590c281043",
+      "file": "audio/refusal.mp3",
+      "durationSec": 8.050975,
+      "spoken": "Now a result comes back with the wrong code. AutoNEAR refuses to record that deployment. The matching result passes.",
+      "display": "Now a result comes back with the wrong code. AutoNEAR refuses to record that deployment. The matching result passes.",
       "tag": "RECORDED RUN · MOCKED RPC",
       "cal": {
         "speech": {
-          "start": 0.213333,
-          "end": 13.330975
+          "start": 0.263243,
+          "end": 8.050975
         },
         "pauses": [
           {
-            "start": 2.011,
-            "end": 2.378
+            "start": 3.083,
+            "end": 3.479
           },
           {
-            "start": 3.76,
-            "end": 4.13
+            "start": 5.777,
+            "end": 6.458
           },
           {
-            "start": 5.638,
-            "end": 5.81
-          },
-          {
-            "start": 7.403,
-            "end": 7.682
-          },
-          {
-            "start": 9.436,
-            "end": 9.825
-          },
-          {
-            "start": 10.391,
-            "end": 10.665
-          },
-          {
-            "start": 11.23,
-            "end": 11.552
+            "start": 7.264,
+            "end": 7.476
           }
         ]
       }
     },
     {
-      "id": "proof",
-      "hash": "64fcc5dc84f7e06a",
-      "file": "audio/proof.mp3",
-      "durationSec": 8.010975,
-      "spoken": "Underneath: registries in Rust for NEAR and Solidity for EVM. eighty-four and one hundred and forty-four passing tests, with fuzzing and invariants. They record approvals. They don't move funds.",
-      "display": "Underneath: registries in Rust for NEAR and Solidity for EVM. 84 and 144 passing tests, with fuzzing and invariants. They record approvals. They don't move funds.",
-      "tag": "VERIFIED 2026-11-05",
+      "id": "testnet",
+      "hash": "74f9d6aa9e8a33f1",
+      "file": "audio/testnet.mp3",
+      "durationSec": 9.650975,
+      "spoken": "This also ran on NEAR testnet. A demo owner capped a vault, the agent deployed through it, and the chain refused it four times when it pushed past its limits.",
+      "display": "This also ran on NEAR testnet. A demo owner capped a vault, the agent deployed through it, and the chain refused it 4 times when it pushed past its limits.",
+      "tag": "PUBLIC TESTNET · DEMO OWNER KEY · AUTOMATED",
       "cal": {
         "speech": {
-          "start": 0.139864,
-          "end": 7.948639
+          "start": 0.225556,
+          "end": 9.650975
         },
         "pauses": [
           {
-            "start": 2.489,
-            "end": 2.722
+            "start": 2.193,
+            "end": 2.556
           },
           {
-            "start": 2.92,
-            "end": 2.981
+            "start": 4.192,
+            "end": 4.432
           },
           {
-            "start": 4.686,
-            "end": 4.747
-          },
-          {
-            "start": 4.86,
-            "end": 4.921
-          },
-          {
-            "start": 5.875,
-            "end": 6.087
-          },
-          {
-            "start": 6.992,
-            "end": 7.102
+            "start": 5.759,
+            "end": 5.985
           }
         ]
       }
     },
     {
       "id": "close",
-      "hash": "5ca80d529667a3e9",
+      "hash": "4843fc7070538c83",
       "file": "audio/close.mp3",
-      "durationSec": 9.050975,
-      "spoken": "AutoNEAR. Evidence in. Human approves. Chain verifies. Clone it, run the tests, and tell us which approval rule you would add.",
-      "display": "AutoNEAR. Evidence in. Human approves. Chain verifies. Clone it, run the tests, and tell us which approval rule you would add.",
+      "durationSec": 6.770975,
+      "spoken": "The agent has a company card. You set the limit. Judges: clone it and run the tests.",
+      "display": "The agent has a company card. You set the limit. Judges: clone it and run the tests.",
       "tag": null,
       "cal": {
         "speech": {
-          "start": 0.265941,
-          "end": 9.050975
+          "start": 0.270181,
+          "end": 6.347188
         },
         "pauses": [
           {
-            "start": 1.011,
-            "end": 1.35
+            "start": 2.171,
+            "end": 2.437
           },
           {
-            "start": 2.176,
-            "end": 2.374
+            "start": 3.324,
+            "end": 3.76
           },
           {
-            "start": 3.332,
-            "end": 3.533
+            "start": 4.46,
+            "end": 4.649
           },
           {
-            "start": 4.606,
-            "end": 5.05
-          },
-          {
-            "start": 5.452,
-            "end": 5.827
+            "start": 5.035,
+            "end": 5.338
           }
         ]
       }

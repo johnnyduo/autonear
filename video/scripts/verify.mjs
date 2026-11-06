@@ -36,7 +36,7 @@ if (timing) {
 }
 
 // 4. honesty: scenes built from fixtures/mocks must say so on screen
-const need = { pipeline: /FIXTURE/, gate: /FIXTURE/, verify: /MOCKED/, evidence: /LIVE/ };
+const need = { poison: /FIXTURE/, owner: /DEMO DATA/, evidence: /LIVE/, council: /FIXTURE/, approval: /FIXTURE/, refusal: /MOCKED/, testnet: /TESTNET.*DEMO OWNER KEY/ };
 for (const [id, re] of Object.entries(need)) must(re.test(script.scenes.find((s) => s.id === id)?.tag ?? ''), `${id}: provenance tag must match ${re}`);
 
 // 5. captured data must be fresh and green; contract numbers must be MEASURED (contracts.json), not typed

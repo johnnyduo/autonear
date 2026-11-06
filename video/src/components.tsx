@@ -62,7 +62,7 @@ export const Provenance: React.FC<{ tag: string | null; s: SceneTiming }> = ({ t
   const sec = useNarrationSec(s);
   if (!tag) return null;
   const live = /LIVE/.test(tag);
-  const color = live ? C.signal : /VERIFIED/.test(tag) ? C.mineralHi : C.warn;
+  const color = live ? C.signal : /VERIFIED|TESTNET/.test(tag) ? C.mineralHi : C.warn;
   const pulse = 0.55 + 0.45 * Math.sin(sec * 5);
   return (
     <div style={{ position: 'absolute', left: 96, top: 64, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', border: `1px solid ${color}66`, background: `${C.ink1}dd`, borderRadius: 6, opacity: ramp(sec, 0.1, 0.4), transform: `translateY(${(1 - ramp(sec, 0.1, 0.4)) * -8}px)` }}>

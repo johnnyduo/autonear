@@ -1,56 +1,65 @@
 {
-  "title": "AutoNEAR - hackathon demo",
+  "title": "AutoNEAR · the agent with a company card (v2)",
   "track": "AI Security & Defense",
   "voice": {
     "name": "Puck",
-    "style": "Speak like a confident founder delivering a hackathon pitch at a brisk, energetic pace of about three words per second: crisp, warm, rising energy, short punchy sentences, only a short beat after each full stop. Never robotic, never shouting."
+    "style": "Confident, warm product-launch narration at a brisk pace of about three words per second, with crisp sentences and short natural pauses. Start intimate, gain energy through the owner flow, and become quiet and exact at each refusal."
   },
-  "tokens_note": "{{path}} is resolved from src/data/captured.json. {{path|w}} = spoken words (TTS), digits are used in captions. Numbers cannot drift from what the code produced.",
+  "tokens_note": "Numbers only as {{tokens}} resolved from src/data/captured.json (and contracts.json). No typed digits in narration.",
   "scenes": [
     {
-      "id": "hook",
+      "id": "night",
       "tag": null,
-      "narration": "Would you let an AI agent touch your treasury? Neither would we."
+      "narration": "Your phone lights up at midnight. Your new hire wants to spend. Would you hand them the company card?",
+      "style": "Intimate and unhurried, slower than the rest at about two words per second; let the question hang."
     },
     {
-      "id": "problem",
-      "tag": null,
-      "narration": "Public posts show what builders need. They can also hide poisoned instructions. So our rule is simple: agents propose. Humans approve."
+      "id": "poison",
+      "tag": "RECORDED RUN · FIXTURE INPUTS",
+      "narration": "A public post looks useful. Hidden inside: an order to send the budget away. That is the trap.",
+      "style": "Gather speed, then stop cold on the final sentence."
     },
     {
-      "id": "solution",
-      "tag": null,
-      "narration": "This is AutoNEAR. It collects evidence, scores every opportunity in the open, and prepares one allowed action: a testnet deployment with a spend cap of zero. A human must approve it."
+      "id": "owner",
+      "tag": "APP SCREENSHOTS · DEMO DATA",
+      "narration": "Here is AutoNEAR. You choose what it watches. You set the card's limit, and you can stop it.",
+      "style": "Warm and assured, with a clear pause after the product name."
     },
     {
       "id": "evidence",
       "tag": "LIVE SNAPSHOT",
-      "narration": "Live snapshot: {{live.total|w}} public records. Treasury tooling scores {{live.treasury.score|d}}, from {{live.treasury.breakdown.counts.demand|w}} posts by {{live.treasury.breakdown.counts.authors|w}} authors. But only {{live.treasury.breakdown.counts.sources|w}} demand sources. So AutoNEAR flags it: low confidence. It tells you when not to trust it."
+      "narration": "It reads public signals and shows its work. This snapshot has {{live.total|w}} records. One promising idea still gets a low-confidence warning.",
+      "style": "Bright discovery, then measured caution on the warning."
     },
     {
-      "id": "pipeline",
+      "id": "council",
       "tag": "RECORDED RUN · FIXTURE INPUTS",
-      "narration": "{{run.roleCount|W}} roles turn evidence into a brief. Code limits their tools and the run budget. Citations must point to evidence they were given. Suspected injection text is withheld from model prompts."
+      "narration": "The council weighs the evidence. {{run.roleCount|W}} roles prepare a brief, check the build, and leave a request for the owner.",
+      "style": "A little quicker, like a team working in sequence."
     },
     {
-      "id": "gate",
+      "id": "approval",
       "tag": "RECORDED RUN · FIXTURE INPUTS",
-      "narration": "Now the human gate. Wrong nonce: rejected. Changed payload: rejected. No named signer: rejected. Kill switch on: rejected. Only the exact confirmation phrase gets through."
+      "narration": "The owner reviews the exact request and holds to approve. Approval is a decision. The next action still has to pass its checks.",
+      "style": "Slow down; make the full stop after decision unmistakable."
     },
     {
-      "id": "verify",
+      "id": "refusal",
       "tag": "RECORDED RUN · MOCKED RPC",
-      "narration": "Approval is not execution. You sign in your own wallet. AutoNEAR records a deployment only after the chain checks out: signer, account, and code hash. Wrong hash? Refused. Mocked RPC in this recording."
+      "narration": "Now a result comes back with the wrong code. AutoNEAR refuses to record that deployment. The matching result passes.",
+      "style": "Low and precise for the refusal; release the tension on passes."
     },
     {
-      "id": "proof",
-      "tag": "VERIFIED {{suites.nearContract.verifiedOn}}",
-      "narration": "Underneath: registries in Rust for NEAR and Solidity for EVM. {{suites.nearContract.passed|w}} and {{suites.evmContract.passed|w}} passing tests, with fuzzing and invariants. They record approvals. They don't move funds."
+      "id": "testnet",
+      "tag": "PUBLIC TESTNET · DEMO OWNER KEY · AUTOMATED",
+      "narration": "This also ran on NEAR testnet. A demo owner capped a vault, the agent deployed through it, and the chain refused it {{testnet.refusalCount|w}} times when it pushed past its limits.",
+      "style": "Steady and factual at about two and a half words per second; leave a clear pause after testnet."
     },
     {
       "id": "close",
       "tag": null,
-      "narration": "AutoNEAR. Evidence in. Human approves. Chain verifies. Clone it, run the tests, and tell us which approval rule you would add."
+      "narration": "The agent has a company card. You set the limit. Judges: clone it and run the tests.",
+      "style": "Land the first two sentences slowly, then invite action."
     }
   ]
 }

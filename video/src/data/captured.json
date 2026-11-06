@@ -137,6 +137,55 @@
     ],
     "note": "LIVE: evidence the app itself ingested from public sources (GitHub, gov.near.org, Hacker News, NEAR mainnet RPC)."
   },
+  "testnet": {
+    "network": "near-testnet",
+    "ownerMode": "DEMO owner key held on the agent machine; automated, not a human wallet",
+    "owner": "autonear-owner-1106.testnet",
+    "vault": "vault-v1.autonear-owner-1106.testnet",
+    "registry": "reg1.vault-v1.autonear-owner-1106.testnet",
+    "finishedAt": "2026-11-06T03:08:19.479Z",
+    "steps": {
+      "vaultDeployed": true,
+      "vaultLocked": true,
+      "templateAllowed": true,
+      "mandateSet": true,
+      "agentDraw": true,
+      "agentDeploy": true,
+      "revoked": true
+    },
+    "refusals": [
+      {
+        "what": "over the per-draw cap",
+        "code": "E_PerDrawCap",
+        "hash": "22uZ1m2zWs558XNHAaS1VjpwniWoDnUKnCiaAo1NbjGn",
+        "explorer": "https://testnet.nearblocks.io/txns/22uZ1m2zWs558XNHAaS1VjpwniWoDnUKnCiaAo1NbjGn",
+        "rejectedByChain": true
+      },
+      {
+        "what": "second deploy beyond the mandate",
+        "code": "E_DeployLimit",
+        "hash": "GEguMwExvWqi8RgeEJgjsNMMJ6KLhZMXf1mLjn7hEj88",
+        "explorer": "https://testnet.nearblocks.io/txns/GEguMwExvWqi8RgeEJgjsNMMJ6KLhZMXf1mLjn7hEj88",
+        "rejectedByChain": true
+      },
+      {
+        "what": "code that is not on the allowlist",
+        "code": "E_TemplateNotAllowed",
+        "hash": "4Hhw7ZfwM3NjTRGMKfPgqHG9AZLCswESVXq3mpjopnfn",
+        "explorer": "https://testnet.nearblocks.io/txns/4Hhw7ZfwM3NjTRGMKfPgqHG9AZLCswESVXq3mpjopnfn",
+        "rejectedByChain": true
+      },
+      {
+        "what": "draw after the owner revoked",
+        "code": "E_MandateInactive",
+        "hash": "JpjuQ7y4Pmt9M8vSgcTdb68jzyxfacLFrFtTYNojCck",
+        "explorer": "https://testnet.nearblocks.io/txns/JpjuQ7y4Pmt9M8vSgcTdb68jzyxfacLFrFtTYNojCck",
+        "rejectedByChain": true
+      }
+    ],
+    "refusalCount": 4,
+    "note": "Two entries in the source file are marked FAIL by the script itself, not the chain (expected-error regex; over-large withdraw); see its followUp. Kept unchanged there."
+  },
   "policyLines": [
     "signal_collector: { tools: ['db.read', 'http.collector'], llm: false, dataClass: 'public' },",
     "skeptic: { tools: ['db.read', 'llm.complete', 'registry.competitors'], llm: true, dataClass: 'public' },",
@@ -148,8 +197,8 @@
     "source": "fixture",
     "flagged": true
   },
-  "capturedAt": "2026-11-05T12:51:16.762Z",
-  "elapsedMs": 614,
+  "capturedAt": "2026-11-06T15:44:27.557Z",
+  "elapsedMs": 13202,
   "provenance": "RECORDED RUN: real AutoNEAR modules on fixture inputs (canned evidence, test-double build attestation, mocked NEAR RPC). No network, no funds.",
   "ingest": [
     {
@@ -228,7 +277,7 @@
     "evidence_quality": 0.1
   },
   "run": {
-    "id": "run_8429dd8fcecc",
+    "id": "run_ee207f8e45f9",
     "state": "awaiting_approval",
     "roleCount": 7,
     "events": [
@@ -250,7 +299,7 @@
       {
         "role": "evidence_analyst",
         "status": "completed",
-        "detail": "LLM_PROVIDER=none: deterministic baseline in use; 1 injection-flagged record(s) withheld from prompts"
+        "detail": "LLM_PROVIDER=none: deterministic baseline in use; 1 injection-flagged record(s) and 0 social record(s) text withheld from prompts"
       },
       {
         "role": "skeptic",
@@ -300,22 +349,22 @@
       {
         "role": "launch_planner",
         "status": "completed",
-        "detail": "decision dec_44dda93de5f2eb created: awaiting human approval"
+        "detail": "decision dec_dcf16259983517 created: awaiting human approval"
       }
     ],
     "auditChainOk": true
   },
   "decision": {
-    "id": "dec_44dda93de5f2eb",
+    "id": "dec_dcf16259983517",
     "chain": "near-testnet",
     "target": "reg.op.testnet",
     "maxSpend": "0",
     "status": "pending",
-    "payloadHashPrefix": "cdfe511b7c055bb8",
-    "expiry": 1793969476162,
+    "payloadHashPrefix": "cd7c502402e3b3a9",
+    "expiry": 1794066254368,
     "expiryHours": 24,
     "approvedStatus": "approved",
-    "receiptPrefix": "d0ca164f58894b9c",
+    "receiptPrefix": "effee506fc0e9fbe",
     "finalStatus": "executed"
   },
   "attempts": [
@@ -347,7 +396,7 @@
       "label": "Wrong confirmation phrase",
       "rejected": true,
       "code": "confirm",
-      "message": "type the exact confirmation phrase: approve dec_44dda93de5f2eb"
+      "message": "type the exact confirmation phrase: approve dec_dcf16259983517"
     },
     {
       "label": "Record a deployment before approval",
@@ -531,7 +580,7 @@
   },
   "suites": {
     "node": {
-      "pass": 33,
+      "pass": 693,
       "fail": 0,
       "command": "npm test"
     },
@@ -539,8 +588,8 @@
       "passed": 84,
       "failed": 0,
       "command": "cargo test --locked",
-      "verifiedOn": "2026-11-05",
-      "ranAt": "2026-11-05T12:51:15.745Z",
+      "verifiedOn": "2026-11-06",
+      "ranAt": "2026-11-06T15:44:14.217Z",
       "note": "includes a randomized state-machine property test",
       "sampleTests": [
         "replay_of_identical_proposal_rejected",
@@ -552,12 +601,12 @@
       ]
     },
     "evmContract": {
-      "passed": 144,
+      "passed": 241,
       "failed": 0,
       "command": "forge test",
-      "verifiedOn": "2026-11-05",
-      "ranAt": "2026-11-05T12:51:15.745Z",
-      "note": "includes 7 invariant tests (512 runs x 32,768 calls each)"
+      "verifiedOn": "2026-11-06",
+      "ranAt": "2026-11-06T15:44:14.217Z",
+      "note": "includes 15 invariant tests (512 runs x 32,768 calls each)"
     }
   }
 }
