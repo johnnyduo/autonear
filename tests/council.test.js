@@ -100,3 +100,12 @@ test('final judgement follows the stored facts: ready, in progress, held at buil
   await db.run("DELETE FROM deployments WHERE id='dep_j'"); await db.run("UPDATE decisions SET status='rejected' WHERE id='dec_j'");
   assert.equal((await journeyFor(db, oid)).outcome.state, 'held');
 });
+
+test('a checked build recorded against the decision (not the run) still counts, and an existing request is never reported as held at build', async () => {
+  const db = await seeded(); const c = await currentCouncil(db); const oid = c.opportunities[0].oppId; const now = Date.now();
+  await db.run("INSERT INTO runs(id,opportunity_id,trigger,state,budget,started_at) VALUES('run_k',?,'operator','blocked','{}',?)", [oid, now]);
+  await db.run("INSERT INTO artifacts(id,run_id,kind,immutable_ref,hash,test_results,created_at) VALUES('a_other','run_other','contract-build:near','r','hk','{}',?)", [now]);
+  await db.run("INSERT INTO decisions(id,run_id,artifact_hash,action,chain_id,target,method,max_spend,expiry,nonce,payload,payload_hash,status,created_at) VALUES('dec_k','run_k','hk','deploy_testnet','near:testnet','t','m','0',?,'nk','{}','ph','pending',?)", [now + 3600e3, now]);
+  const j = await journeyFor(db, oid, { mode: 'auto' });
+  assert.equal(j.stages.find((x) => x.id === 'build').state, 'done'); assert.equal(j.outcome.state, 'waiting'); assert.notEqual(j.outcome.headline, 'Held at the build step');
+});
