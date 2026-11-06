@@ -319,3 +319,10 @@
   .hist li { grid-template-columns: 1fr auto; } .hist time { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) { .req .tech summary, .hist-wrap .tech summary { min-height: 40px; display: flex; align-items: center; } }
+
+/* what-if simulator and browser verify */
+.cn-wi { max-width: 760px; margin: 18px auto 0; border: 1px solid var(--line); border-radius: var(--r); padding: 10px 14px; } .cn-wi summary { cursor: pointer; font-weight: 600; } .cn-wi p { margin: 8px 0; font-size: 13px; }
+.cn-wi-grid { display: grid; gap: 6px; margin: 10px 0; } .cn-wi-row { display: grid; grid-template-columns: 170px 1fr 44px; align-items: center; gap: 12px; font-size: 13px; } .cn-wi-row small { color: var(--chalk-2); font-family: var(--f-mono); margin-left: 4px; } .cn-wi-row b { font: 500 12px var(--f-mono); text-align: right; } .cn-wi-row input { accent-color: #c6f432; width: 100%; }
+.cn-wi-out { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding-top: 10px; border-top: 1px solid var(--line); } .cn-wi-out > b { font: 400 40px 'Instrument Serif', serif; color: var(--c); } .cn-wi-out em { font: 600 13px var(--f-mono); letter-spacing: .14em; color: var(--c); font-style: normal; } .cn-wi-out small { flex-basis: 100%; color: var(--chalk-2); }
+.cn-vok { color: #c6f432; font-size: 13px; } .cn-vbad { color: #ff6a3d; font-size: 13px; }
+@media (max-width: 560px) { .cn-wi-row { grid-template-columns: 1fr 44px; } .cn-wi-row input { grid-column: 1 / -1; grid-row: 2; } }

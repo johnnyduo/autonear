@@ -5,6 +5,7 @@ import { fmt, useApi } from '../api.js';
 import { CountUp } from '../views/constellation/shared.js';
 import { href } from './nav.js';
 import ProofDialog from './CouncilProof.jsx';
+import WhatIf from './WhatIf.jsx';
 
 const COL = { back: '#c6f432', abstain: '#f2b84b', object: '#ff6a3d' };
 const SEAT_LABEL = { signal_collector: 'Collector', evidence_analyst: 'Analyst', skeptic: 'Skeptic', product_architect: 'Architect', builder: 'Builder', security_reviewer: 'Security', launch_planner: 'Planner' };
@@ -176,6 +177,7 @@ export default function Council({ data, opts }) {
         <Chamber entry={entry} rules={rules} replayKey={replay} onSeat={(v) => setProof(v)} onVerdict={() => setProof('verdict')} />
         <ul className="cn-reasons">{entry.votes.map((v) => <li key={v.role}><i style={{ background: COL[v.stance] }} aria-hidden="true" /><b>{SEAT_LABEL[v.role]}</b><span className="num">{q(v.support)}</span><span className="dim">{v.reason}</span></li>)}</ul>
         <p className="faint cn-note">Each seat gives a number from 0 to 100 for its own question. The animation replays the stored votes; it is not a live vote and no AI opinion is involved. Click a seat or the verdict to see its proof and the chain links.</p>
+        <WhatIf entry={entry} rules={rules} />
       </Chapter>
 
       <Chapter id="ch-decide" n="3" title="What did it decide?" lead="Four plain checks. All four must pass for a GO.">

@@ -31,8 +31,8 @@ export const SEAT_INFO = Object.freeze({
   security_reviewer: 'Are the supporting records clean, or flagged as bot, duplicate or injection?',
   launch_planner: 'Is interest speeding up or slowing down?',
 });
-const sha = (x) => createHash('sha256').update(typeof x === 'string' ? x : JSON.stringify(x)).digest('hex');
-const canon = (x) => JSON.stringify(x, (_, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, v[k]])) : v));
+export const sha = (x) => createHash('sha256').update(typeof x === 'string' ? x : JSON.stringify(x)).digest('hex');
+export const canon = (x) => JSON.stringify(x, (_, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, v[k]])) : v));
 /** Hash of the published thresholds and of the code that turns stored numbers into votes and a verdict. Anyone with the source recomputes it; it changes when a rule changes. */
 export const rulesHash = () => sha(canon({ rules: RULES, buildable: BUILDABLE_TOPICS, code: [votesFor.toString(), verdictOf.toString()] }));
 export const seatId = (role) => `autonear:council-seat:${role}@1`;

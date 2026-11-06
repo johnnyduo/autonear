@@ -1,7 +1,9 @@
 // Proof popup for the Council page. Shows what a seat (or the verdict) really is, a digest anyone can recompute, and what is really on a chain.
 // Honesty: a seat is an off-chain rule in src/council.js. It is not a contract and not an agent with a key, so there is nothing of it to deploy.
 // The chain facts are (1) this product's deployment, when one exists in the stored data, and (2) the recorded NEAR testnet run of the vault and the registry.
+import { useState } from 'react';
 import { Dialog } from '../ui.jsx';
+import { verifyEntry } from './whatif.js';
 import run from './testnetRun.json';
 
 const EXP = 'https://testnet.nearblocks.io';
@@ -30,6 +32,23 @@ function Chain({ journey, oppId }) {
   );
 }
 
+function Verify({ entry, seat }) {
+  const [res, setRes] = useState(null); const [err, setErr] = useState('');
+  const canCheck = entry.digest && entry.votes.every((v) => v.digest);
+  if (!canCheck) return null;
+  const go = async () => { setErr(''); try { setRes(await verifyEntry(entry)); } catch (e) { setErr(e.message); } };
+  const mine = seat ? res?.seats.find((x) => x.role === seat.role)?.ok : res?.verdictOk;
+  return (
+    <div className="cn-pbox"><b>Check it in this browser</b>
+      <p>Your browser recomputes the SHA-256 of {seat ? 'this vote' : 'the verdict'} from the numbers and reasons it received and compares it with the digest the server published.</p>
+      <div className="row"><button type="button" className="btn sm primary" onClick={go}>Recompute now</button>
+        {res && <span role="status" className={mine ? 'cn-vok' : 'cn-vbad'}>{mine ? `Match: this ${seat ? 'vote' : 'verdict'} is exactly what the digest says${res.all ? ' (all seven votes and the verdict match)' : ''}.` : 'Does not match. Do not trust this page.'}</span>}
+        {err && <span role="alert" className="cn-vbad">{err}</span>}</div>
+      <p className="faint">This proves the numbers on this page were not altered after the digest was made. It does not prove the stored data is true, and the rules hash needs the source code to recompute.</p>
+    </div>
+  );
+}
+
 export default function ProofDialog({ entry, seat, council, journey, onClose }) {
   const info = seat ? council.seats?.find((s) => s.role === seat.role) : null; const label = seat?.label ?? 'Verdict';
   return (
@@ -49,6 +68,7 @@ export default function ProofDialog({ entry, seat, council, journey, onClose }) 
             <dl className="cn-pdl"><dt>Verdict digest</dt><dd className="mono-v">{entry.digest ?? 'available after the next council session'}</dd><dt>Rules hash</dt><dd className="mono-v">{council.rulesHash ?? 'available after the next council session'}</dd></dl>
           </>
         )}
+        <Verify entry={entry} seat={seat} />
         <h4 className="cn-ph">How to check it yourself</h4>
         <ol className="cn-pol"><li>Open <a href="/api/council" target="_blank" rel="noreferrer noopener" className="mono-v">/api/council</a>: the same numbers and digests are there, read only.</li><li>Recompute the digest from the vote with SHA-256 over the sorted JSON, as written in <span className="mono-v">src/council.js</span>. The same stored data always gives the same digest, and any change to a vote or rule changes it.</li></ol>
         <p className="faint">Ids such as the seat id are AutoNEAR&rsquo;s own names, not EIP, ERC or NEP numbers. The only standard in use on chain is NEP-297 (event format) in the registry contract.</p>
