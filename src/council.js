@@ -104,10 +104,11 @@ export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } 
     for (const e of await db.all('SELECT agent_role, status FROM run_events WHERE run_id=? ORDER BY id', [run.id])) roles[e.agent_role] = e.status;
     artifacts = (await db.all('SELECT kind FROM artifacts WHERE run_id=?', [run.id])).map((a) => a.kind);
   }
-  const decision = run ? await db.get("SELECT id, status, approver, decided_at, expiry FROM decisions WHERE run_id=? AND action='deploy_testnet' ORDER BY created_at DESC LIMIT 1", [run.id]) : null;
+  const decision = run ? await db.get("SELECT id, artifact_hash, status, approver, decided_at, expiry FROM decisions WHERE run_id=? AND action='deploy_testnet' ORDER BY created_at DESC LIMIT 1", [run.id]) : null;
   const deployment = decision ? await db.get('SELECT id, network, account, status, verification, explorer_url, time FROM deployments WHERE decision_id=? ORDER BY time DESC LIMIT 1', [decision.id]) : null;
   const monitor = deployment ? parse((await db.get('SELECT v FROM kv WHERE k=?', [`monitor:${deployment.id}`]))?.v, null) : null;
-  const built = artifacts.some((k) => k.startsWith('contract-build')); const byAgent = Boolean(decision?.approver && String(decision.approver).startsWith('mandate:'));
+  // the checked build can be recorded against the decision's artifact hash (not only against this run), so look at both
+  const built = artifacts.some((k) => k.startsWith('contract-build')) || Boolean(decision && await db.get("SELECT 1 x FROM artifacts WHERE hash=? AND kind LIKE 'contract-build:%'", [decision.artifact_hash])); const byAgent = Boolean(decision?.approver && String(decision.approver).startsWith('mandate:'));
   const verified = Boolean(deployment && ['verified', 'verified_local'].includes(deployment.status)); const expired = Boolean(decision && decision.status === 'pending' && decision.expiry < now());
   const declined = Boolean(decision && ['rejected', 'expired', 'cancelled'].includes(decision.status)) || expired;
   const st = (done, active, blocked) => (blocked ? 'blocked' : done ? 'done' : active ? 'active' : 'todo');
@@ -130,7 +131,7 @@ export async function journeyFor(db, oppId, { verdict = null, mode = 'manual' } 
   else if (deployment) outcome = { state: 'failed', headline: 'The deployment did not verify', detail: `Deployment status is ${deployment.status}.`, next: 'The owner reviews the receipt.' };
   else if (declined) outcome = { state: 'held', headline: expired ? 'The request expired' : 'The owner declined', detail: 'No contract was deployed.', next: 'A new run can create a new request.' };
   else if (failedRun) outcome = { state: 'failed', headline: 'The research run did not finish', detail: `Run state: ${run.state}.`, next: 'Retry the run from the Runs page.' };
-  else if (researchDone && !built) outcome = { state: 'held', headline: 'Held at the build step', detail: 'The research is done, but there is no checked contract build to deploy.', next: 'Needs a build host with the Rust toolchain. Build there, then the request can be created.' };
+  else if (researchDone && !built && !decision) outcome = { state: 'held', headline: 'Held at the build step', detail: 'The research is done, but there is no checked contract build to deploy.', next: 'Needs a build host with the Rust toolchain. Build there, then the request can be created.' };
   else if (decision?.status === 'pending') outcome = { state: 'waiting', headline: 'Waiting to be executed', detail: 'The request is ready.', next: mode === 'auto' ? 'In Auto the agent executes it inside the owner limits, because the council backs it.' : 'The owner approves and signs in their own wallet.' };
   else if (run && ['running', 'queued'].includes(run.state)) outcome = { state: 'in_progress', headline: 'Research in progress', detail: `Run ${run.state}.`, next: 'The seven roles run one after another.' };
   else if (verdict === 'go') outcome = { state: 'ready', headline: 'Backed by the council', detail: 'No run has started for this product yet.', next: 'The next scheduled check starts the research.' };
