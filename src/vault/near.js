@@ -16,6 +16,8 @@ import { jsonRpc, base58, hexToBytes, check } from '../chains/common.js';
 let ROOT = '';
 try { ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..'); } catch { /* not a file: URL (bundled) */ }
 export const VAULT_WASM_PATH = resolve(ROOT, 'contracts/near-vault/dist/autonear_vault.wasm');
+/** The payouts build (cargo feature `payouts`, config().version "1.1.0"): token `pay`, allowlisted tokens and payees. A SECOND attested build next to the v1 one. */
+export const VAULT_PAY_WASM_PATH = resolve(ROOT, 'contracts/near-vault/dist/autonear_vault_pay.wasm');
 export const REGISTRY_WASM_PATH = resolve(ROOT, 'contracts/near-registry/dist/autonear_registry.wasm');
 
 const sha256 = (b) => new Uint8Array(createHash('sha256').update(b).digest());
@@ -111,7 +113,9 @@ async function readState({ net, vault, now, agent, fetchImpl, role, finality = '
       if (/does not exist|UNKNOWN_ACCOUNT|doesn't exist/i.test(String(e.message))) { agentBalance = '0'; agentExists = false; } else throw e;
     }
   }
+  const payBuild = hasPayouts(cfg.version);
   const out = {
+    build: payBuild ? 'pay' : 'v1',
     config: { owner: cfg.owner, pendingOwner: cfg.pending_owner ?? null, paused: Boolean(cfg.paused), networkId: cfg.network_id, epoch: Number(cfg.epoch), vaultId: cfg.vault_id, version: cfg.version, reserve: String(cfg.reserve) },
     mandate: man ? { agent: man.agent, expiresAt: Number(man.expires_at), perDrawCap: String(man.per_draw_cap), periodSecs: Number(man.period_secs), periodCap: String(man.period_cap), totalCap: String(man.total_cap), maxDeploys: Number(man.max_deploys), revoked: Boolean(man.revoked), start: Number(man.start), active: Boolean(man.active) } : null,
     usage: { totalSpent: String(usage.total_spent), periodSpent: String(usage.period_spent), deploys: Number(usage.deploys), periodIndex: Number(usage.period_index) },
@@ -122,12 +126,39 @@ async function readState({ net, vault, now, agent, fetchImpl, role, finality = '
     vaultBalance: String(acct.amount), codeHash: acct.code_hash,
     period: ps ? { index: Number(ps.period_index), start: Number(ps.period_start), end: Number(ps.period_end), spent: String(ps.period_spent), remaining: String(ps.period_remaining), totalSpent: String(ps.total_spent), totalRemaining: String(ps.total_remaining), deploys: Number(ps.deploys), deploysRemaining: Number(ps.deploys_remaining), active: Boolean(ps.active) } : null,
   };
+  // Payout views exist ONLY in the payouts build: a v1 vault is never asked (and keeps its exact read shape, no `payouts` key).
+  if (payBuild) out.payouts = await readPayouts(v);
   if (previews) {
     out.previews = { draw: {}, deploy: {} };
     for (const a of previews.draw ?? []) out.previews.draw[String(a)] = await v('preview_draw', { amount: String(a) });
     for (const d of previews.deploy ?? []) out.previews.deploy[`${d.template}:${d.name}`] = await v('preview_deploy', { template: d.template, name: d.name });
+    if (payBuild && previews.pay) {
+      out.previews.pay = {};
+      for (const p of previews.pay) out.previews.pay[`${p.token}:${p.to}:${p.amount}`] = await v('preview_pay', { token: p.token, to: p.to, amount: String(p.amount) });
+    }
   }
   return out;
+}
+
+/** config().version of a build that has the payout views (1.1.0 and later 1.x). */
+const hasPayouts = (version) => { const m = /^(\d+)\.(\d+)\./.exec(String(version ?? '')); return Boolean(m) && Number(m[1]) === 1 && Number(m[2]) >= 1; };
+
+/** tokens (caps + this epoch's stored usage) and payees, from views pinned to the caller's block. */
+async function readPayouts(v) {
+  const toks = await v('tokens');
+  const tokens = [];
+  for (const t of toks) {
+    const u = await v('token_usage', { token: t.token });
+    tokens.push({ token: t.token, perPayCap: String(t.per_pay_cap), periodCap: String(t.period_cap), totalCap: String(t.total_cap), usage: { total: String(u.total_spent), period: String(u.period_spent), periodIndex: Number(u.period_index) } });
+  }
+  const payees = [];
+  const PAGE = 100;
+  for (let from = 0; from < 1000; from += PAGE) {
+    const page = await v('payees', { from_index: String(from), limit: String(PAGE) });
+    payees.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return { tokens, payees };
 }
 
 async function allTemplates(v) {
@@ -147,11 +178,16 @@ async function previewDraw({ net, vault, amount, fetchImpl, role, block }) {
 async function previewDeploy({ net, vault, template, name, fetchImpl, role, block }) {
   return view(net, ctx({ fetchImpl, role }), blockRef(block), vault, 'preview_deploy', { template: String(template).replace(/^0x/, ''), name });
 }
+/** payouts build only: the chain's own preview of pay(token, to, amount) (no memo) for the bound agent: '' = ok, else an E_ code name. */
+async function previewPay({ net, vault, token, to, amount, fetchImpl, role, block }) {
+  return view(net, ctx({ fetchImpl, role }), blockRef(block), vault, 'preview_pay', { token, to, amount: String(amount) });
+}
 const blockRef = (block) => (block === undefined || block === null || block === '' ? { finality: 'final' } : { block_id: /^\d+$/.test(String(block)) ? Number(block) : String(block) });
 /** Core-facing preview (src/vault/index.js): '' = the call would pass, else the vault's error code name. `block` = readState().blockTag. */
-async function preview(kind, { net, vault, amount, template, nameOrSalt, name, block, fetchImpl, role } = {}) {
+async function preview(kind, { net, vault, amount, template, nameOrSalt, name, token, to, block, fetchImpl, role } = {}) {
   if (kind === 'draw') return previewDraw({ net, vault, amount, block, fetchImpl, role });
   if (kind === 'deploy') return previewDeploy({ net, vault, template, name: nameOrSalt ?? name, block, fetchImpl, role });
+  if (kind === 'pay') return previewPay({ net, vault, token, to, amount, block, fetchImpl, role });
   throw new Error(`preview: unknown kind "${String(kind).slice(0, 20)}"`);
 }
 
@@ -166,36 +202,50 @@ function attestedHash(attested) {
 }
 
 /**
- * attested: the vault build's sha256 hex, a manifest { sha256 }, or the wasm bytes; omitted = sha256 of contracts/near-vault/dist/autonear_vault.wasm.
- * Checks: on-chain code hash == base58(sha256(attested wasm)); config() is callable and names this very account; vault holds no function-call/other
- * keys is NOT judged here (INFO only): a full-access key on the vault account can bypass every rule and a human must own that decision.
+ * attested: the vault build's sha256 hex, a manifest { sha256 }, or the wasm bytes; omitted (or the adapter's own `attested`, which carries `builds`) =
+ * EITHER attested build in contracts/near-vault/dist: the v1 vault (autonear_vault.wasm, config().version 1.0.0) or the payouts vault
+ * (autonear_vault_pay.wasm, 1.1.0). An explicit `attested` is exactly that one hash (build 'pay' when it is the payouts hash, else 'v1').
+ * Checks: on-chain code hash == base58(sha256(attested wasm)); config() is callable, names this very account and reports the version of the
+ * build that matched; vault holds no function-call/other keys is NOT judged here (INFO only): a full-access key on the vault account can bypass
+ * every rule and a human must own that decision.
+ * -> { ok, checks, build: 'v1' | 'pay' | null (no attested build matched), version }
  */
 async function verifyVaultCode({ net, vault, attested, fetchImpl, role } = {}) {
   const c = ctx({ fetchImpl, role });
   const checks = [];
-  let want = attested === undefined || attested === null ? null : attestedHash(attested);
-  let source = 'attested';
-  if (!want) {
-    try { want = sha256Hex(readFileSync(VAULT_WASM_PATH)); source = 'contracts/near-vault/dist'; } catch (e) { checks.push(check('attested vault wasm hash available', false, `${VAULT_WASM_PATH}: ${e.code ?? e.message}`)); return { ok: false, checks }; }
+  let cands; let source = 'attested';
+  const explicit = attested === undefined || attested === null || attested.builds ? null : attestedHash(attested);
+  if (explicit) cands = [{ build: explicit === ATTESTED_BUILDS.pay.sha256 ? 'pay' : 'v1', sha256: explicit }];
+  else {
+    cands = Object.values(ATTESTED_BUILDS).filter((b) => b.sha256).map((b) => ({ build: b.build, sha256: b.sha256 }));
+    source = 'contracts/near-vault/dist';
+    if (!cands.length) { checks.push(check('attested vault wasm hash available', false, `${VAULT_WASM_PATH}: ${ATTESTED_BUILDS.v1.error ?? 'not built'}`)); return { ok: false, checks, build: null, version: null }; }
   }
-  checks.push(check('attested vault hash is 64 lowercase hex', isHex32(want), `${source}: ${String(want).slice(0, 70)}`));
-  if (!isHex32(want)) return { ok: false, checks };
-  const wantB58 = base58(hexToBytes(want));
+  const allHex = cands.every((x) => isHex32(x.sha256));
+  checks.push(check('attested vault hash is 64 lowercase hex', allHex, `${source}: ${cands.map((x) => String(x.sha256).slice(0, 70)).join(', ')}`));
+  if (!allHex) return { ok: false, checks, build: null, version: null };
+  const wants = cands.map((x) => ({ ...x, b58: base58(hexToBytes(x.sha256)) }));
+  let matched = null;
   try {
     const acct = await viewAccount(net, c, { finality: 'final' }, vault);
-    checks.push(check('on-chain code hash == attested vault wasm sha256', acct.code_hash === wantB58, `${acct.code_hash} vs ${wantB58}`));
-  } catch (e) { checks.push(check('vault account readable', false, String(e.message).slice(0, 200))); return { ok: false, checks }; }
+    matched = wants.find((x) => x.b58 === acct.code_hash) ?? null;
+    checks.push(check('on-chain code hash == attested vault wasm sha256', Boolean(matched), `${acct.code_hash} vs ${wants.map((x) => x.b58).join(' | ')}${matched ? ` (${matched.build})` : ''}`));
+  } catch (e) { checks.push(check('vault account readable', false, String(e.message).slice(0, 200))); return { ok: false, checks, build: null, version: null }; }
+  let version = null;
   try {
     const cfg = await view(net, c, { finality: 'final' }, vault, 'config');
+    version = cfg.version ?? null;
     checks.push(check('config() callable and vault_id == this account', cfg.vault_id === vault, `${cfg.vault_id} vs ${vault}`));
-    checks.push(check('config().version is 1.0.0', cfg.version === '1.0.0', String(cfg.version)));
+    const wantVersions = [...new Set((matched ? [matched] : wants).map((x) => BUILD_VERSION[x.build]))];
+    checks.push(check(`config().version is ${wantVersions.join(' or ')}`, wantVersions.includes(cfg.version), String(cfg.version)));
   } catch (e) { checks.push(check('config() callable', false, String(e.message).slice(0, 200))); }
   try {
     const keys = await rpcCall(net, c, 'query', { request_type: 'view_access_key_list', finality: 'final', account_id: vault });
     const full = (keys.keys ?? []).filter((k) => k.access_key?.permission === 'FullAccess').map((k) => k.public_key);
     checks.push({ name: 'INFO: full-access keys on the vault account (whoever holds one can bypass the contract; a human must confirm each is theirs)', ok: true, detail: full.join(', ') || 'none (vault account is locked)', info: true });
   } catch (e) { checks.push({ name: 'INFO: vault access key list unavailable', ok: true, detail: String(e.message).slice(0, 160), info: true }); }
-  return { ok: checks.every((x) => x.ok), checks };
+  const ok = checks.every((x) => x.ok);
+  return { ok, checks, build: ok && matched ? matched.build : null, version };
 }
 
 // ------------------------------------------------------------------ expectedTemplate
@@ -274,8 +324,22 @@ function expectedTemplate({ manifest, payload, vault, wasmPath, label, deposit }
 }
 
 // ------------------------------------------------------------------ buildCall
-/** -> { method, target, args } exactly as src/agent/near-signer.js (enforceCall + defaultEncodeArgs) accepts and encodes it. */
-function buildCall(kind, { vault, amount, template, code, nameOrSalt } = {}) {
+const U128_MAX = (1n << 128n) - 1n;
+const MAX_MEMO_BYTES = 128;
+/** Gas the OWNER attaches to payout management calls (allow_*, disallow_*) and to withdraw_token (ft_transfer 30 + callback 5 + the call itself). */
+export const OWNER_GAS = Object.freeze({ allow_token: 30n * TGAS, disallow_token: 30n * TGAS, allow_payee: 30n * TGAS, disallow_payee: 30n * TGAS, withdraw_token: 100n * TGAS });
+const reservedAccount = (a, vault) => a === 'system' || /^0{64}$/.test(a) || a === vault;
+const needAccount = (what, a, vault, { allowReserved = false } = {}) => {
+  if (!validAccount(a)) throw new Error(`buildCall: ${what} must be a NEAR account id`);
+  if (!allowReserved && reservedAccount(a, vault)) throw new Error(`buildCall: ${what} must not be the vault, "system" or the zero account (E_${what === 'payee' ? 'BadPayee' : 'BadToken'})`);
+  return a;
+};
+const needAmount = (what, v) => { const a = big(v); if (a === null || a <= 0n || a > U128_MAX) throw new Error(`buildCall: ${what} must be a positive integer that fits u128`); return a; };
+/** -> { method, target, args } exactly as src/agent/near-signer.js (enforceCall + defaultEncodeArgs) accepts and encodes it.
+ *  Payouts build only: `pay` (the agent; same three keys, no gas/deposit: the vault takes the 1 yocto of each ft_transfer from its own balance, so the agent attaches
+ *  0 deposit; attach ATTACHED_GAS.pay = 100 Tgas) and the owner calls allow_token / disallow_token / allow_payee / disallow_payee / withdraw_token, which carry
+ *  `gas` and `deposit` (decimal strings, deposit '0') like planSteps' `call`. */
+function buildCall(kind, { vault, amount, template, code, nameOrSalt, token, to, memo, account, perPayCap, periodCap, totalCap } = {}) {
   if (!validAccount(vault)) throw new Error('buildCall: vault must be a NEAR account id');
   if (kind === 'draw') {
     const a = big(amount);
@@ -290,7 +354,54 @@ function buildCall(kind, { vault, amount, template, code, nameOrSalt } = {}) {
     if (sha256Hex(code) !== t) throw new Error('buildCall: sha256(code) != template id (the vault would revert CodeMismatch)');
     return { method: 'deploy', target: vault, args: { template: t, name: nameOrSalt, code } };
   }
+  if (kind === 'pay') {
+    needAccount('token', token, vault, { allowReserved: true }); needAccount('payee', to, vault, { allowReserved: true });
+    const a = needAmount('pay amount', amount);
+    const args = { token, to, amount: a.toString() };
+    if (memo !== undefined && memo !== null) {
+      if (typeof memo !== 'string' || new TextEncoder().encode(memo).length > MAX_MEMO_BYTES) throw new Error(`buildCall: memo must be a string of at most ${MAX_MEMO_BYTES} bytes (E_BadMemo)`);
+      args.memo = memo;
+    }
+    return { method: 'pay', target: vault, args };
+  }
+  const owner = (method, args) => ({ method, target: vault, args, gas: OWNER_GAS[method].toString(), deposit: '0' });
+  if (kind === 'allow_token') {
+    needAccount('token', token, vault);
+    const per = needAmount('perPayCap', perPayCap), period = needAmount('periodCap', periodCap), total = needAmount('totalCap', totalCap);
+    if (!(per <= period && period <= total)) throw new Error('buildCall: caps must satisfy 0 < perPayCap <= periodCap <= totalCap (E_BadToken)');
+    return owner('allow_token', { token, per_pay_cap: per.toString(), period_cap: period.toString(), total_cap: total.toString() });
+  }
+  if (kind === 'disallow_token') return owner('disallow_token', { token: needAccount('token', token, vault, { allowReserved: true }) });
+  if (kind === 'allow_payee') return owner('allow_payee', { account: needAccount('payee', account ?? to, vault) });
+  if (kind === 'disallow_payee') return owner('disallow_payee', { account: needAccount('payee', account ?? to, vault, { allowReserved: true }) });
+  if (kind === 'withdraw_token') return owner('withdraw_token', { token: needAccount('token', token, vault), amount: needAmount('withdraw_token amount', amount).toString() });
   throw new Error(`buildCall: unknown kind "${String(kind).slice(0, 20)}"`);
+}
+
+// ------------------------------------------------------------------ NEP-141 / NEP-145 helpers (read-only views on the token contract)
+/** ft_balance_of(account) on `token` -> decimal string (smallest unit). */
+async function ftBalance({ net, token, account, fetchImpl, role, block } = {}) {
+  if (!validAccount(token) || !validAccount(account)) throw new Error('ftBalance: token and account must be NEAR account ids');
+  return String(await view(net, ctx({ fetchImpl, role }), blockRef(block), token, 'ft_balance_of', { account_id: account }));
+}
+/** storage_balance_of(account) on `token` -> { total, available } (decimal strings) or null when the account is not registered. */
+async function storageBalanceOf({ net, token, account, fetchImpl, role, block } = {}) {
+  if (!validAccount(token) || !validAccount(account)) throw new Error('storageBalanceOf: token and account must be NEAR account ids');
+  const r = await view(net, ctx({ fetchImpl, role }), blockRef(block), token, 'storage_balance_of', { account_id: account });
+  return r ? { total: String(r.total), available: String(r.available) } : null;
+}
+/** Is `account` registered on `token` (NEP-145)? An unregistered payee makes ft_transfer fail, so the vault reverses the charge: register before allow_payee. */
+async function ftRegistered(o = {}) { return (await storageBalanceOf(o)) !== null; }
+/** storage_balance_bounds() on `token` -> { min, max|null } (decimal strings). */
+async function storageBalanceBounds({ net, token, fetchImpl, role, block } = {}) {
+  if (!validAccount(token)) throw new Error('storageBalanceBounds: token must be a NEAR account id');
+  const r = await view(net, ctx({ fetchImpl, role }), blockRef(block), token, 'storage_balance_bounds', {});
+  return { min: String(r.min), max: r.max === null || r.max === undefined ? null : String(r.max) };
+}
+/** ft_metadata() on `token` -> { spec, name, symbol, decimals, ... } as the token reports it. */
+async function ftMetadata({ net, token, fetchImpl, role, block } = {}) {
+  if (!validAccount(token)) throw new Error('ftMetadata: token must be a NEAR account id');
+  return view(net, ctx({ fetchImpl, role }), blockRef(block), token, 'ft_metadata', {});
 }
 
 // ------------------------------------------------------------------ verifyDeploy
@@ -417,22 +528,40 @@ async function verifyDeploy({ net, txHash, vault, agent, decision, manifest, exp
 }
 
 // ------------------------------------------------------------------ extensions required by src/vault/index.js (VAULT_REQUIRED_LOOP)
-function loadAttestedVault() {
-  try { const b = readFileSync(VAULT_WASM_PATH); return Object.freeze({ sha256: sha256Hex(b), codeHash: base58(sha256(b)), bytes: b.length, source: 'contracts/near-vault/dist/autonear_vault.wasm' }); } catch (e) { return Object.freeze({ sha256: null, codeHash: null, bytes: 0, source: 'contracts/near-vault/dist/autonear_vault.wasm', error: String(e.code ?? e.message).slice(0, 80) }); }
+function loadAttestedBuild(path, build, version) {
+  const source = path.replace(/^.*\/contracts\//, 'contracts/');
+  try { const b = readFileSync(path); return Object.freeze({ build, version, sha256: sha256Hex(b), codeHash: base58(sha256(b)), bytes: b.length, source }); } catch (e) { return Object.freeze({ build, version, sha256: null, codeHash: null, bytes: 0, source, error: String(e.code ?? e.message).slice(0, 80) }); }
 }
-/** Attested vault build = the wasm in contracts/near-vault/dist (scripts/near-vault-build.sh). sha256 is null when it has not been built here. */
-const ATTESTED_VAULT = loadAttestedVault();
+const BUILD_VERSION = Object.freeze({ v1: '1.0.0', pay: '1.1.0' });
+/** The two attested vault builds (scripts/near-vault-build.sh): v1 = autonear_vault.wasm, pay = autonear_vault_pay.wasm. sha256 is null when a build is absent here. */
+export const ATTESTED_BUILDS = Object.freeze({
+  v1: loadAttestedBuild(VAULT_WASM_PATH, 'v1', BUILD_VERSION.v1),
+  pay: loadAttestedBuild(VAULT_PAY_WASM_PATH, 'pay', BUILD_VERSION.pay),
+});
+/** Attested vault build = the wasm in contracts/near-vault/dist (scripts/near-vault-build.sh). sha256 is null when it has not been built here.
+ *  BACKWARD COMPATIBLE: the top-level fields (sha256, codeHash, bytes, source) are the v1 build, exactly as before; `builds` carries both. */
+const ATTESTED_VAULT = Object.freeze({ ...ATTESTED_BUILDS.v1, builds: ATTESTED_BUILDS });
+/** 'v1' | 'pay' | null for an on-chain code hash (base58, as view_account returns it). null = not an attested build. */
+export function buildOfCodeHash(codeHash) { return Object.values(ATTESTED_BUILDS).find((b) => b.codeHash && b.codeHash === codeHash)?.build ?? null; }
+/** Which attested build is deployed at `vault`? -> { build: 'v1'|'pay'|null, codeHash, version } from the final view_account + config(). null build = unattested code; version is what the contract claims. */
+async function detectVaultBuild({ net, vault, fetchImpl, role, block } = {}) {
+  const c = ctx({ fetchImpl, role }); const blk = blockRef(block);
+  const acct = await viewAccount(net, c, blk, vault);
+  const cfg = await view(net, c, blk, vault, 'config');
+  return { build: buildOfCodeHash(acct.code_hash), codeHash: acct.code_hash, version: cfg.version ?? null };
+}
 
 /** Gas attached by the agent's signer (src/agent/near-signer.js DEFAULT_GAS); signerOptions() pins the same numbers so estimateFee and the signer agree. */
-export const ATTACHED_GAS = Object.freeze({ draw: 50n * TGAS, deploy: 300n * TGAS });
+export const ATTACHED_GAS = Object.freeze({ draw: 50n * TGAS, deploy: 300n * TGAS, pay: 100n * TGAS });
 /** The signer prices the worst case at current gas price x 1.5 (gasPriceMultiplier default). Same arithmetic here. */
 export const GAS_PRICE_MULTIPLIER_PERCENT = 150n;
 const nearNetworkId = (net) => net?.nearNetworkId ?? net?.networkId ?? (net?.mainnet ? 'mainnet' : net?.id === 'near-testnet' ? 'testnet' : 'localnet');
 
 /** Options for keystore.signer('near', opts). The signer itself refuses any chain_id that is not testnet / sandbox / localnet or differs from networkId. */
-const signerOptions = ({ net, fetchImpl, extra = {} } = {}) => ({
+const signerOptions = ({ net, fetchImpl, extra = {}, payouts = false } = {}) => ({
   rpcUrl: net.rpc, networkId: nearNetworkId(net), fetchImpl, role: 'launch',
-  gas: { draw: ATTACHED_GAS.draw.toString(), deploy: ATTACHED_GAS.deploy.toString() }, ...extra,
+  // `payouts: true` (a payouts-build vault) also pins the gas of `pay`; the default keeps the v1 shape byte for byte.
+  gas: { draw: ATTACHED_GAS.draw.toString(), deploy: ATTACHED_GAS.deploy.toString(), ...(payouts ? { pay: ATTACHED_GAS.pay.toString() } : {}) }, ...extra,
 });
 
 /** Worst-case fee (yoctoNEAR, bigint) the signer would price this call at: attached gas x gas_price x 1.5. No deposit is ever attached by the agent. */
@@ -525,6 +654,61 @@ function planSteps({ net, payload, vault }) {
   return steps;
 }
 
+// ------------------------------------------------------------------ payouts: owner-side plan steps (builders only; not wired into planSteps/activation yet)
+/** Attached to NEP-145 `storage_deposit(registration_only)`: 0.0025 NEAR. Above the usual minimum (~0.00125); with registration_only the token refunds the excess. */
+export const STORAGE_DEPOSIT_DEFAULT = 25n * 10n ** 20n;
+const humanStep = ({ net, owner, receiver, method, args, gas, deposit = 0n, title, note }) => ({
+  who: 'human', title, note,
+  call: { receiverId: receiver, method, args, gas: gas.toString(), deposit: deposit.toString() },
+  cli: `near contract call-function as-transaction ${shq(receiver)} ${method} json-args ${shq(JSON.stringify(args))} prepaid-gas '${gas / TGAS} Tgas' attached-deposit '${formatNear(deposit)} NEAR' sign-as ${shq(owner)} network-config ${nearNetworkId(net)} sign-with-keychain send`,
+});
+/** Owner step: register `account` on `token` (NEP-145 storage_deposit, registration_only). ft_transfer to an unregistered account fails, the vault reverses the charge. */
+function storageDepositStep({ net, owner, token, account, deposit = STORAGE_DEPOSIT_DEFAULT, label } = {}) {
+  if (!validAccount(owner) || !validAccount(token) || !validAccount(account)) throw new Error('storageDepositStep: owner, token and account must be NEAR account ids');
+  const d = big(deposit); if (d === null || d <= 0n) throw new Error('storageDepositStep: deposit must be a positive yoctoNEAR amount');
+  return humanStep({ net, owner, receiver: token, method: 'storage_deposit', args: { account_id: account, registration_only: true }, gas: 30n * TGAS, deposit: d,
+    title: `storage_deposit: register ${account} on ${label ?? token}`,
+    note: `Pays the token contract's one-time storage fee (${formatNear(d)} NEAR attached, registration_only: the excess is refunded) so ${account} can hold ${label ?? token}. Without it a transfer to this account fails and the vault gives the budget back.` });
+}
+/** Owner step: allow_token on the vault (payouts build). Caps are in the token's smallest unit. */
+function allowTokenStep({ net, owner, vault, token, perPayCap, periodCap, totalCap, label, decimals } = {}) {
+  const c = buildCall('allow_token', { vault, token, perPayCap, periodCap, totalCap });
+  const shown = (v) => (decimals === undefined ? String(v) : formatUnitsStr(v, decimals));
+  return humanStep({ net, owner, receiver: vault, method: 'allow_token', args: c.args, gas: BigInt(c.gas),
+    title: `allow_token: ${label ?? token}`,
+    note: `Owner allowlists ${token} for payouts: at most ${shown(c.args.per_pay_cap)} per payment, ${shown(c.args.period_cap)} per period, ${shown(c.args.total_cap)} in total (same clock, agent, expiry, pause and revoke as the NEAR mandate; set_mandate resets the usage, not the caps).` });
+}
+/** Owner step: allow_payee on the vault (payouts build). */
+function allowPayeeStep({ net, owner, vault, account } = {}) {
+  const c = buildCall('allow_payee', { vault, account });
+  return humanStep({ net, owner, receiver: vault, method: 'allow_payee', args: c.args, gas: BigInt(c.gas), title: `allow_payee: ${account}`,
+    note: `Owner lets the agent pay ${account}. The agent can pay nobody who is not on this list.` });
+}
+const formatUnitsStr = (v, decimals) => { const d = 10n ** BigInt(decimals); const x = BigInt(v); const f = (x % d).toString().padStart(Number(decimals), '0').replace(/0+$/, ''); return f ? `${x / d}.${f}` : `${x / d}`; };
+/**
+ * Exact owner-side steps of a payouts grant, in the order that is safe to run: (1) register the vault and each payee on each token (storage_deposit),
+ * (2) allow_token per token, (3) allow_payee per payee. Funding the vault with the token itself and the mandate/NEAR steps stay in planSteps.
+ * tokens: [{ token, perPayCap, periodCap, totalCap, label?, decimals?, storageDeposit? }]; payees: [account]; registered: ['<token>:<account>'] already registered (skipped).
+ * Refuses what the contract would refuse (E_BadToken / E_BadPayee): > 8 tokens, > 64 payees, caps out of order, a token that is also a payee, the vault / system / zero account.
+ */
+function payoutPlanSteps({ net, vault, owner, tokens = [], payees = [], registered = [] } = {}) {
+  if (!validAccount(vault) || !validAccount(owner)) throw new Error('payoutPlanSteps: vault and owner must be NEAR account ids');
+  if (tokens.length > 8) throw new Error('payoutPlanSteps: at most 8 tokens (E_BadToken)');
+  if (payees.length > 64) throw new Error('payoutPlanSteps: at most 64 payees (E_BadPayee)');
+  const tokenIds = tokens.map((t) => t.token);
+  if (new Set(tokenIds).size !== tokenIds.length || new Set(payees).size !== payees.length) throw new Error('payoutPlanSteps: duplicate token or payee');
+  for (const a of tokenIds) if (payees.includes(a)) throw new Error(`payoutPlanSteps: ${a} cannot be both a token and a payee (E_BadToken / E_BadPayee)`);
+  const done = new Set(registered instanceof Set ? [...registered] : registered);
+  const steps = [];
+  const reg = (t, account) => { if (!done.has(`${t.token}:${account}`)) steps.push(storageDepositStep({ net, owner, token: t.token, account, deposit: t.storageDeposit, label: t.label })); };
+  for (const t of tokens) { buildCall('allow_token', { vault, ...t }); reg(t, vault); }   // validates every cap/account before any step is returned
+  for (const a of payees) buildCall('allow_payee', { vault, account: a });
+  for (const t of tokens) for (const a of payees) reg(t, a);
+  for (const t of tokens) steps.push(allowTokenStep({ net, owner, vault, ...t }));
+  for (const a of payees) steps.push(allowPayeeStep({ net, owner, vault, account: a }));
+  return steps;
+}
+
 // ------------------------------------------------------------------ explorers
 const explorerBase = (net) => String(net?.explorer ?? '').replace(/\/txns\/?$/, '');
 /** testnet: https://testnet.nearblocks.io/txns/<hash>. A local network (no explorer) returns ''. */
@@ -541,5 +725,9 @@ export const adapter = Object.freeze({
   preview, estimateFee, signerOptions, deployTarget, planSteps,
   // additive extras (ignoring them is safe)
   previewDraw, previewDeploy, checkTemplate, depositForWasm, validSubName, subAccountOf,
+  // payouts build (phase 2a): which build is on chain, the pay preview, NEP-141 / NEP-145 reads, owner plan-step builders
+  builds: ATTESTED_BUILDS, detectVaultBuild, buildOfCodeHash, previewPay,
+  ftBalance, storageBalanceOf, ftRegistered, storageBalanceBounds, ftMetadata,
+  payoutPlanSteps, storageDepositStep, allowTokenStep, allowPayeeStep,
 });
 export default adapter;

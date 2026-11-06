@@ -1,0 +1,7135 @@
+{
+ "version": 1,
+ "note": "Payouts build (contracts/near-vault, cargo feature `payouts`, config().version 1.1.0). Same schema and runner conventions as vault-conformance.json, which is NOT edited; this file is run against the Rust payouts build (src/conformance_pay.rs) and src/vault-model.js (tests/vault-pay-conformance.test.js). `accounts` maps every role to the account id both sides use. Do not edit to make an implementation pass.",
+ "roles": [
+  "owner",
+  "agent",
+  "other",
+  "newOwner",
+  "vault",
+  "usdc",
+  "usdt",
+  "alice",
+  "bob",
+  "system",
+  "zero",
+  "tok1",
+  "tok2",
+  "tok3",
+  "tok4",
+  "tok5",
+  "tok6",
+  "tok7",
+  "tok8",
+  "p1",
+  "p2",
+  "p3",
+  "p4",
+  "p5",
+  "p6",
+  "p7",
+  "p8",
+  "p9",
+  "p10",
+  "p11",
+  "p12",
+  "p13",
+  "p14",
+  "p15",
+  "p16",
+  "p17",
+  "p18",
+  "p19",
+  "p20",
+  "p21",
+  "p22",
+  "p23",
+  "p24",
+  "p25",
+  "p26",
+  "p27",
+  "p28",
+  "p29",
+  "p30",
+  "p31",
+  "p32",
+  "p33",
+  "p34",
+  "p35",
+  "p36",
+  "p37",
+  "p38",
+  "p39",
+  "p40",
+  "p41",
+  "p42",
+  "p43",
+  "p44",
+  "p45",
+  "p46",
+  "p47",
+  "p48",
+  "p49",
+  "p50",
+  "p51",
+  "p52",
+  "p53",
+  "p54",
+  "p55",
+  "p56",
+  "p57",
+  "p58",
+  "p59",
+  "p60",
+  "p61",
+  "p62",
+  "p63",
+  "p64",
+  "p65"
+ ],
+ "accounts": {
+  "owner": "owner.testnet",
+  "agent": "agent.testnet",
+  "other": "other.testnet",
+  "newOwner": "newowner.testnet",
+  "vault": "vault.testnet",
+  "usdc": "usdc.testnet",
+  "usdt": "usdt.testnet",
+  "alice": "alice.testnet",
+  "bob": "bob.testnet",
+  "system": "system",
+  "zero": "0000000000000000000000000000000000000000000000000000000000000000",
+  "tok1": "tok1.testnet",
+  "tok2": "tok2.testnet",
+  "tok3": "tok3.testnet",
+  "tok4": "tok4.testnet",
+  "tok5": "tok5.testnet",
+  "tok6": "tok6.testnet",
+  "tok7": "tok7.testnet",
+  "tok8": "tok8.testnet",
+  "p1": "p1.testnet",
+  "p2": "p2.testnet",
+  "p3": "p3.testnet",
+  "p4": "p4.testnet",
+  "p5": "p5.testnet",
+  "p6": "p6.testnet",
+  "p7": "p7.testnet",
+  "p8": "p8.testnet",
+  "p9": "p9.testnet",
+  "p10": "p10.testnet",
+  "p11": "p11.testnet",
+  "p12": "p12.testnet",
+  "p13": "p13.testnet",
+  "p14": "p14.testnet",
+  "p15": "p15.testnet",
+  "p16": "p16.testnet",
+  "p17": "p17.testnet",
+  "p18": "p18.testnet",
+  "p19": "p19.testnet",
+  "p20": "p20.testnet",
+  "p21": "p21.testnet",
+  "p22": "p22.testnet",
+  "p23": "p23.testnet",
+  "p24": "p24.testnet",
+  "p25": "p25.testnet",
+  "p26": "p26.testnet",
+  "p27": "p27.testnet",
+  "p28": "p28.testnet",
+  "p29": "p29.testnet",
+  "p30": "p30.testnet",
+  "p31": "p31.testnet",
+  "p32": "p32.testnet",
+  "p33": "p33.testnet",
+  "p34": "p34.testnet",
+  "p35": "p35.testnet",
+  "p36": "p36.testnet",
+  "p37": "p37.testnet",
+  "p38": "p38.testnet",
+  "p39": "p39.testnet",
+  "p40": "p40.testnet",
+  "p41": "p41.testnet",
+  "p42": "p42.testnet",
+  "p43": "p43.testnet",
+  "p44": "p44.testnet",
+  "p45": "p45.testnet",
+  "p46": "p46.testnet",
+  "p47": "p47.testnet",
+  "p48": "p48.testnet",
+  "p49": "p49.testnet",
+  "p50": "p50.testnet",
+  "p51": "p51.testnet",
+  "p52": "p52.testnet",
+  "p53": "p53.testnet",
+  "p54": "p54.testnet",
+  "p55": "p55.testnet",
+  "p56": "p56.testnet",
+  "p57": "p57.testnet",
+  "p58": "p58.testnet",
+  "p59": "p59.testnet",
+  "p60": "p60.testnet",
+  "p61": "p61.testnet",
+  "p62": "p62.testnet",
+  "p63": "p63.testnet",
+  "p64": "p64.testnet",
+  "p65": "p65.testnet"
+ },
+ "errors": [
+  "Unauthorized",
+  "Paused",
+  "NoMandate",
+  "MandateInactive",
+  "BadMandate",
+  "BadAmount",
+  "PerDrawCap",
+  "PeriodCap",
+  "TotalCap",
+  "InsufficientBalance",
+  "DeployLimit",
+  "TemplateNotAllowed",
+  "CodeMismatch",
+  "AddressTaken",
+  "BadName",
+  "BadTemplate",
+  "BadOwner",
+  "TokenNotAllowed",
+  "PayeeNotAllowed",
+  "PerPayCap",
+  "BadToken",
+  "BadPayee",
+  "BadMemo"
+ ],
+ "stateKeys": {
+  "inherited": [
+   "available",
+   "total_spent",
+   "period_spent",
+   "epoch",
+   "paused",
+   "revoked"
+  ],
+  "payouts": {
+   "token_total": "{ tokenRole: n }  token_usage(token).total_spent (current epoch; also for a disallowed token)",
+   "token_period": "{ tokenRole: n }  period spend EFFECTIVE at the step time t (0 when the stored period index is not the current one)",
+   "token_sent": "{ tokenRole: { toRole: n } }  cumulative token amount the vault transferred out, net of failed transfers (read from the ft_transfer receipts)",
+   "allowed_tokens": "[roles] sorted",
+   "allowed_payees": "[roles] sorted",
+   "n_tokens": "n",
+   "n_payees": "n",
+   "caps": "{ tokenRole: [per_pay, period, total] }"
+  }
+ },
+ "opArgs": {
+  "pay": "{ token, to, amount, memo? | memo_len (n x \"x\") | memo_repeat [str, n] }",
+  "on_paid": "{ failed, epoch, period_index, token, to, amount } called by the vault itself (private callback)",
+  "on_token_withdrawn": "{ failed, token, to, amount }"
+ },
+ "scenarios": [
+  {
+   "name": "pay_owner_only_gating",
+   "description": "allow_token / disallow_token / allow_payee / disallow_payee / withdraw_token are owner-only (Unauthorized first, nothing changes); pay is for the bound agent only (owner, other, newOwner and a payee are refused)",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok",
+     "state": {
+      "allowed_tokens": [
+       "usdc"
+      ]
+     }
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok",
+     "state": {
+      "allowed_payees": [
+       "alice"
+      ]
+     }
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "allow_payee",
+     "args": {
+      "account": "bob"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1013,
+     "as": "agent",
+     "op": "disallow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1014,
+     "as": "agent",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1015,
+     "as": "other",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1016,
+     "as": "other",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1017,
+     "as": "other",
+     "op": "allow_payee",
+     "args": {
+      "account": "bob"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1018,
+     "as": "other",
+     "op": "disallow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1019,
+     "as": "other",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1020,
+     "as": "newOwner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1021,
+     "as": "newOwner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1022,
+     "as": "newOwner",
+     "op": "allow_payee",
+     "args": {
+      "account": "bob"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1023,
+     "as": "newOwner",
+     "op": "disallow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1024,
+     "as": "newOwner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1025,
+     "as": "alice",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1026,
+     "as": "alice",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1027,
+     "as": "alice",
+     "op": "allow_payee",
+     "args": {
+      "account": "bob"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1028,
+     "as": "alice",
+     "op": "disallow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1029,
+     "as": "alice",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1030,
+     "as": "owner",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1031,
+     "as": "other",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1032,
+     "as": "newOwner",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1033,
+     "as": "alice",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1034,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 1
+      },
+      "token_period": {
+       "usdc": 1
+      },
+      "allowed_tokens": [
+       "usdc"
+      ],
+      "allowed_payees": [
+       "alice"
+      ],
+      "n_tokens": 1,
+      "n_payees": 1,
+      "token_sent": {
+       "usdc": {
+        "alice": 1,
+        "owner": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_error_order_table",
+   "description": "NoMandate > Unauthorized > Paused > MandateInactive > TokenNotAllowed > PayeeNotAllowed > BadAmount > PerPayCap > PeriodCap > TotalCap > BadMemo > InsufficientBalance (each rule shown with every later rule also violated)",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 100,
+     "as": "other",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 100,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 1
+     }
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1003,
+     "as": "other",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1004,
+     "as": "owner",
+     "op": "pause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 1005,
+     "as": "other",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 1006,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1006,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1007,
+     "as": "owner",
+     "op": "unpause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 5000,
+     "as": "owner",
+     "op": "pause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 5000,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 5000,
+     "as": "owner",
+     "op": "unpause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 5000,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 5000,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 5001,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 9000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2
+     }
+    },
+    {
+     "t": 5002,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 5002,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 0
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 5002,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 5002,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 5003,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 25
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5004,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5005,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5006,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 6
+     },
+     "expect": {
+      "err": "PeriodCap"
+     },
+     "state": {
+      "token_total": {
+       "usdc": 20
+      },
+      "token_period": {
+       "usdc": 20
+      }
+     }
+    },
+    {
+     "t": 5601,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 6
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 5602,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5603,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     },
+     "state": {
+      "token_total": {
+       "usdc": 25
+      },
+      "token_period": {
+       "usdc": 5
+      }
+     }
+    },
+    {
+     "t": 5604,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5605,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0,
+      "memo_len": 129
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 5605,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_len": 129
+     },
+     "expect": {
+      "err": "BadMemo"
+     }
+    },
+    {
+     "t": 5606,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_len": 128
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5607,
+     "as": "owner",
+     "op": "withdraw",
+     "args": {
+      "amount": 1000
+     },
+     "expect": "ok",
+     "state": {
+      "available": 0
+     }
+    },
+    {
+     "t": 5608,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     }
+    },
+    {
+     "t": 5608,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     }
+    },
+    {
+     "t": 5608,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_len": 129
+     },
+     "expect": {
+      "err": "BadMemo"
+     }
+    },
+    {
+     "t": 5608,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 5609,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 30,
+      "period_cap": 30,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5610,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 30
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 5611,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 30,
+      "period_cap": 30,
+      "total_cap": 30
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5612,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 5613,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 30,
+      "period_cap": 30,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 5614,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     }
+    },
+    {
+     "t": 5615,
+     "as": "other",
+     "op": "deposit",
+     "args": {
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "available": 1
+     }
+    },
+    {
+     "t": 5616,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 27
+      },
+      "token_period": {
+       "usdc": 7
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_caps_per_pay_period_total",
+   "description": "per-pay cap, period cap (exact boundary, exact rollover at start+k*period_secs), total cap (exact), two tokens independent",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 20000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 3,
+      "period_cap": 4,
+      "total_cap": 5
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 10
+      },
+      "token_period": {
+       "usdc": 10
+      }
+     }
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1013,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 25
+      },
+      "token_period": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 1014,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1020,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 25,
+       "usdt": 3
+      }
+     }
+    },
+    {
+     "t": 1021,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1022,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1023,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 25,
+       "usdt": 4
+      },
+      "token_period": {
+       "usdc": 25,
+       "usdt": 4
+      }
+     }
+    },
+    {
+     "t": 1024,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1599,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     },
+     "state": {
+      "token_period": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 1599,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1600,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 35
+      },
+      "token_period": {
+       "usdc": 10,
+       "usdt": 0
+      }
+     }
+    },
+    {
+     "t": 1601,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1602,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 50
+      },
+      "token_period": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 1603,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1610,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 1611,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdt": 5
+      },
+      "token_period": {
+       "usdt": 1
+      }
+     }
+    },
+    {
+     "t": 1612,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 2200,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2201,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2202,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 75
+      },
+      "token_period": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 2800,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2801,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2802,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 100
+      },
+      "token_period": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 3400,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     },
+     "state": {
+      "token_total": {
+       "usdc": 100
+      },
+      "token_period": {
+       "usdc": 0
+      }
+     }
+    },
+    {
+     "t": 3400,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_allowlists_enforced",
+   "description": "the agent can only pay a listed payee from a listed token: owner, agent, other, the vault and a token account as payee, and an unlisted token / the owner / the vault / a payee as token, are all refused; disallow closes the door at once",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "owner",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "agent",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "other",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1013,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "vault",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1014,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "usdc",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1015,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "usdt",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1016,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1017,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1018,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "owner",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1019,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "vault",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1020,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "alice",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1021,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "alice": 1,
+        "owner": 0,
+        "agent": 0,
+        "bob": 0
+       }
+      }
+     }
+    },
+    {
+     "t": 1022,
+     "as": "owner",
+     "op": "disallow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1023,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1024,
+     "as": "owner",
+     "op": "disallow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1025,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1026,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1027,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1028,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1029,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1030,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1031,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "agent"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1032,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "agent",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "alice": 2,
+        "agent": 1
+       }
+      },
+      "allowed_payees": [
+       "agent",
+       "alice"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_allow_token_bounds",
+   "description": "allow_token: 0 < per_pay <= period <= total, not the vault / system / zero account, at most 8 tokens (update still works), a token is never a payee; update keeps usage",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 0,
+      "period_cap": 5,
+      "total_cap": 5
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 6,
+      "period_cap": 5,
+      "total_cap": 9
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 1003,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 5,
+      "period_cap": 9,
+      "total_cap": 8
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 1004,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "vault",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 1005,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "system",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 1006,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "zero",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 1007,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1008,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 5,
+      "period_cap": 5,
+      "total_cap": 5
+     },
+     "expect": "ok",
+     "state": {
+      "allowed_tokens": [
+       "usdc"
+      ],
+      "caps": {
+       "usdc": [
+        5,
+        5,
+        5
+       ]
+      },
+      "n_tokens": 1
+     }
+    },
+    {
+     "t": 1009,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 6,
+      "period_cap": 7,
+      "total_cap": 8
+     },
+     "expect": "ok",
+     "state": {
+      "caps": {
+       "usdc": [
+        6,
+        7,
+        8
+       ]
+      },
+      "n_tokens": 1
+     }
+    },
+    {
+     "t": 1010,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 6
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 6
+      }
+     }
+    },
+    {
+     "t": 1012,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 6,
+      "period_cap": 10,
+      "total_cap": 20
+     },
+     "expect": "ok",
+     "state": {
+      "caps": {
+       "usdc": [
+        6,
+        10,
+        20
+       ]
+      },
+      "token_total": {
+       "usdc": 6
+      },
+      "token_period": {
+       "usdc": 6
+      }
+     }
+    },
+    {
+     "t": 1013,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "alice",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 1014,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "usdc"
+     },
+     "expect": {
+      "err": "BadPayee"
+     }
+    },
+    {
+     "t": 1015,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok1",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1016,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "tok1"
+     },
+     "expect": {
+      "err": "BadPayee"
+     }
+    },
+    {
+     "t": 1017,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "tok1"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1018,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "tok1"
+     },
+     "expect": "ok",
+     "state": {
+      "allowed_payees": [
+       "alice",
+       "tok1"
+      ]
+     }
+    },
+    {
+     "t": 1019,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok1",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     },
+     "state": {
+      "allowed_tokens": [
+       "usdc"
+      ]
+     }
+    },
+    {
+     "t": 1020,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1021,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok2",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1022,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok3",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1023,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok4",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1024,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok5",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1025,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok6",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1026,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok7",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1027,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok8",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     },
+     "state": {
+      "n_tokens": 8
+     }
+    },
+    {
+     "t": 1028,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok3",
+      "per_pay_cap": 2,
+      "period_cap": 3,
+      "total_cap": 4
+     },
+     "expect": "ok",
+     "state": {
+      "n_tokens": 8,
+      "caps": {
+       "tok3": [
+        2,
+        3,
+        4
+       ]
+      }
+     }
+    },
+    {
+     "t": 1029,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": "ok",
+     "state": {
+      "n_tokens": 7
+     }
+    },
+    {
+     "t": 1030,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "tok8",
+      "per_pay_cap": 1,
+      "period_cap": 1,
+      "total_cap": 1
+     },
+     "expect": "ok",
+     "state": {
+      "n_tokens": 8
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_allow_payee_bounds",
+   "description": "allow_payee: not the vault / system / zero account / an allowed token, at most 64 payees, re-allowing is an idempotent no-op even when full",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "vault"
+     },
+     "expect": {
+      "err": "BadPayee"
+     }
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "zero"
+     },
+     "expect": {
+      "err": "BadPayee"
+     }
+    },
+    {
+     "t": 1003,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "system"
+     },
+     "expect": {
+      "err": "BadPayee"
+     }
+    },
+    {
+     "t": 1004,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1005,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "usdc"
+     },
+     "expect": {
+      "err": "BadPayee"
+     },
+     "state": {
+      "n_payees": 0
+     }
+    },
+    {
+     "t": 1006,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 1
+     }
+    },
+    {
+     "t": 1007,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 1
+     }
+    },
+    {
+     "t": 1008,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p1"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1009,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p2"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p3"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1011,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p4"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1012,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p5"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1013,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p6"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1014,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p7"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1015,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p8"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1016,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p9"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1017,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p10"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1018,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p11"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1019,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p12"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1020,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p13"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1021,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p14"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1022,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p15"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1023,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p16"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1024,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p17"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1025,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p18"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1026,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p19"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1027,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p20"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1028,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p21"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1029,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p22"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1030,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p23"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1031,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p24"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1032,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p25"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1033,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p26"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1034,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p27"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1035,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p28"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1036,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p29"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1037,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p30"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1038,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p31"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1039,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p32"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1040,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p33"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1041,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p34"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1042,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p35"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1043,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p36"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1044,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p37"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1045,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p38"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1046,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p39"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1047,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p40"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1048,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p41"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1049,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p42"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1050,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p43"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1051,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p44"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1052,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p45"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1053,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p46"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1054,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p47"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1055,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p48"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1056,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p49"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1057,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p50"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1058,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p51"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1059,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p52"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1060,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p53"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1061,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p54"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1062,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p55"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1063,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p56"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1064,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p57"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1065,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p58"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1066,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p59"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1067,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p60"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1068,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p61"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1069,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p62"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1070,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p63"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1071,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p64"
+     },
+     "expect": {
+      "err": "BadPayee"
+     },
+     "state": {
+      "n_payees": 64
+     }
+    },
+    {
+     "t": 1072,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p10"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 64
+     }
+    },
+    {
+     "t": 1073,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 64
+     }
+    },
+    {
+     "t": 1074,
+     "as": "owner",
+     "op": "disallow_payee",
+     "args": {
+      "account": "p10"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 63
+     }
+    },
+    {
+     "t": 1075,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "p64"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 64
+     }
+    },
+    {
+     "t": 1076,
+     "as": "owner",
+     "op": "disallow_payee",
+     "args": {
+      "account": "p11"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 63
+     }
+    },
+    {
+     "t": 1077,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1078,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "usdc"
+     },
+     "expect": "ok",
+     "state": {
+      "n_payees": 64
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_usage_survives_allowlist_changes_and_resets_on_new_mandate",
+   "description": "re-allow, update and disallow-then-allow never reset token usage; set_mandate resets every token (epoch) but keeps allowlists and caps",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 3,
+      "period_cap": 4,
+      "total_cap": 5
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 20
+      },
+      "token_period": {
+       "usdc": 20
+      }
+     }
+    },
+    {
+     "t": 1020,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 20
+      },
+      "token_period": {
+       "usdc": 20
+      }
+     }
+    },
+    {
+     "t": 1021,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 20
+      },
+      "token_period": {
+       "usdc": 20
+      }
+     }
+    },
+    {
+     "t": 1022,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1023,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 20
+      },
+      "token_period": {
+       "usdc": 20
+      }
+     }
+    },
+    {
+     "t": 1024,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 6
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1025,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 1026,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1027,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 30,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1028,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 30
+      }
+     }
+    },
+    {
+     "t": 1029,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 30,
+       "usdt": 3
+      }
+     }
+    },
+    {
+     "t": 1100,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2,
+      "token_total": {
+       "usdc": 0,
+       "usdt": 0
+      },
+      "token_period": {
+       "usdc": 0,
+       "usdt": 0
+      },
+      "allowed_tokens": [
+       "usdc",
+       "usdt"
+      ],
+      "allowed_payees": [
+       "alice"
+      ],
+      "caps": {
+       "usdc": [
+        10,
+        30,
+        100
+       ],
+       "usdt": [
+        3,
+        4,
+        5
+       ]
+      },
+      "n_tokens": 2
+     }
+    },
+    {
+     "t": 1101,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1102,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1103,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 30
+      },
+      "token_period": {
+       "usdc": 30
+      }
+     }
+    },
+    {
+     "t": 1104,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1105,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 30,
+       "usdt": 3
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_blocked_by_pause_revoke_expiry_withdraw_token_still_works",
+   "description": "pause, revoke and expiry (exclusive: active while now < expires_at) block pay; withdraw_token keeps working in all of them, also for a token that is no longer (or never was) allowed",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 3000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1003,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1004,
+     "as": "owner",
+     "op": "pause",
+     "args": {},
+     "expect": "ok",
+     "state": {
+      "paused": true
+     }
+    },
+    {
+     "t": 1005,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1006,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 1,
+        "alice": 1
+       }
+      }
+     }
+    },
+    {
+     "t": 1007,
+     "as": "owner",
+     "op": "unpause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 1008,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1009,
+     "as": "owner",
+     "op": "revoke",
+     "args": {},
+     "expect": "ok",
+     "state": {
+      "revoked": true
+     }
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1011,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 2
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 3
+       }
+      }
+     }
+    },
+    {
+     "t": 1100,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 2000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2
+     }
+    },
+    {
+     "t": 1999,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 1
+      }
+     }
+    },
+    {
+     "t": 2000,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 2000,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 2000,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2001,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2002,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 2003,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdt",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 5
+       },
+       "usdt": {
+        "owner": 1
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_withdraw_token_rules",
+   "description": "withdraw_token: owner only, amount > 0, never the vault / system / zero account as token (BadToken before BadAmount), works with no mandate at all, pays the current owner, a failed-transfer callback only reports",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 100,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 5
+       }
+      }
+     }
+    },
+    {
+     "t": 101,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 102,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "vault",
+      "amount": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 103,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "vault",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 104,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "system",
+      "amount": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 105,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "zero",
+      "amount": 1
+     },
+     "expect": {
+      "err": "BadToken"
+     }
+    },
+    {
+     "t": 106,
+     "as": "other",
+     "op": "withdraw_token",
+     "args": {
+      "token": "vault",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 107,
+     "as": "agent",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 110,
+     "as": "vault",
+     "op": "on_token_withdrawn",
+     "args": {
+      "failed": true,
+      "token": "usdc",
+      "to": "owner",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 0
+       }
+      },
+      "token_total": {
+       "usdc": 0
+      }
+     }
+    },
+    {
+     "t": 111,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 3
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 3
+       }
+      }
+     }
+    },
+    {
+     "t": 112,
+     "as": "vault",
+     "op": "on_token_withdrawn",
+     "args": {
+      "failed": false,
+      "token": "usdc",
+      "to": "owner",
+      "amount": 3
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 3
+       }
+      }
+     }
+    },
+    {
+     "t": 120,
+     "as": "owner",
+     "op": "transfer_ownership",
+     "args": {
+      "to": "newOwner"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 121,
+     "as": "newOwner",
+     "op": "accept_ownership",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 122,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdt",
+      "amount": 2
+     },
+     "expect": {
+      "err": "Unauthorized"
+     }
+    },
+    {
+     "t": 123,
+     "as": "newOwner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdt",
+      "amount": 2
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdt": {
+        "newOwner": 2,
+        "owner": 0
+       },
+       "usdc": {
+        "owner": 3
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_failed_transfer_reverses_in_same_epoch",
+   "description": "a failed ft_transfer reverses the optimistic charge (total and period) in the same epoch; the whole budget is usable again",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 10
+      },
+      "token_period": {
+       "usdc": 10
+      },
+      "token_sent": {
+       "usdc": {
+        "alice": 10
+       }
+      }
+     }
+    },
+    {
+     "t": 1011,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 0
+      },
+      "token_period": {
+       "usdc": 0
+      },
+      "token_sent": {
+       "usdc": {
+        "alice": 0
+       }
+      }
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1013,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1014,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 1015,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_successful_transfer_keeps_the_charge",
+   "description": "a successful ft_transfer leaves the charge; a callback for a token that never had a charge changes nothing",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1011,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": false,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 10
+      },
+      "token_period": {
+       "usdc": 10
+      },
+      "token_sent": {
+       "usdc": {
+        "alice": 10
+       }
+      }
+     }
+    },
+    {
+     "t": 1012,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdt",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 10,
+       "usdt": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_failed_transfer_after_mandate_replacement_is_report_only",
+   "description": "a late failure of an old-epoch transfer must not touch the new epoch counters (also a wrongly-stamped reversal finds a stale record and changes nothing)",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1020,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2
+     }
+    },
+    {
+     "t": 1021,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 2
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 2
+      },
+      "token_period": {
+       "usdc": 2
+      },
+      "token_sent": {
+       "usdc": {
+        "alice": 6
+       }
+      }
+     }
+    },
+    {
+     "t": 1022,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 2
+      },
+      "token_period": {
+       "usdc": 2
+      },
+      "token_sent": {
+       "usdc": {
+        "alice": 2
+       }
+      }
+     }
+    },
+    {
+     "t": 1030,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 3,
+      "token_total": {
+       "usdc": 0
+      }
+     }
+    },
+    {
+     "t": 1031,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 3,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 2
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 0
+      },
+      "token_period": {
+       "usdc": 0
+      }
+     }
+    },
+    {
+     "t": 1032,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1033,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1034,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 25
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_failed_transfer_after_period_rollover_reverses_total_only",
+   "description": "after a period rollover the old period is not re-credited but the total is; the current period reverses with its own index",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1600,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 7
+      },
+      "token_period": {
+       "usdc": 3
+      }
+     }
+    },
+    {
+     "t": 1601,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 3
+      },
+      "token_period": {
+       "usdc": 3
+      }
+     }
+    },
+    {
+     "t": 1602,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 1,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 0
+      },
+      "token_period": {
+       "usdc": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_failed_transfer_replay_saturates",
+   "description": "a replayed failure callback can never underflow the counters",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1011,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 0
+      },
+      "token_period": {
+       "usdc": 0
+      }
+     }
+    },
+    {
+     "t": 1012,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 0
+      },
+      "token_period": {
+       "usdc": 0
+      }
+     }
+    },
+    {
+     "t": 1013,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1000
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 0
+      },
+      "token_period": {
+       "usdc": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_failed_transfer_reverses_for_a_disallowed_token",
+   "description": "a reversal also works after the token was disallowed and never touches another token",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1003,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdt",
+      "per_pay_cap": 3,
+      "period_cap": 4,
+      "total_cap": 5
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 3
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1012,
+     "as": "owner",
+     "op": "disallow_token",
+     "args": {
+      "token": "usdc"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1013,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 0,
+       "usdt": 3
+      },
+      "token_period": {
+       "usdc": 0,
+       "usdt": 3
+      },
+      "allowed_tokens": [
+       "usdt"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_memo_limit_is_128_bytes",
+   "description": "memo: 128 bytes ok, 129 BadMemo; bytes not characters; empty and absent memo ok",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_len": 128
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_len": 129
+     },
+     "expect": {
+      "err": "BadMemo"
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_repeat": [
+       "é",
+       64
+      ]
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1013,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_repeat": [
+       "é",
+       65
+      ]
+     },
+     "expect": {
+      "err": "BadMemo"
+     }
+    },
+    {
+     "t": 1014,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo": ""
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1015,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo": "invoice 42"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1016,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 5
+      },
+      "token_period": {
+       "usdc": 5
+      },
+      "token_sent": {
+       "usdc": {
+        "alice": 5
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_preview_parity_sweep",
+   "description": "preview_pay returns exactly the code the real pay hits (as the bound agent) across fresh / no token / no payee / ok / period full / paused / next period / total full / revoked / new epoch / expired; both sides also check parity on every pay step",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 100,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 100,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 101,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 101,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 102,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 102,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 103,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 103,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 104,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 104,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 105,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 105,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "NoMandate"
+     }
+    },
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 4000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1001,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1002,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1002,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1003,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1003,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1004,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1004,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1005,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1005,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1006,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1006,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1007,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1008,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1008,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1009,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1009,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1013,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1013,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1014,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1015,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1015,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1016,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1016,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1017,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1017,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1018,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1018,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1019,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1019,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1020,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1020,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1021,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1022,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 4
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 25
+      }
+     }
+    },
+    {
+     "t": 1023,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1023,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1024,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1024,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1025,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1025,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1026,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1026,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1027,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1027,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1028,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1028,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "PeriodCap"
+     }
+    },
+    {
+     "t": 1029,
+     "as": "owner",
+     "op": "pause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 1030,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1030,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1031,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1031,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1032,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1032,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1033,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1033,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1034,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1034,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1035,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1035,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "Paused"
+     }
+    },
+    {
+     "t": 1036,
+     "as": "owner",
+     "op": "unpause",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 1600,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1600,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1601,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1601,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1602,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1602,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1603,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1603,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1604,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1604,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1605,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1605,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1606,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 36
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1607,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 1607,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 1608,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1608,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1609,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1609,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1610,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1610,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1611,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1611,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1612,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 1612,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "TotalCap"
+     }
+    },
+    {
+     "t": 1613,
+     "as": "owner",
+     "op": "revoke",
+     "args": {},
+     "expect": "ok"
+    },
+    {
+     "t": 1614,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1614,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1615,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1615,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1616,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1616,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1617,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1617,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1618,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1618,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1619,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1619,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 1620,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 4500,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok",
+     "state": {
+      "epoch": 2
+     }
+    },
+    {
+     "t": 1621,
+     "as": "other",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1621,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1621,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1622,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1622,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "BadAmount"
+     }
+    },
+    {
+     "t": 1623,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1623,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "PerPayCap"
+     }
+    },
+    {
+     "t": 1624,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1624,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "PayeeNotAllowed"
+     }
+    },
+    {
+     "t": 1625,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1625,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "TokenNotAllowed"
+     }
+    },
+    {
+     "t": 1626,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1626,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 4500,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4500,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4501,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4501,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 0
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4502,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4502,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 11
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4503,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4503,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "bob",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4504,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4504,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdt",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4505,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    },
+    {
+     "t": 4505,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 10
+     },
+     "expect": {
+      "err": "MandateInactive"
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_and_draw_budgets_are_independent",
+   "description": "a token payment never touches the NEAR budget and a NEAR draw never touches token usage",
+   "setup": {
+    "balance": 1000
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 0,
+      "period_spent": 0,
+      "token_total": {
+       "usdc": 5
+      }
+     }
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "draw",
+     "args": {
+      "amount": 10
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 10,
+      "period_spent": 10,
+      "available": 990,
+      "token_total": {
+       "usdc": 5
+      },
+      "token_period": {
+       "usdc": 5
+      }
+     }
+    },
+    {
+     "t": 1012,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 10,
+      "period_spent": 10,
+      "token_total": {
+       "usdc": 10
+      }
+     }
+    },
+    {
+     "t": 1013,
+     "as": "vault",
+     "op": "on_paid",
+     "args": {
+      "failed": true,
+      "epoch": 1,
+      "period_index": 0,
+      "token": "usdc",
+      "to": "alice",
+      "amount": 5
+     },
+     "expect": "ok",
+     "state": {
+      "total_spent": 10,
+      "token_total": {
+       "usdc": 5
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "pay_needs_spendable_near_for_the_ft_transfer_deposit",
+   "description": "pay and withdraw_token attach 1 yoctoNEAR: with no spendable NEAR they fail InsufficientBalance (after every other rule), and work once the vault has some",
+   "setup": {
+    "balance": 0
+   },
+   "steps": [
+    {
+     "t": 1000,
+     "as": "owner",
+     "op": "set_mandate",
+     "args": {
+      "agent": "agent",
+      "expires_at": 5000,
+      "per_draw_cap": 100,
+      "period_secs": 600,
+      "period_cap": 250,
+      "total_cap": 400,
+      "max_deploys": 2
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1001,
+     "as": "owner",
+     "op": "allow_token",
+     "args": {
+      "token": "usdc",
+      "per_pay_cap": 10,
+      "period_cap": 25,
+      "total_cap": 100
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1002,
+     "as": "owner",
+     "op": "allow_payee",
+     "args": {
+      "account": "alice"
+     },
+     "expect": "ok"
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     },
+     "state": {
+      "available": 0,
+      "token_total": {
+       "usdc": 0
+      }
+     }
+    },
+    {
+     "t": 1010,
+     "as": "agent",
+     "op": "preview_pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     }
+    },
+    {
+     "t": 1011,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1,
+      "memo_len": 129
+     },
+     "expect": {
+      "err": "BadMemo"
+     }
+    },
+    {
+     "t": 1012,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": {
+      "err": "InsufficientBalance"
+     }
+    },
+    {
+     "t": 1013,
+     "as": "other",
+     "op": "deposit",
+     "args": {
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "available": 1
+     }
+    },
+    {
+     "t": 1014,
+     "as": "agent",
+     "op": "pay",
+     "args": {
+      "token": "usdc",
+      "to": "alice",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_total": {
+       "usdc": 1
+      }
+     }
+    },
+    {
+     "t": 1015,
+     "as": "owner",
+     "op": "withdraw_token",
+     "args": {
+      "token": "usdc",
+      "amount": 1
+     },
+     "expect": "ok",
+     "state": {
+      "token_sent": {
+       "usdc": {
+        "owner": 1,
+        "alice": 1
+       }
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

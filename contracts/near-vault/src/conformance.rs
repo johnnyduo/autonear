@@ -21,6 +21,11 @@ use std::collections::{BTreeMap, BTreeSet};
 
 const FILE: &str = include_str!("../../vault-conformance.json");
 
+/// Payouts build only: the same harness conventions, run over `vault-conformance-pay.json`.
+#[cfg(feature = "payouts")]
+#[path = "conformance_pay.rs"]
+mod pay;
+
 fn role_account(role: &str) -> String {
     match role {
         "owner" => OWNER.into(),

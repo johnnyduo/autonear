@@ -14,6 +14,14 @@ export const ERROR_CODES = Object.freeze([
   'InsufficientBalance', 'DeployLimit', 'TemplateNotAllowed', 'CodeMismatch', 'AddressTaken', 'BadName', 'BadTemplate', 'BadOwner',
 ]);
 
+/**
+ * Extra codes of the payouts build (contracts/near-vault, cargo feature `payouts`, config().version "1.1.0"). Kept OUT of ERROR_CODES on
+ * purpose: ERROR_CODES is the v1 list that contracts/vault-conformance.json and the EVM/NEAR v1 contracts are checked against.
+ * contracts/vault-conformance-pay.json lists these separately (`payoutErrors`).
+ */
+export const PAYOUT_ERROR_CODES = Object.freeze(['TokenNotAllowed', 'PayeeNotAllowed', 'PerPayCap', 'BadToken', 'BadPayee', 'BadMemo']);
+export const ALL_ERROR_CODES = Object.freeze([...ERROR_CODES, ...PAYOUT_ERROR_CODES]);
+
 export class VaultError extends Error {
   constructor(code, detail = '') {
     super(detail ? `E_${code}: ${detail}` : `E_${code}`);
@@ -30,7 +38,12 @@ export const LIMITS = Object.freeze({
   maxLabelBytes: 64,
   maxInitArgsBytes: 1024,
   nearNameMaxLen: 40,            // MODEL CHOICE: the spec says only "invalid name"; the Rust contract is the authority.
+  // payouts build (payouts.rs): MAX_TOKENS / MAX_PAYEES / MAX_MEMO_BYTES
+  maxTokens: 8,
+  maxPayees: 64,
+  maxMemoBytes: 128,
 });
+const U128_MAX = (1n << 128n) - 1n;
 
 const NEAR_NAME = /^[a-z0-9]+([-_][a-z0-9]+)*$/;
 const ZERO_ADDR = /^0x0*$/i;
@@ -53,12 +66,17 @@ export class VaultModel {
   /**
    * init: owner address, chain ('evm' | 'near'), initial balance. `deploy_fail_reverts` is not a knob: see onDeployFailed.
    */
-  constructor({ chain = 'evm', owner = 'owner', balance = 0n, networkId = '' } = {}) {
+  constructor({ chain = 'evm', owner = 'owner', balance = 0n, networkId = '', vaultId = 'vault', callDeposit = 1n } = {}) {
     if (chain !== 'evm' && chain !== 'near') throw new TypeError('chain must be "evm" or "near"');
     if (isEmptyAddr(owner)) throw new TypeError('owner required');
     const b = toBig(balance);
     if (b === null) throw new TypeError('balance must be a non-negative integer');
     this.chain = chain;
+    // Payouts only: `vaultId` = the vault's own account (never a token or payee). `callDeposit` = the NEAR the vault attaches to each
+    // ft_transfer (1 yoctoNEAR on chain; pass 0n when `balance` is in abstract units, as the conformance runner does). The runtime refunds it
+    // when the transfer fails.
+    this.vaultId = vaultId;
+    this.callDeposit = toBig(callDeposit) ?? 1n;
     this.config = { owner, pendingOwner: null, paused: false, networkId, epoch: 0n };
     this.mandate = null;   // { agent, expiresAt, perDrawCap, periodSecs, periodCap, totalCap, maxDeploys, revoked, start }
     this.usage = { totalSpent: 0n, periodIndex: 0n, periodSpent: 0n, deploys: 0n };
@@ -69,6 +87,11 @@ export class VaultModel {
     this.deployedDeposits = 0n;      // cumulative deposit forwarded to deployed contracts, net of failed-deploy refunds
     this.deposited = b;              // cumulative funds that entered (initial balance + deposits)
     this.pendingDeploys = new Map(); // NEAR async window: id -> receipt, until onDeployed / onDeployFailed
+    // ---- payouts (payouts.rs); empty = v1 behaviour, nothing below is touched
+    this.tokens = new Map();         // token account -> { perPayCap, periodCap, totalCap }   (insertion order)
+    this.payees = new Set();
+    this.tokenUsage = new Map();     // token account -> { epoch, total, periodIndex, period }  kept when a token is disallowed
+    this.tokenSent = new Map();      // token -> Map(receiver -> cumulative amount transferred out, net of failed transfers)
     this.events = [];
     this._seq = 0;
   }
@@ -76,7 +99,11 @@ export class VaultModel {
   static init(opts) { return new VaultModel(opts); }
 
   clone() {
-    const m = new VaultModel({ chain: this.chain, owner: this.config.owner, balance: 0n, networkId: this.config.networkId });
+    const m = new VaultModel({ chain: this.chain, owner: this.config.owner, balance: 0n, networkId: this.config.networkId, vaultId: this.vaultId, callDeposit: this.callDeposit });
+    m.tokens = new Map([...this.tokens].map(([k, v]) => [k, { ...v }]));
+    m.payees = new Set(this.payees);
+    m.tokenUsage = new Map([...this.tokenUsage].map(([k, v]) => [k, { ...v }]));
+    m.tokenSent = new Map([...this.tokenSent].map(([k, v]) => [k, new Map(v)]));
     m.config = { ...this.config };
     m.mandate = this.mandate ? { ...this.mandate } : null;
     m.usage = { ...this.usage };
@@ -116,8 +143,47 @@ export class VaultModel {
       chain: this.chain, config: { ...this.config }, mandate: this.mandate ? { ...this.mandate } : null,
       usage: { ...this.usage }, period: now === undefined ? null : this.periodState(now), available: this.balance,
       templates: this.listTemplates(0, Number.MAX_SAFE_INTEGER), received: Object.fromEntries(this.received),
+      // only present once payouts are used, so a v1 snapshot is exactly what it always was
+      ...(this.tokens.size || this.payees.size || this.tokenUsage.size ? { payouts: this.payoutSnapshot() } : {}),
     };
   }
+  payoutSnapshot() {
+    return {
+      tokens: this.tokenList(), payees: [...this.payees],
+      usage: Object.fromEntries([...this.tokenUsage].map(([k, v]) => [k, { ...v }])),
+      sent: Object.fromEntries([...this.tokenSent].map(([k, v]) => [k, Object.fromEntries(v)])),
+    };
+  }
+
+  // ---------------------------------------------------------------- payout views (payouts.rs: tokens, payees, token_usage, token_period_state)
+  tokenList() { return [...this.tokens].map(([token, l]) => ({ token, ...l })); }
+  payeeList(from = 0, limit = 50) { return [...this.payees].slice(from, from + Math.min(limit, 100)); }
+  _usageIn(token, epoch) {
+    const u = this.tokenUsage.get(token);
+    return u && u.epoch === epoch ? { ...u } : { epoch, total: 0n, periodIndex: 0n, period: 0n };
+  }
+  /** Rust period_index saturates (a time before `start` is period 0); v1's periodIndex above does not. Payouts mirror Rust. */
+  _payPeriodIndex(t) { const m = this.mandate; return t > m.start ? (t - m.start) / m.periodSecs : 0n; }
+  /** token_usage(token): stored (lazily re-based) values of the CURRENT epoch; zeros for an unknown token or an older epoch. */
+  tokenUsageView(token) { const u = this._usageIn(token, this.config.epoch); return { totalSpent: u.total, periodIndex: u.periodIndex, periodSpent: u.period }; }
+  /** Period spend of `token` effective at `now` (0 when the stored period is not the current one, or there is no mandate). */
+  tokenPeriodSpent(token, now) {
+    if (!this.mandate) return 0n;
+    const u = this._usageIn(token, this.config.epoch);
+    return u.periodIndex === this._payPeriodIndex(timeOf(now)) ? u.period : 0n;
+  }
+  /** token_period_state(token, now): figures effective at `now`; null without a mandate or when the token is not allowed. */
+  tokenPeriodState(token, now) {
+    const t = timeOf(now); const m = this.mandate; const lim = this.tokens.get(token);
+    if (!m || !lim) return null;
+    const idx = this._payPeriodIndex(t); const u = this._usageIn(token, this.config.epoch);
+    const spent = u.periodIndex === idx ? u.period : 0n;
+    const sat = (a, b) => (a > b ? a - b : 0n);
+    const start = m.start + idx * m.periodSecs;
+    return { periodIndex: idx, periodStart: start, periodEnd: start + m.periodSecs, periodSpent: spent, periodRemaining: sat(lim.periodCap, spent), totalSpent: u.total, totalRemaining: sat(lim.totalCap, u.total), active: !m.revoked && t < m.expiresAt };
+  }
+  /** Cumulative token amount sent out to `to` (net of transfers whose callback reported failure). */
+  tokenSentTo(token, to) { return this.tokenSent.get(token)?.get(to) ?? 0n; }
 
   // ---------------------------------------------------------------- internals
   _emit(type, data = {}) { this.events.push({ seq: this._seq++, type, ...data }); }
@@ -317,6 +383,130 @@ export class VaultModel {
     return true;
   }
 
+  // ================================================================ payouts (contracts/near-vault/src/payouts.rs is the SOURCE OF TRUTH)
+  // Token budgets reuse the NEAR mandate's clock, agent, expiry, revoke, pause and epoch. Usage is stamped with the epoch it was charged in
+  // (a stale epoch reads as zero); allow / re-allow / disallow never reset it, set_mandate does (by bumping the epoch). The charge is
+  // optimistic, `onPaid(failed)` reverses it. Amounts are BigInt in the token's smallest unit.
+  _reserved(a) { return typeof a !== 'string' || a === '' || a === 'system' || /^0{64}$/.test(a) || a === this.vaultId; }
+  _sent(token, to, delta) {
+    const m = this.tokenSent.get(token) ?? new Map();
+    const v = (m.get(to) ?? 0n) + delta;
+    m.set(to, v < 0n ? 0n : v); this.tokenSent.set(token, m);
+  }
+  /**
+   * All `pay` rules in Rust order: NoMandate, Unauthorized, Paused, MandateInactive, TokenNotAllowed, PayeeNotAllowed, BadAmount, PerPayCap,
+   * PeriodCap, TotalCap, BadMemo (> 128 BYTES), InsufficientBalance (< 1 yocto of spendable NEAR for the ft_transfer deposit).
+   * caller === null = preview (assume the bound agent). Returns { err } or { amount, lim, idx, memo }.
+   */
+  _checkPay(caller, { token, to, amount: amountIn, memo } = {}, t) {
+    const gate = this._agentGate(caller, t); if (gate) return { err: gate };
+    const lim = this.tokens.get(token);
+    if (!lim) return { err: 'TokenNotAllowed' };
+    if (!this.payees.has(to)) return { err: 'PayeeNotAllowed' };
+    const amount = toBig(amountIn);
+    if (amount === null || amount === 0n || amount > U128_MAX) return { err: 'BadAmount' };
+    if (amount > lim.perPayCap) return { err: 'PerPayCap' };
+    const u = this._usageIn(token, this.config.epoch);
+    const idx = this._payPeriodIndex(t);
+    if ((u.periodIndex === idx ? u.period : 0n) + amount > lim.periodCap) return { err: 'PeriodCap' };
+    if (u.total + amount > lim.totalCap) return { err: 'TotalCap' };
+    if (memo !== undefined && memo !== null && (typeof memo !== 'string' || utf8Len(memo) > LIMITS.maxMemoBytes)) return { err: 'BadMemo' };
+    if (this.balance < 1n) return { err: 'InsufficientBalance' };
+    return { amount, lim, idx, memo: memo ?? null };
+  }
+  /** preview_pay(token, to, amount): the error code `pay` would hit now ('' = ok). `caller` omitted = the bound agent (as on chain). */
+  previewPay(token, to, amount, { caller = null, now, memo } = {}) {
+    const r = this._checkPay(caller, { token, to, amount, memo }, timeOf(now)); return r.err ?? '';
+  }
+
+  allowToken(caller, args = {}) {
+    this._owner(caller);
+    const token = args.token;
+    const per = toBig(args.per_pay_cap ?? args.perPayCap), period = toBig(args.period_cap ?? args.periodCap), total = toBig(args.total_cap ?? args.totalCap);
+    if (this._reserved(token)) throw new VaultError('BadToken', 'invalid token account');
+    if (per === null || period === null || total === null || !(per > 0n && per <= period && period <= total && total <= U128_MAX)) throw new VaultError('BadToken', 'token caps out of bounds');
+    if (this.payees.has(token)) throw new VaultError('BadToken', 'token is an allowed payee');
+    const updated = this.tokens.has(token);
+    if (!updated && this.tokens.size >= LIMITS.maxTokens) throw new VaultError('BadToken', 'too many tokens');
+    this.tokens.set(token, { perPayCap: per, periodCap: period, totalCap: total });
+    this._emit('TokenAllowed', { token, perPayCap: per, periodCap: period, totalCap: total, updated });
+  }
+  disallowToken(caller, token) {
+    this._owner(caller);
+    if (!this.tokens.delete(token)) throw new VaultError('TokenNotAllowed', 'unknown token');
+    this._emit('TokenDisallowed', { token });   // usage is kept: a later re-allow cannot reset it
+  }
+  allowPayee(caller, account) {
+    this._owner(caller);
+    if (this._reserved(account)) throw new VaultError('BadPayee', 'invalid payee account');
+    if (this.tokens.has(account)) throw new VaultError('BadPayee', 'payee is an allowed token');
+    if (this.payees.has(account)) return;      // idempotent, no event
+    if (this.payees.size >= LIMITS.maxPayees) throw new VaultError('BadPayee', 'too many payees');
+    this.payees.add(account);
+    this._emit('PayeeAllowed', { payee: account });
+  }
+  disallowPayee(caller, account) {
+    this._owner(caller);
+    if (!this.payees.delete(account)) throw new VaultError('PayeeNotAllowed', 'unknown payee');
+    this._emit('PayeeDisallowed', { payee: account });
+  }
+  /** Sends `amount` of `token` to the OWNER only. Works while paused / revoked / expired, for any token account. Nothing is charged. */
+  withdrawToken(caller, token, amountIn) {
+    this._owner(caller);
+    if (this._reserved(token)) throw new VaultError('BadToken', 'invalid token account');
+    const amount = toBig(amountIn);
+    if (amount === null || amount === 0n || amount > U128_MAX) throw new VaultError('BadAmount');
+    if (this.balance < 1n) throw new VaultError('InsufficientBalance', 'no NEAR for the 1 yocto deposit');
+    const to = this.config.owner;
+    this.balance -= this.callDeposit; this._sent(token, to, amount);
+    this._emit('TokenWithdrawn', { token, to, amount });
+    return { token, to, amount };
+  }
+  /** Callback of withdraw_token: only reports a failure (and the runtime refunds the call deposit). */
+  onTokenWithdrawn({ token, to, amount } = {}, failed = true) {
+    if (!failed) return false;
+    const a = toBig(amount) ?? 0n;
+    this.balance += this.callDeposit; this._sent(token, to, -a);
+    this._emit('TokenWithdrawFailed', { token, to, amount: a });
+    return true;
+  }
+  /** pay(token, to, amount, memo?): optimistic charge, then an ft_transfer(to, amount, memo) the host performs. Returns the transfer + receipt. */
+  pay(caller, args, now) {
+    const t = timeOf(now);
+    const { token, to } = args ?? {};
+    const r = this._checkPay(caller, args ?? {}, t);
+    if (r.err) throw new VaultError(r.err);
+    const epoch = this.config.epoch;
+    const u = this._usageIn(token, epoch);
+    if (u.periodIndex !== r.idx) { u.periodIndex = r.idx; u.period = 0n; }
+    u.period += r.amount; u.total += r.amount;
+    this.tokenUsage.set(token, u);
+    this.balance -= this.callDeposit; this._sent(token, to, r.amount);
+    this._emit('Paid', { agent: this.mandate.agent, token, to, amount: r.amount, memo: r.memo, epoch, totalSpent: u.total, periodSpent: u.period });
+    return { token, to, amount: r.amount, memo: r.memo, epoch, periodIndex: r.idx };
+  }
+  /**
+   * Callback `on_paid`. Success does nothing. On failure the charge is reversed ONLY when `epoch` is still the current one and the stored
+   * record is of that epoch (a newer mandate has its own counters), the period only if the stored period is the one charged, saturating (a replay
+   * cannot underflow); the token may already be disallowed. Always reports `PayFailed` { reversed }. Returns reversed (bool) or null on success.
+   */
+  onPaid({ epoch, periodIndex, period_index: pi, token, to, amount } = {}, failed = true) {
+    if (!failed) return null;
+    const ep = toBig(epoch) ?? -1n; const idx = toBig(periodIndex ?? pi) ?? -1n; const a = toBig(amount) ?? 0n;
+    let reversed = false;
+    if (ep === this.config.epoch) {
+      const u = this.tokenUsage.get(token);
+      if (u && u.epoch === ep) {
+        u.total = u.total > a ? u.total - a : 0n;
+        if (u.periodIndex === idx) u.period = u.period > a ? u.period - a : 0n;
+        reversed = true;
+      }
+    }
+    this.balance += this.callDeposit; this._sent(token, to, -a);
+    this._emit('PayFailed', { token, to, amount: a, epoch: ep, reversed });
+    return reversed;
+  }
+
   // ---------------------------------------------------------------- dispatcher (conformance + backend pre-flight)
   /**
    * exec(op, caller, args, now): one entry point for every op. Throws VaultError on rejection.
@@ -338,6 +528,16 @@ export class VaultModel {
       case 'deploy': return this.deploy(caller, args, now);
       case 'preview_draw': return this.previewDraw(args.amount, now);
       case 'preview_deploy': return this.previewDeploy(args.template, args.name ?? args.salt, now, args.code);
+      // payouts build only (see the block above); a v1 vault has no such methods
+      case 'allow_token': return this.allowToken(caller, args);
+      case 'disallow_token': return this.disallowToken(caller, args.token);
+      case 'allow_payee': return this.allowPayee(caller, args.account ?? args.payee);
+      case 'disallow_payee': return this.disallowPayee(caller, args.account ?? args.payee);
+      case 'withdraw_token': return this.withdrawToken(caller, args.token, args.amount);
+      case 'pay': return this.pay(caller, args, now);
+      case 'preview_pay': return this.previewPay(args.token, args.to, args.amount, { now });
+      case 'on_paid': return this.onPaid(args, args.failed ?? true);
+      case 'on_token_withdrawn': return this.onTokenWithdrawn(args, args.failed ?? true);
       default: throw new TypeError(`unknown op "${op}"`);
     }
   }
