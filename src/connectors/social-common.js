@@ -20,7 +20,7 @@ export const maxItemsPerTick = (name) => Math.floor(envNum(name, envNum('SOCIAL_
 export const maxAgeMs = () => envNum('SOCIAL_MAX_AGE_DAYS', 90, 1, 3650) * 864e5;
 /** Wall-clock budget one social connector may spend fetching (default 25 s); it stops early and reports partial:true. */
 export const budgetMs = () => envNum('SOCIAL_BUDGET_MS', 25_000, 1_000, 120_000);
-export const csv = (name, def) => (process.env[name] ? String(process.env[name]) : def).split(',').map((s) => s.trim()).filter(Boolean);
+export const csv = (name, def, env = process.env) => (env[name] ? String(env[name]) : def).split(',').map((s) => s.trim()).filter(Boolean);
 
 export class Budget {
   constructor(ms = budgetMs()) { this.until = Date.now() + ms; }

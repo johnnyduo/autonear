@@ -73,6 +73,7 @@ export const blueskyConnector = {
     if (c.handle && c.password) return { status: 'ready' };
     return { status: 'not_configured', reason: 'Bluesky search requires authentication. Set BLUESKY_HANDLE and BLUESKY_APP_PASSWORD (an app password) to enable this source. Nothing was requested.' };
   },
+  subSources: () => QUERIES.map((q) => `query: ${q}`),
   async fetch(ctx = {}) {
     const c = creds();
     if (!c.handle || !c.password) throw new Error('not configured: BLUESKY_HANDLE / BLUESKY_APP_PASSWORD missing');

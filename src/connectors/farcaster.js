@@ -16,6 +16,9 @@ const DEFAULT_HUB = 'https://haatz.quilibrium.com';
 const DEFAULT_CHANNELS = 'near';
 const CHANNEL_RE = /^[a-z0-9][a-z0-9-]{0,40}$/;
 
+const channelsOf = (env = process.env) => csv('FARCASTER_CHANNELS', DEFAULT_CHANNELS, env).map((c) => c.toLowerCase().replace(/^\/+/, '')).filter((c) => CHANNEL_RE.test(c));
+const fidsOf = (env = process.env) => csv('FARCASTER_FIDS', '', env).filter((f) => /^[1-9][0-9]{0,9}$/.test(f)).slice(0, 10);
+
 /** Normalizes one hub Message (MESSAGE_TYPE_CAST_ADD) (exported for tests). */
 export function normalizeCast(m, via) {
   const d = m?.data;
@@ -49,10 +52,11 @@ export const farcasterConnector = {
   rateLimit: 'Not published for the community hub (no rate-limit headers seen 2026-11-05). We issue 1 request per channel + 1 per watchlist FID per run (<= 12 total, sequential, 300 ms apart).',
   docsUrl: 'https://snapchain.farcaster.xyz/reference/httpapi/casts',
   maxItems: () => maxItemsPerTick('FARCASTER_MAX_ITEMS'),
+  subSources: (env = process.env) => [...channelsOf(env).map((c) => `channel: ${c}`), ...fidsOf(env).map((f) => `fid: ${f}`)],
   async fetch(ctx = {}) {
     const hub = (process.env.FARCASTER_HUB_URL || DEFAULT_HUB).replace(/\/+$/, ''); // must still be on the outbound allowlist, else it fails closed
-    const channels = csv('FARCASTER_CHANNELS', DEFAULT_CHANNELS).map((c) => c.toLowerCase().replace(/^\/+/, '')).filter((c) => CHANNEL_RE.test(c));
-    const fids = csv('FARCASTER_FIDS', '').filter((f) => /^[1-9][0-9]{0,9}$/.test(f)).slice(0, 10);
+    const channels = channelsOf();
+    const fids = fidsOf();
     const budget = new Budget();
     const items = []; const errors = []; let ok = 0; let requests = 0; let partial = false;
     const jobs = [

@@ -11,6 +11,9 @@ const DEFAULT_TAGS = 'nearprotocol,nearintents,near';
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
 const TAG_RE = /^[\p{L}\p{N}_]{2,40}$/u;
 
+const instancesOf = (env = process.env) => csv('MASTODON_INSTANCES', DEFAULT_INSTANCES, env).filter((h) => HOST_RE.test(h));
+const tagsOf = (env = process.env) => csv('MASTODON_TAGS', DEFAULT_TAGS, env).map((t) => t.replace(/^#/, '')).filter((t) => TAG_RE.test(t));
+
 /** Normalizes one Mastodon Status into a connector item (exported for tests). */
 export function normalizeStatus(s, instance) {
   if (!s || typeof s !== 'object' || !s.uri || !s.created_at || typeof s.content !== 'string') return null;
@@ -58,9 +61,10 @@ export const mastodonConnector = {
   rateLimit: 'Mastodon default: 300 requests / 5 min per IP (docs.joinmastodon.org/api/rate-limits; X-RateLimit-* headers returned and checked). We issue <= 3 tags x 2 instances x (1 page, a 2nd only via the Link header) per run and stop below 5 remaining.',
   docsUrl: 'https://docs.joinmastodon.org/methods/timelines/#tag',
   maxItems: () => maxItemsPerTick('MASTODON_MAX_ITEMS'),
+  subSources: (env = process.env) => { const tags = tagsOf(env); return instancesOf(env).flatMap((h) => tags.map((t) => `tag: ${t} on ${h}`)); },
   async fetch(ctx = {}) {
-    const instances = csv('MASTODON_INSTANCES', DEFAULT_INSTANCES).filter((h) => HOST_RE.test(h));
-    const tags = csv('MASTODON_TAGS', DEFAULT_TAGS).map((t) => t.replace(/^#/, '')).filter((t) => TAG_RE.test(t));
+    const instances = instancesOf();
+    const tags = tagsOf();
     const maxPages = Math.min(3, Math.max(1, Number(process.env.MASTODON_MAX_PAGES) || 2));
     const cutoff = Date.now() - maxAgeMs();
     const budget = new Budget();

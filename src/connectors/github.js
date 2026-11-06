@@ -19,6 +19,7 @@ export const githubConnector = {
   terms: 'GitHub ToS / REST API terms; issue text is user-authored public content, stored as excerpts with source link.',
   rateLimit: '10 search req/min unauthenticated, 30/min with token; we issue ≤6 per run',
   docsUrl: 'https://docs.github.com/en/rest/search/search#search-issues-and-pull-requests',
+  subSources: () => QUERIES.map((q) => `query: ${q}`),
   async fetch(ctx = {}) {
     const since = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
     const items = [];

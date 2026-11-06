@@ -16,6 +16,16 @@ const HEAD_A = 'An agent that works for you,'; const HEAD_B = 'on a leash you ho
 // each word sits in a mask and rises into it; the heading stays one sentence for screen readers (aria-label on the h1)
 const Words = ({ text, from }) => text.split(' ').map((w, i, all) => <Fragment key={w + i}><span className="ln-word" aria-hidden="true" style={{ '--i': from + i }}><span>{w}</span></span>{i < all.length - 1 ? ' ' : null}</Fragment>);
 
+// Only standards the code really uses. ERC-8004 is an optional adapter for a draft standard and is off unless AGENT_PUBLIC_URL is set.
+const STANDARDS = [
+  ['NEP-518', 'MetaMask signs NEAR', 'An Ethereum wallet signs NEAR transactions; a relayer submits them. The owner never installs a second wallet.'],
+  ['EIP-191', 'owner sign-in', 'Signing a plain-text challenge proves control of the owner address. No transaction, no cost.'],
+  ['EIP-1193 · 6963', 'wallet connect', 'Injected wallets are discovered and used through the standard provider API. No WalletConnect.'],
+  ['NEP-141 · 145', 'payout tokens', 'The vault reads fungible-token metadata and storage registration before a payout is allowed.'],
+  ['NEP-297', 'contract events', 'Every state change in the contracts emits one standard event, so the audit trail can be read from the chain.'],
+  ['ERC-8004', 'agent identity (optional, draft)', 'An optional adapter that can publish the agent registration file. Off unless the operator sets a public URL.'],
+];
+
 export default function Landing({ data, connected = false }) {
   const calm = useCalm();
   const heroRef = useRef(null);
@@ -25,6 +35,10 @@ export default function Landing({ data, connected = false }) {
   const [star, setStar] = useState('evidence'); const [cc, setCc] = useState(null); // the score card belongs to the council star: it shows only while that star is selected
   const [demo] = useState(() => makeLandingDemo()); // example data for the picture only, see landing-demo.js
   const ok = sources.filter((x) => x.status === 'ok').length;
+  const c = s?.counts;
+  const feedList = sources.filter((x) => x.watched && x.subSources?.length).map((x) => `${x.name}: ${x.subSources.join('; ')}`).join('. ');
+  const scoreParts = c && c.scores != null ? `${c.evidence} relevance, ${c.seatVotes} seat votes, ${c.opportunities} council` : '';
+  const scoreTitle = scoreParts ? `${c.evidence} relevance scores (one per post or commit read), ${c.seatVotes} seat votes (${c.opportunities} scored x ${c.seats} council seats), ${c.opportunities} council scores` : undefined;
   const proof = [...data.ledger].reverse().find((e) => e.kind === 'deploy' && e.status === 'confirmed' && !data.demo);
   return (
     <div className="ln">
@@ -51,12 +65,15 @@ export default function Landing({ data, connected = false }) {
           </div>
           {!connected && <p className="ln-hint">{T.signHint}</p>}
           <p className="ln-live mono">Illustration: made-up records and scores. Click the pink orb to open the council card. Real data is in the app.</p>
+          <ul className="ln-std mono" aria-label="Standards AutoNEAR is built on">
+            {STANDARDS.map(([id, what, tip]) => <li key={id} title={tip}><b>{id}</b> {what}</li>)}
+          </ul>
         </div>
       </section>
       <section className="ln-proof" aria-label="Live numbers">
-        <div><b>{s ? `${ok}/${sources.length}` : '–'}</b><span>sources being watched</span></div>
-        <div><b>{s?.counts?.evidence ?? '–'}</b><span>posts and commits read</span></div>
-        <div><b>{s?.counts?.opportunities ?? '–'}</b><span>ideas scored</span></div>
+        <div title={feedList || undefined} aria-describedby={feedList ? 'ln-feeds' : undefined}><b>{s ? `${ok}/${sources.length}` : '–'}</b><span>sources being watched</span>{c?.feeds != null && <small>{c.feeds} feeds inside them</small>}{feedList && <i className="ln-sr" id="ln-feeds">{feedList}</i>}</div>
+        <div><b>{c?.evidence ?? '–'}</b><span>posts and commits read</span></div>
+        <div title={scoreTitle}><b>{c?.scores ?? '–'}</b><span>scores computed</span>{scoreParts && <small>{scoreParts}</small>}</div>
         <div><b>{s?.scheduler?.lastTick ? fmt.ago(s.scheduler.lastTick.at) : '–'}</b><span>last check</span></div>
         {proof && <div className="wide"><b>Latest action</b><span>{fmt.ago(proof.time)}: the agent published a contract through its vault{proof.explorerUrl ? <> · <a href={proof.explorerUrl} target="_blank" rel="noreferrer noopener">see it on chain</a></> : null}</span></div>}
       </section>

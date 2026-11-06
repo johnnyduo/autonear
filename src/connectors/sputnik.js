@@ -15,6 +15,7 @@ export const sputnikConnector = {
   rateLimit: 'Public RPC is rate limited; we make 2 view calls per DAO (10 per run) and at most one run every 2 hours; a DAO that fails is skipped',
   docsUrl: 'https://github.com/near-daos/sputnik-dao-contract',
   minIntervalMs: 2 * 3_600_000,
+  subSources: () => DAOS.map((id) => `dao: ${id}`),
   async fetch(ctx = {}) {
     const rows = []; const errors = [];
     for (const id of DAOS) {

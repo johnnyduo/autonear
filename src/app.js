@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { parse, j, now, verifyAuditChain, getBlob, audit } from './db.js';
 import { config } from './config.js';
 import { CONNECTORS } from './connectors/index.js';
-import { ingestAll } from './ingest.js';
+import { ingestAll, sourceEnabled } from './ingest.js';
 import { refreshOpportunities, FORMULA, WEIGHTS, SCORING_NOTES } from './scoring.js';
 import { createRun, executeRun, emit, verifyRunChain, isPaused, setPaused, pipelineTick } from './orchestrator/coordinator.js';
 import { oppEvidence, getOpp, hydrateEvidence } from './store.js';
@@ -17,7 +17,7 @@ import { ALLOWED_HOSTS } from './http-client.js';
 import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant, activateVault, getVault } from './vault/index.js';
 import { createPayment, listPayments, recordPayment } from './payments.js';
 import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
-import { currentCouncil, journeyFor, pickFocus, queueFor } from './council.js';
+import { currentCouncil, journeyFor, pickFocus, queueFor, SEATS } from './council.js';
 import { getWatch, setWatch } from './watch.js';
 import { WELL_KNOWN_PATH } from './identity/erc8004.js';
 import { buildSite, listView, view as siteView, pageResponse } from './sites/service.js';
@@ -122,7 +122,14 @@ export function createApp(deps) {
     const metas = new Map((await db.all("SELECT k,v FROM kv WHERE k LIKE 'meta:%'")).map((r) => [r.k.slice(5), parse(r.v, null)]));
     const tick = parse((await db.get("SELECT v FROM kv WHERE k='tick:last'"))?.v, null);
     const active = await db.get("SELECT * FROM runs WHERE state IN ('queued','running') ORDER BY started_at DESC LIMIT 1");
-    const counts = await db.get('SELECT (SELECT COUNT(*) FROM evidence) evidence, (SELECT COUNT(*) FROM opportunities) opportunities, (SELECT COUNT(*) FROM runs) runs, (SELECT COUNT(*) FROM decisions WHERE status=\'pending\') pending_decisions');
+    const base = await db.get('SELECT (SELECT COUNT(*) FROM evidence) evidence, (SELECT COUNT(*) FROM opportunities) opportunities, (SELECT COUNT(*) FROM runs) runs, (SELECT COUNT(*) FROM decisions WHERE status=\'pending\') pending_decisions');
+    const watch = await getWatch(db);
+    const connectors = new Map(CONNECTORS.map((c) => [c.id, c]));
+    const feedsOf = (id) => connectors.get(id)?.subSources?.() ?? [];
+    const watched = (id) => { const c = connectors.get(id); return Boolean(c) && sourceEnabled(c, watch); };
+    // every evidence row carries one relevance score, every opportunity gets one vote per council seat and one council score
+    const seatVotes = base.opportunities * SEATS.length;
+    const counts = { ...base, feeds: sources.reduce((n, s) => n + (watched(s.id) ? feedsOf(s.id).length : 0), 0), seats: SEATS.length, seatVotes, scores: base.evidence + seatVotes + base.opportunities };
     const t = now();
     const interval = config.ingestIntervalMs;
     return {
@@ -132,6 +139,7 @@ export function createApp(deps) {
         id: s.id, name: s.name, kind: s.kind, endpoint: s.endpoint, status: s.status, docs: s.docs_url, terms: s.terms, rateLimit: s.rate_limit,
         lastSuccess: s.last_success, lastError: s.last_error, lastErrorAt: s.last_error_at, failures: s.consecutive_failures, circuitOpenUntil: s.circuit_open_until,
         stale: !s.last_success || t - s.last_success > 6 * 36e5, lastRun: lastRuns.get(s.id) ?? null, meta: metas.get(s.id) ?? null,
+        subSources: feedsOf(s.id), watched: watched(s.id),
       })),
       scheduler: { mode: deps.schedulerMode ?? 'external', intervalMs: interval, lastTick: tick, nextRunAt: tick ? tick.at + interval : null, note: deps.schedulerNote ?? '' },
       activeRun: active ?? null,

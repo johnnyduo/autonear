@@ -10,6 +10,7 @@ import { rpc } from './nearrpc.js';
 //    seconds-per-block (two RPC `block` calls). Every record carries signals.timeEstimated = true.
 const API = 'https://api.near.social';
 const ACCOUNT_RE = /^(?:[a-z0-9]+(?:[-_.][a-z0-9]+)*|[0-9a-f]{64})$/; // validated BEFORE it is put into a key pattern: no wildcards reach the contract
+const INDEXES = [{ action: 'post', label: 'posts', limit: (cap) => cap }, { action: 'comment', label: 'comments', limit: (cap) => Math.ceil(cap / 2) }];
 const FALLBACK_SEC_PER_BLOCK = 0.58; // measured 2026-11-05 (0.576-0.587 over 1k..100k blocks); only used if calibration fails
 const bodyCache = new Map(); // `${key}@${height}` -> main string. A value at a block height is immutable, so this cache can never go stale.
 let calCache = null;
@@ -52,14 +53,12 @@ export const nearSocialConnector = {
   rateLimit: 'Not published for api.near.social (checked docs.near.org/primitives/social and the SDK source 2026-11-05). We issue <= 2 index + <= NEAR_SOCIAL_MAX_ITEMS (default 40) get requests, 6 concurrent, immutable bodies cached in memory. Public RPC: 2 block calls.',
   docsUrl: 'https://docs.near.org/primitives/social',
   maxItems: () => maxItemsPerTick('NEAR_SOCIAL_MAX_ITEMS'),
+  subSources: () => INDEXES.map((i) => `index: social.near ${i.label}`),
   async fetch(ctx = {}) {
     const cap = this.maxItems();
     const budget = new Budget();
     const calP = calibrate(ctx); calP.catch(() => {}); // block-time calibration runs in parallel with the index reads
-    const [posts, comments] = await Promise.all([
-      fetchJson(`${API}/index`, ctx, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'post', key: 'main', options: { order: 'desc', limit: cap } }) }),
-      fetchJson(`${API}/index`, ctx, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'comment', key: 'main', options: { order: 'desc', limit: Math.ceil(cap / 2) } }) }),
-    ]);
+    const [posts, comments] = await Promise.all(INDEXES.map(({ action, limit }) => fetchJson(`${API}/index`, ctx, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, key: 'main', options: { order: 'desc', limit: limit(cap) } }) })));
     if (!Array.isArray(posts.json) || !Array.isArray(comments.json)) throw new Error('unexpected /index response shape from api.near.social');
     let malformed = 0;
     const entries = [];

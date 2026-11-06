@@ -19,6 +19,7 @@ export const nearFeedConnector = {
   rateLimit: 'One request per run; the feed is a static file (about 32 KB)',
   docsUrl: 'https://www.near.org/blog',
   minIntervalMs: 3_600_000,
+  subSources: () => [`feed: ${new URL(FEED).host}${new URL(FEED).pathname}`],
   async fetch(ctx = {}) {
     const res = await guardedFetch('collector', FEED, { fetchImpl: ctx.fetchImpl, headers: { accept: 'application/rss+xml, application/xml' } });
     if (!/<rss[\s>]/i.test(res.text)) throw new Error('near.org/feed.xml is not an RSS document');

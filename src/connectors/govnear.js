@@ -12,6 +12,7 @@ export const govNearConnector = {
   terms: 'Public Discourse forum; content is community-authored. Stored as excerpts with a link to the original post.',
   rateLimit: 'Discourse default anonymous API limits (~20 req/10s per IP); we issue ≤5 per run, 1.5s apart; stop early on HTTP 429',
   docsUrl: 'https://docs.discourse.org/#tag/Search',
+  subSources: () => QUERIES.map((q) => `query: ${q}`),
   async fetch(ctx = {}) {
     const items = [];
     let partial = false;

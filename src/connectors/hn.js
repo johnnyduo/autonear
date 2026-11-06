@@ -11,6 +11,7 @@ export const hnConnector = {
   terms: 'HN content is user-authored; Algolia HN Search API is public. Stored as excerpts with link to the original item.',
   rateLimit: '10,000 req/hour per IP (Algolia HN API docs); we issue ≤5 per run',
   docsUrl: 'https://hn.algolia.com/api',
+  subSources: () => QUERIES.map((q) => `query: ${q}`),
   async fetch(ctx = {}) {
     const since = Math.floor(Date.now() / 1000) - 120 * 86400;
     const items = [];

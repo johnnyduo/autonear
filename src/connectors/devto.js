@@ -9,6 +9,8 @@ import { fetchJson, Budget, csv, maxItemsPerTick, maxAgeMs, sanitize, htmlToText
 const DEFAULT_TAGS = 'nearprotocol,near';
 const TAG_RE = /^[a-z0-9]{2,30}$/;
 
+const tagsOf = (env = process.env) => csv('DEVTO_TAGS', DEFAULT_TAGS, env).map((t) => t.toLowerCase().replace(/^#/, '')).filter((t) => TAG_RE.test(t));
+
 /** Normalizes one Forem article (exported for tests). */
 export function normalizeArticle(a) {
   if (!a || typeof a !== 'object' || !a.id || !a.title || !a.url || !a.published_at) return null;
@@ -45,8 +47,9 @@ export const devtoConnector = {
   rateLimit: 'Not documented. Measured 2026-11-05: 429 with retry-after: 1 after about 2 quick requests. We issue <= 2 requests per run (one per tag), spaced 1.3 s, with one bounded retry on 429.',
   docsUrl: 'https://developers.forem.com/api/v1',
   maxItems: () => maxItemsPerTick('DEVTO_MAX_ITEMS'),
+  subSources: (env = process.env) => tagsOf(env).map((t) => `tag: ${t}`),
   async fetch(ctx = {}) {
-    const tags = csv('DEVTO_TAGS', DEFAULT_TAGS).map((t) => t.toLowerCase().replace(/^#/, '')).filter((t) => TAG_RE.test(t));
+    const tags = tagsOf();
     const budget = new Budget();
     const items = []; const errors = []; let ok = 0; let partial = false;
     for (const [i, tag] of tags.entries()) {

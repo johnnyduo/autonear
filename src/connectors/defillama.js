@@ -1,6 +1,7 @@
 import { getJson, num, usd, utcDay } from './onchain-common.js';
 
 const API = 'https://api.llama.fi';
+const PATH = { chains: '/v2/chains', intents: '/tvl/near-intents', dex: '/overview/dexs/near' };
 
 // DefiLlama public API (no key). Verified live 2026-11-06:
 //  /v2/chains                  58 KB, array of { name, tvl, ... }; the NEAR entry is named "Near" (chain TVL, USD)
@@ -16,18 +17,19 @@ export const defillamaConnector = {
   rateLimit: 'No limit is published for the free API; we send 3 small requests per run and at most one run per hour',
   docsUrl: 'https://defillama.com/docs/api',
   minIntervalMs: 3_600_000,
+  subSources: () => [`series: NEAR chain TVL (${PATH.chains})`, `series: NEAR Intents TVL (${PATH.intents})`, `series: NEAR DEX volume (${PATH.dex})`],
   async fetch(ctx = {}) {
     const errors = [];
     const grab = async (label, fn) => { try { return await fn(); } catch (e) { errors.push(`${label}: ${String(e.message).slice(0, 120)}`); return null; } };
     const chainTvl = await grab('chain tvl', async () => {
-      const chains = await getJson('collector', `${API}/v2/chains`, ctx);
+      const chains = await getJson('collector', `${API}${PATH.chains}`, ctx);
       const near = Array.isArray(chains) ? chains.find((c) => c?.name === 'Near') : null;
       const v = num(near?.tvl); if (v === null || v < 0) throw new Error('no NEAR entry with a numeric tvl');
       return v;
     });
-    const intentsTvl = await grab('near-intents tvl', async () => { const v = num(await getJson('collector', `${API}/tvl/near-intents`, ctx)); if (v === null || v < 0) throw new Error('not a number'); return v; });
+    const intentsTvl = await grab('near-intents tvl', async () => { const v = num(await getJson('collector', `${API}${PATH.intents}`, ctx)); if (v === null || v < 0) throw new Error('not a number'); return v; });
     const dex = await grab('dex volume', async () => {
-      const d = await getJson('collector', `${API}/overview/dexs/near?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true`, ctx);
+      const d = await getJson('collector', `${API}${PATH.dex}?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true`, ctx);
       const d24 = num(d?.total24h); const d7 = num(d?.total7d); if (d24 === null || d7 === null) throw new Error('no numeric total24h/total7d');
       return { d24, d7, d30: num(d.total30d) };
     });

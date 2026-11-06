@@ -17,6 +17,9 @@ export async function registerSources(db, connectors = CONNECTORS) {
   }
 }
 
+/** True when a scheduled run would reach the network for this connector: not switched off by the owner and, for opt-in sources, configured. */
+export const sourceEnabled = (connector, watch) => watch.sources[connector.id] !== false && (connector.availability?.().status ?? 'ready') === 'ready';
+
 const norm = (s) => s.replace(/\s+/g, ' ').trim();
 
 /** Ingest one connector. Idempotent: same provider+external_id never duplicates; changed content creates a revision. */

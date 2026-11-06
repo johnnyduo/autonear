@@ -1,6 +1,8 @@
 import { guardedFetch } from '../http-client.js';
 import { config } from '../config.js';
 
+const INTENTS = 'intents.near'; const WNEAR = 'wrap.near'; const USDC = '17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1';
+
 export async function rpc(method, params, ctx) {
   const res = await guardedFetch('collector', config.near.mainnetRpc, {
     method: 'POST', headers: { 'content-type': 'application/json' },
@@ -27,11 +29,12 @@ export const nearRpcConnector = {
   terms: 'FastNEAR public NEAR JSON-RPC (docs.near.org/api/rpc). Public node, best-effort and rate limited; production use needs a provider key. rpc.mainnet.near.org is deprecated.',
   rateLimit: 'Public endpoint is rate limited and may throttle; we issue 4 calls per run',
   docsUrl: 'https://docs.near.org/api/rpc/introduction',
+  subSources: () => [`account: ${INTENTS} balance and storage`, `token: ${WNEAR} held by ${INTENTS}`, `token: USDC held by ${INTENTS}`, 'network: gas price'],
   async fetch(ctx = {}) {
     const [acct, wnear, usdc, gas] = await Promise.all([
-      rpc('query', { request_type: 'view_account', finality: 'final', account_id: 'intents.near' }, ctx),
-      ftBalance('wrap.near', 'intents.near', ctx),
-      ftBalance('17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1', 'intents.near', ctx),
+      rpc('query', { request_type: 'view_account', finality: 'final', account_id: INTENTS }, ctx),
+      ftBalance(WNEAR, INTENTS, ctx),
+      ftBalance(USDC, INTENTS, ctx),
       rpc('gas_price', [null], ctx),
     ]);
     const day = new Date().toISOString().slice(0, 10);

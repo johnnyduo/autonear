@@ -2,6 +2,7 @@ import { getJson, num, int, pause, utcDay } from './onchain-common.js';
 
 const API = 'https://api.nearblocks.io/v1';
 const SIGNER = 'v1.signer'; const INTENTS = 'intents.near';
+const PATH = { charts: '/charts', count: (account) => `/account/${account}/txns/count`, latest: (account) => `/account/${account}/txns?per_page=1` };
 
 // NearBlocks public API (api.nearblocks.io/v1), no key. Verified live 2026-11-06:
 //  /charts                               1.5 MB: one row per UTC day since 2020 with txns, new_accounts, active_accounts, new_contracts, active_contracts (strings)
@@ -17,6 +18,7 @@ export const nearblocksConnector = {
   rateLimit: 'Free tier: 6 calls/min, ~10,000 calls/month; we send 4 calls per run and at most one run every 6 hours; stop early on HTTP 429',
   docsUrl: 'https://docs.near.org/tools/ecosystem-apis/nearblocks-api',
   minIntervalMs: 6 * 3_600_000,
+  subSources: () => [`chart: daily network totals (${PATH.charts})`, `account: ${SIGNER} transaction count (${PATH.count(SIGNER)})`, `account: ${SIGNER} newest transaction (${PATH.latest(SIGNER)})`, `account: ${INTENTS} transaction count (${PATH.count(INTENTS)})`],
   async fetch(ctx = {}) {
     const items = []; const errors = [];
     const grab = async (label, fn) => { try { return await fn(); } catch (e) { errors.push(`${label}: ${String(e.message).slice(0, 120)}`); return null; } };
@@ -24,7 +26,7 @@ export const nearblocksConnector = {
     const today = utcDay();
 
     const charts = await grab('charts', async () => {
-      const d = await getJson('collector', `${API}/charts`, ctx); const rows = d?.charts;
+      const d = await getJson('collector', `${API}${PATH.charts}`, ctx); const rows = d?.charts;
       if (!Array.isArray(rows)) throw new Error('no charts array');
       const done = rows.filter((r) => typeof r?.date === 'string' && r.date.slice(0, 10) < today); // today's row is partial
       const last = done.at(-1); if (!last) throw new Error('no completed day');
@@ -51,14 +53,14 @@ export const nearblocksConnector = {
     }
 
     const count = async (account) => {
-      const d = await getJson('collector', `${API}/account/${account}/txns/count`, ctx); const c = num(d?.txns?.[0]?.count);
+      const d = await getJson('collector', `${API}${PATH.count(account)}`, ctx); const c = num(d?.txns?.[0]?.count);
       if (c === null || c < 0) throw new Error(`no numeric count for ${account}`); return c;
     };
     await pause(ctx, 1200);
     const signerCount = await grab(`${SIGNER} count`, () => count(SIGNER));
     await pause(ctx, 1200);
     const signerLast = signerCount === null ? null : await grab(`${SIGNER} latest`, async () => {
-      const d = await getJson('collector', `${API}/account/${SIGNER}/txns?per_page=1`, ctx); const ns = num(d?.txns?.[0]?.receipt_block?.block_timestamp);
+      const d = await getJson('collector', `${API}${PATH.latest(SIGNER)}`, ctx); const ns = num(d?.txns?.[0]?.receipt_block?.block_timestamp);
       if (ns === null || ns <= 0) throw new Error('no block_timestamp'); return Math.floor(ns / 1e6);
     });
     if (signerCount !== null) {
