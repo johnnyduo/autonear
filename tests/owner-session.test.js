@@ -177,3 +177,16 @@ test('removing a co-owner kills its existing session on the next request (owners
   const me = await call(app, '/api/auth/me', { headers: { authorization: `Bearer ${a.body.token}` } });
   assert.equal(me.body.isOwner, false);
 });
+
+test('POST /api/vault/activate: owner or operator only, scoped to the owner\'s own grant, and it refuses what is not a grant or has no attached vault', async () => {
+  const app = await mk(); const db = app.__db;
+  const ins = (id, action, signer, target = 'vault.testnet') => db.run("INSERT INTO decisions(id,run_id,artifact_hash,action,chain_id,target,method,max_spend,expiry,nonce,payload,payload_hash,status,created_at,bound_signer) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [id, null, 'h', action, 'near-testnet', target, 'm', '0', Date.now() + 1e6, `n_${id}`, '{}', 'ph', 'approved', Date.now(), signer]);
+  await ins('dec_grant', 'grant_mandate', owner.address); await ins('dec_theirs', 'grant_mandate', other.address); await ins('dec_dep', 'deploy_testnet', owner.address);
+  const post = (decisionId, headers) => call(app, '/api/vault/activate', { method: 'POST', headers, body: JSON.stringify({ decisionId }) });
+  assert.equal((await post('dec_grant', {})).status, 401);
+  const { body } = await signIn(app, owner); const h = { authorization: `Bearer ${body.token}` };
+  assert.equal((await post('dec_theirs', h)).status, 400); // bound to a different signer
+  assert.equal((await post('dec_dep', h)).status, 404); // not a grant
+  const noVault = await post('dec_grant', h); assert.equal(noVault.status, 404); assert.match(JSON.stringify(noVault.body), /not attached/);
+  assert.equal((await post('nope', h)).status, 400);
+});

@@ -13,8 +13,9 @@ export const CONFIRM_PHRASE = (id) => `approve ${id}`;
  *  agent under a standing, human-granted mandate: NO human signed that particular deployment. */
 export function approvalInfo(d) {
   if (!d?.approver) return null;
-  const m = /^mandate:([^:]+):(\d+)$/.exec(d.approver);
-  if (m) return { mode: 'mandate', humanSigned: false, vaultId: m[1], epoch: Number(m[2]), approver: d.approver, note: 'Executed autonomously by the agent under a standing mandate. No human signed this particular deployment.' };
+  const m = /^mandate:([^:]+):(\d+)(?:\+(.+))?$/.exec(d.approver);
+  if (m && m[3]) return { mode: 'mandate', humanSigned: false, humanApproved: true, approvedBy: m[3], vaultId: m[1], epoch: Number(m[2]), approver: d.approver, note: 'The owner approved this request. The agent then published it from its vault, inside the limits the owner set. The owner did not sign the transaction.' };
+  if (m) return { mode: 'mandate', humanSigned: false, humanApproved: false, vaultId: m[1], epoch: Number(m[2]), approver: d.approver, note: 'Executed autonomously by the agent under a standing mandate. No human signed this particular deployment.' };
   return { mode: 'human', humanSigned: true, approver: d.approver, note: 'A human approved this decision and signs the on-chain transaction themselves.' };
 }
 const hydrate = (d) => d && ({ ...d, payload: parse(d.payload, {}), approval: approvalInfo(d) });
@@ -72,13 +73,21 @@ export async function rejectDecision(db, id, { actor, reason = '' }) {
  *   - bound_signer = the vault address (the deployer of record is the vault, which creates the contract via CREATE2/promise batch)
  *   - inserts mandate_runs(decision_id PK): one agent execution per decision, ever; a partial unique index allows one in flight per vault.
  */
-export async function approveUnderMandate(db, id, { vault, epoch }) {
+export async function approveUnderMandate(db, id, { vault, epoch, byOwner = false }) {
   if (await isPaused(db)) throw new PolicyError('kill switch engaged', 'paused');
   const d = await db.get('SELECT * FROM decisions WHERE id=?', [id]);
   if (!d) throw new PolicyError('unknown decision', 'not_found');
-  if (effective(d) !== 'pending') throw new PolicyError(`decision is ${effective(d)}, not pending`, 'state');
   if (d.action !== 'deploy_testnet') throw new PolicyError(`only deploy_testnet decisions can run under a mandate (got "${d.action}")`, 'action_blocked');
-  if (d.bound_signer || d.approver) throw new PolicyError('decision already has an approver/bound signer: it is left to that human', 'state');
+  // Two entry points. Auto: a pending decision nobody has touched. byOwner: a decision the OWNER already approved (Manual mode's execution step):
+  // the human approval is kept in the approver string (`mandate:<vault>:<epoch>+<owner actor>`), so the record never claims the owner signed the tx.
+  if (byOwner) {
+    if (d.status !== 'approved' || !d.approver || String(d.approver).startsWith('mandate:') || !d.bound_signer) throw new PolicyError('only a decision approved by the owner can be executed this way', 'state');
+    if (d.expiry < now()) throw new PolicyError('the approved request has expired: approve it again', 'state');
+    if (findNetwork(d.chain_id)?.protocol !== 'near') throw new PolicyError('owner-approved execution through the vault is NEAR only; other networks are signed by the owner', 'action_blocked');
+  } else {
+    if (effective(d) !== 'pending') throw new PolicyError(`decision is ${effective(d)}, not pending`, 'state');
+    if (d.bound_signer || d.approver) throw new PolicyError('decision already has an approver/bound signer: it is left to that human', 'state');
+  }
   if (!vault || vault.status !== 'active') throw new PolicyError('vault is not active', 'state');
   if (d.chain_id !== vault.chain_id) throw new PolicyError('decision network differs from the vault network', 'network_blocked');
   const net = findNetwork(d.chain_id);
@@ -86,12 +95,13 @@ export async function approveUnderMandate(db, id, { vault, epoch }) {
   assertDecisionAllowed(d);
   if (sha256(d.payload) !== d.payload_hash) throw new PolicyError('stored payload does not match its hash: refusing to execute', 'payload_hash');
   if (!Number.isSafeInteger(Number(epoch))) throw new PolicyError('mandate epoch required', 'input');
-  const approver = `mandate:${vault.id}:${Number(epoch)}`;
+  const approver = `mandate:${vault.id}:${Number(epoch)}${byOwner ? `+${d.approver}` : ''}`;
   const receipt = sha256(`${d.id}|${d.payload_hash}|${d.nonce}|${approver}|${now()}`);
+  const guard = byOwner ? "status='approved' AND approver=? AND bound_signer=?" : "status='pending' AND bound_signer IS NULL AND approver IS NULL";
   try {
     await db.tx(async (tx) => {
       await tx.run("INSERT INTO mandate_runs(decision_id,vault_id,epoch,tx_hash,status,created_at) VALUES(?,?,?,?,?,?)", [id, vault.id, Number(epoch), null, 'claimed', now()]);
-      const r = await tx.run("UPDATE decisions SET status='approved', approver=?, decided_at=?, signed_receipt=?, bound_signer=? WHERE id=? AND status='pending' AND bound_signer IS NULL AND approver IS NULL", [approver, now(), receipt, vault.address, id]);
+      const r = await tx.run(`UPDATE decisions SET status='approved', approver=?, decided_at=?, signed_receipt=?, bound_signer=? WHERE id=? AND ${guard}`, [approver, now(), receipt, vault.address, id, ...(byOwner ? [d.approver, d.bound_signer] : [])]);
       if (!r.changes) throw new PolicyError('decision changed concurrently', 'state');
     });
   } catch (e) {
@@ -99,7 +109,7 @@ export async function approveUnderMandate(db, id, { vault, epoch }) {
     if (/UNIQUE|constraint/i.test(String(e.message))) throw new PolicyError(/mandate_runs\.vault_id|inflight/i.test(String(e.message)) ? 'another agent deployment is already in flight for this vault' : 'this decision was already executed (or attempted) by the agent', 'state');
     throw e;
   }
-  await audit(db, approver, 'decision.approved_under_mandate', { id, vaultId: vault.id, epoch: Number(epoch), grantDecisionId: vault.mandate_decision_id ?? null, payloadHash: d.payload_hash, signer: vault.address, humanSigned: false });
+  await audit(db, approver, byOwner ? 'decision.owner_approved_executed_under_mandate' : 'decision.approved_under_mandate', { id, vaultId: vault.id, epoch: Number(epoch), grantDecisionId: vault.mandate_decision_id ?? null, payloadHash: d.payload_hash, signer: vault.address, humanSigned: false, ...(byOwner ? { approvedBy: d.approver, ownerSigner: d.bound_signer } : {}) });
   return getDecision(db, id);
 }
 

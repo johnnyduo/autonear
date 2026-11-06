@@ -449,7 +449,7 @@ test('bluesky: default state is not_configured with an explanatory status, no re
   assert.ok(src.docs.startsWith('https://docs.bsky.app') && src.terms.includes('OPT-IN'));
 });
 
-test('bluesky (against a FAKE server; the real login flow is untested): login, Bearer search, relogin on expiry, credentials never leak', async () => {
+test('bluesky (against a FAKE server): login, Bearer search, relogin on expiry, credentials never leak', async () => {
   process.env.BLUESKY_HANDLE = '@Me.Bsky.Social'; process.env.BLUESKY_APP_PASSWORD = SECRET;
   assert.equal(blueskyConnector.availability().status, 'ready');
   const posts = fx('bluesky-searchposts-shape.json');

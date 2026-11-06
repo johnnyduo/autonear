@@ -14,7 +14,7 @@ import { llmStatus } from './orchestrator/llm.js';
 import { PROTOCOLS, findNetwork } from './protocols.js';
 import { ROLE_POLICY, DECISION_LIMITS, PolicyError, validate, vaultLimits } from './policy.js';
 import { ALLOWED_HOSTS } from './http-client.js';
-import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant } from './vault/index.js';
+import { vaultReport, listLedger, pauseLoop, resumeLoop, attachVault, proposeGrant, buildPlan, vaultStatusSummary, agentRegistrationFile, getLoop, verifyGrant, activateVault, getVault } from './vault/index.js';
 import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
 import { currentCouncil, journeyFor } from './council.js';
 import { getWatch, setWatch } from './watch.js';
@@ -57,7 +57,7 @@ const ALLOW = [
   [/^\/api\/security\/(pause|resume)$/, 'POST'],
   [/^\/api\/ingest$/, 'POST'],
   [/^\/api\/vault(\/ledger|\/plan|\/verify)?$/, 'GET, HEAD'],
-  [/^\/api\/vault\/(loop\/(pause|resume)|mandates\/propose|attach)$/, 'POST'],
+  [/^\/api\/vault\/(loop\/(pause|resume)|mandates\/propose|attach|activate)$/, 'POST'],
   [/^\/api\/auth\/(challenge|session)$/, 'POST'],
   [/^\/api\/auth\/me$/, 'GET, HEAD'],
   [/^\/api\/autonomy$/, 'GET, HEAD'],
@@ -313,6 +313,19 @@ export function createApp(deps) {
       const id = url.searchParams.get('decisionId') ?? '';
       if (!/^dec_\w+$/.test(id)) throw new PolicyError('decisionId (dec_...) required', 'input');
       return out(await verifyGrant(db, id, { fetchImpl }));
+    }
+    if (p === '/api/vault/activate' && m === 'POST') { // after the owner's last wallet step: turn on the vault whose chain state now equals the approved grant. Signs nothing; the same check the loop runs every tick.
+      const who = await needOwner(req);
+      const b = await body(req, { type: 'object', required: ['decisionId'], properties: { decisionId: { type: 'string', maxLength: 40 } } });
+      if (!/^dec_\w+$/.test(b.decisionId)) throw new PolicyError('decisionId (dec_...) required', 'input');
+      await ownsDecision(who, b.decisionId);
+      const d = await db.get('SELECT * FROM decisions WHERE id=?', [b.decisionId]);
+      if (!d || d.action !== 'grant_mandate') throw new PolicyError('not a grant_mandate decision', 'not_found');
+      const v = await db.get('SELECT * FROM vaults WHERE chain_id=? AND lower(address)=?', [d.chain_id, String(d.target).toLowerCase()]);
+      if (!v) throw new PolicyError('this vault is not attached to the backend yet: ask the operator to attach it', 'not_found');
+      const r = await activateVault(db, await getVault(db, v.id), { fetchImpl, keystore });
+      await audit(db, who.actor, 'vault.activate_requested', { decisionId: d.id, vaultId: v.id, activated: Boolean(r.activated) });
+      return out({ activated: Boolean(r.activated), reason: r.reason ?? null, vaultId: v.id });
     }
     if (p === '/api/vault/loop/pause' && m === 'POST') { const who = await needOwner(req); await pauseLoop(db, who.actor); return out({ loop: await getLoop(db) }); }
     if (p === '/api/vault/loop/resume' && m === 'POST') { const who = await needOwner(req); await resumeLoop(db, who.actor); return out({ loop: await getLoop(db) }); }

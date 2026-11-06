@@ -40,10 +40,10 @@ const wellOf = (oppId) => WELLS.indexOf(String(oppId).replace(/^opp_/, ''));
  * Graph model. node.wells = indices of the opportunity wells the record is linked to (stored links), or its first topic tag, or Untagged.
  * node.src = index into `sources`. Pure function of its inputs.
  */
-export function buildModel({ evidence, opps, links, sources }) {
+export function buildModel({ evidence, opps, links, sources, labels }) {
   const srcIdx = new Map(sources.map((s, i) => [s.id, i]));
   const oppById = new Map((opps ?? []).map((o) => [o.id, o]));
-  const wells = WELLS.map((id) => ({ id, label: WELL_SHORT[id], opp: oppById.get(`opp_${id}`) ?? null, n: 0, linked: 0 }));
+  const wells = WELLS.map((id) => ({ id, label: labels?.[id] ?? WELL_SHORT[id], opp: oppById.get(`opp_${id}`) ?? null, n: 0, linked: 0 }));
   const extraSrc = [];
   const nodes = evidence.map((e) => {
     let si = srcIdx.get(e.source_id);

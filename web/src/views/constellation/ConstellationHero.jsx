@@ -12,6 +12,7 @@ import { SphereScene } from './sphere.js';
 import { Scene } from './scene.js';
 import { ListView } from './ListView.jsx';
 import { focusEntry } from './council-star.js';
+import ScoreBox from './ScoreBox.jsx';
 import { ROLES, isRecent, lastIngest, roleStates, CountUp } from './shared.js';
 import './hero.css';
 
@@ -139,7 +140,8 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
   );
 }
 
-export default function ConstellationHero({ status, sources, activeRun, opps, calm, full = false, onReady, onStats }) {
+/** `demo` ({ evidence, links, labels }) swaps the stored data for an illustration (the landing hero). Nothing is fetched then. */
+export default function ConstellationHero({ status, sources, activeRun, opps, calm, full = false, demo = null, onReady, onStats }) {
   const stage = useRef(null); const glCv = useRef(null); const ovCv = useRef(null); const tip = useRef(null);
   const sceneRef = useRef(null); const scenes = useRef({ sphere: null, disc: null, graph: null }); const latest = useRef({}); const rt = useRef({ hover: null, pinned: null, focus: null, pointer: null, engaged: false, touch: false, tier: undefined, fps: 0 });
   const [rk, setRk] = useState('gl');
@@ -147,7 +149,8 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   const [model, setModel] = useState(null);
   const [view, setView] = useState('sphere');
   const [star, setStar] = useState('evidence');
-  const councilApi = useApi('/api/council', { poll: 30000 });
+  useEffect(() => { const sc = sceneRef.current; if (sc) { const sw = stage.current?.clientWidth ?? 0; sc.rightInset = star === 'council' && sw > 900 ? Math.min(380, Math.max(300, sw * 0.24)) + 28 : 0; } });
+  const councilApi = useApi('/api/council', { poll: 30000, enabled: !demo });
   const [hoverK, setHoverK] = useState(null); const [pinnedK, setPinnedK] = useState(null); const [focusK, setFocusK] = useState(null);
   const [filter, setFilter] = useState({ srcOff: new Set(), topicOff: new Set() });
   const [replay, setReplay] = useState({ active: false, playing: false, pos: 0, mode: 'ingest', cur: null });
@@ -170,21 +173,22 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   /* ---------- data: all stored evidence + stored links; reloaded when the stored count really changes ---------- */
   const oppKey = (opps ?? []).map((o) => o.id).join(',');
   const load = useCallback(async (fresh) => {
+    if (demo) { setData({ evidence: demo.evidence, links: demo.links, linkFail: 0, at: Date.now() }); setErr(null); return; }
     try {
       const ids = oppKey ? oppKey.split(',') : [];
       const bust = fresh === true ? String(Date.now()) : '';
       const [evidence, lk] = await Promise.all([loadAllEvidence(bust), loadLinks(ids, bust)]);
       setData({ evidence, links: lk.links, linkFail: lk.failed, at: Date.now() }); setErr(null);
     } catch (e) { setErr(e); }
-  }, [oppKey]);
+  }, [oppKey, demo]);
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { if (data && typeof total === 'number' && total !== data.evidence.length && total !== known.current) { known.current = total; load(true); } }, [total, data, load]);
+  useEffect(() => { if (!demo && data && typeof total === 'number' && total !== data.evidence.length && total !== known.current) { known.current = total; load(true); } }, [total, data, load]);
 
   const sourceKey = (sources ?? []).map((s) => s.id).join(',');
   const syncScene = useCallback((sc) => { const L = latest.current; if (!sc || !L.model) return; sc.setSources(L.srcInfo ?? []); sc.setCouncil?.(L.council); sc.setRoles(L.roles ?? {}, L.oppId, L.active); sc.setFilter(L.filter ?? { srcOff: new Set(), topicOff: new Set() }); sc.auto = L.auto && !calm; }, [calm]);
   useEffect(() => {
     if (!data) return;
-    const m = buildModel({ evidence: data.evidence, opps, links: data.links, sources: (sources ?? []).map((s) => ({ id: s.id, name: s.name })) });
+    const m = buildModel({ evidence: data.evidence, opps, links: data.links, labels: demo?.labels, sources: (sources ?? []).map((s) => ({ id: s.id, name: s.name })) });
     const first = !latest.current.model; latest.current.model = m;
     const sc = sceneRef.current;
     if (sc && sc.model) {
@@ -219,7 +223,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     const R = rt.current; const st = stage.current;
     let sc = scenes.current[view];
     if (!sc) { sc = view === 'sphere' ? new SphereScene({ calm }) : view === 'disc' ? new DiscScene({ calm }) : new Scene({ calm }); sc.setModel(latest.current.model); scenes.current[view] = sc; }
-    sceneRef.current = sc; sc.onSwap = (to) => setStar(to ? 'council' : 'evidence'); setStar(sc.swapT ? 'council' : 'evidence'); R.pinned = null; R.hover = null; R.focus = null; R.sized = false; setPinnedK(null); setFocusK(null); setHoverK(null); syncScene(sc);
+    sceneRef.current = sc; sc.rightInset = 0; sc.onSwap = (to) => setStar(to ? 'council' : 'evidence'); setStar(sc.swapT ? 'council' : 'evidence'); R.pinned = null; R.hover = null; R.focus = null; R.sized = false; setPinnedK(null); setFocusK(null); setHoverK(null); syncScene(sc);
     let renderer;
     try { renderer = rk === 'gl' ? new GLRenderer(glCv.current, { onLost: () => setRk('2d') }) : new Canvas2DRenderer(glCv.current); } catch { if (rk === 'gl') { setRk('2d'); return undefined; } setErr(new Error('Canvas is unavailable in this browser.')); return undefined; }
     const ovx = ovCv.current.getContext('2d');
@@ -404,6 +408,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
               </li>
             ))}
           </ul>
+          {star === 'council' && view === 'sphere' && councilApi.data && <ScoreBox data={councilApi.data} sceneRef={sceneRef} wide={(stage.current?.clientWidth ?? 0) > 900} />}
           {shown && (
             <aside ref={tip} className={`co-card ${pinnedK ? 'pinned' : ''} ${kbFocus ? 'kb' : ''}`} data-ui aria-label={pinnedK ? 'Pinned node details' : 'Node details'}>
               <Card k={shown} councilData={councilApi.data} model={model} srcInfo={srcInfo} roleState={roles} runId={activeRun?.id} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}

@@ -12,7 +12,7 @@ import { encodeAbiParameters, keccak256, parseAbiParameters, toBytes, toHex } fr
 
 export const NEAR_EVM = Object.freeze({
   chainId: 398, chainIdHex: '0x18e', name: 'NEAR testnet (EVM wallet)', rpc: 'https://eth-rpc.testnet.near.org',
-  explorer: 'https://eth-explorer-testnet.near.org', nearRpc: 'https://rpc.testnet.near.org', nearExplorer: 'https://testnet.nearblocks.io',
+  explorer: 'https://eth-explorer-testnet.near.org', nearRpc: 'https://rpc.testnet.fastnear.com', nearExplorer: 'https://testnet.nearblocks.io',
   symbol: 'NEAR', decimals: 18,
 });
 export const SELECTORS = Object.freeze({ functionCall: '0x6179b707', transfer: '0x3ed64124', addKey: '0x753ce5ab' });

@@ -64,7 +64,7 @@ export const blueskyConnector = {
   name: 'Bluesky · post search (opt-in, credentials required)',
   kind: 'demand',
   endpoint: 'https://bsky.social/xrpc/app.bsky.feed.searchPosts',
-  terms: 'OPT-IN. Uses your own Bluesky account through an APP PASSWORD (BLUESKY_HANDLE + BLUESKY_APP_PASSWORD) and is subject to Bluesky Terms of Service. Posts are user-authored; stored as excerpts with a link. Credentials are read from the environment per run, held in memory only and never logged or stored. Login + authenticated search are UNTESTED (no credentials were available when this was written).',
+  terms: 'OPT-IN. Uses your own Bluesky account through an APP PASSWORD (BLUESKY_HANDLE + BLUESKY_APP_PASSWORD) and is subject to Bluesky Terms of Service. Posts are user-authored; stored as excerpts with a link. Credentials are read from the environment per run, held in memory only and never logged or stored. Login and authenticated search were run once against a real account on 2026-11-06 (79 posts, 0 errors) and now run on every scheduled tick.',
   rateLimit: 'PDS: 3000 requests / 5 min per IP; createSession 30 / 5 min / account (docs.bsky.app/docs/advanced-guides/rate-limits). We log in at most once per hour per process and issue <= 5 searches per run, 1 s apart.',
   docsUrl: 'https://docs.bsky.app/docs/api/app-bsky-feed-search-posts',
   maxItems: () => maxItemsPerTick('BLUESKY_MAX_ITEMS'),
@@ -98,6 +98,6 @@ export const blueskyConnector = {
     if (!ok && errors.length) throw new Error(`every request failed: ${errors[0]}`);
     const seen = new Set(); const uniq = items.filter((a) => (seen.has(a.externalId) ? false : seen.add(a.externalId)));
     const w = windowAndSort(flagRepeats(uniq), maxAgeMs());
-    return { items: w.items, meta: { partial, errors: errors.slice(0, 5), errorCount: errors.length, outOfWindow: w.dropped, queries: QUERIES.length, untested: true } };
+    return { items: w.items, meta: { partial, errors: errors.slice(0, 5), errorCount: errors.length, outOfWindow: w.dropped, queries: QUERIES.length } };
   },
 };

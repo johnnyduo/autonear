@@ -2,7 +2,7 @@
 // Jargon map (internal -> shown): mandate -> limits, dossier -> finding, run -> check, circuit open -> paused, retrying, decision -> request, ledger -> history.
 export const BANNED = ['mandate', 'dossier', 'circuit', 'hash', 'epoch', 'calldata', 'ledger', 'nonce', 'payload', 'allowlist'];
 
-export const ROUTES = { home: 'Home', council: 'Council', approvals: 'Approvals', watch: 'Watch', vault: 'Vault' };
+export const ROUTES = { welcome: 'Welcome', home: 'Home', council: 'Council', approvals: 'Approvals', watch: 'Watch', vault: 'Vault' };
 
 export const T = {
   brand: 'AutoNEAR',
@@ -35,10 +35,15 @@ export const T = {
   emptyApprovals: 'Nothing is waiting for you.',
   emptyApprovalsHelp: 'When the agent wants to do something, it will show up here first.',
   nearStepsIntro: 'Approved. Now sign each step in your wallet, one after another. Your wallet may ask you to switch to the NEAR network, and the first time it asks for a one-time setup.',
+  nearOn: 'The vault is on. The agent can now act, but only inside your limits.',
+  nearNotOn: 'The limits are set, but the vault is not switched on yet.',
   nearOwnerOnly: 'This vault belongs to a different account, so these buttons are off.',
   nearAccept: 'Accept ownership',
   nearAcceptHelp: 'The current owner handed this vault to your wallet. Accepting makes you the owner.',
   nearSetupHint: 'The first signature is a one-time setup that lets the network send your later steps.',
+  agentWaiting: 'Approved. The agent publishes it from its own vault, inside your limits, within a minute or two. This page updates when it is on the network.',
+  agentNoVault: 'Approved. To publish it, the agent needs a vault with limits you set. Set one up on the Vault page, then it picks this up on its own.',
+  agentHeld: 'Approved, but the agent held this one back. The reason is on the Activity page. You can reject it and ask again.',
   stop: 'Stop the agent',
   stopHelp: 'Stops the agent on the server, then asks your wallet to pause the vault on chain. You can start it again whenever you like.',
   resume: 'Start the agent again',

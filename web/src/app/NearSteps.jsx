@@ -22,7 +22,7 @@ export function stepWords(step, vault) {
 
 export default function NearSteps({ d, owner, onDone }) {
   const [plan, setPlan] = useState(null); const [err, setErr] = useState('');
-  const [prog, setProg] = useState(() => load(d.id)); const [busy, setBusy] = useState(-1); const [stage, setStage] = useState(''); const [verdict, setVerdict] = useState(null);
+  const [prog, setProg] = useState(() => load(d.id)); const [busy, setBusy] = useState(-1); const [stage, setStage] = useState(''); const [verdict, setVerdict] = useState(null); const [on, setOn] = useState(null);
   const vault = d.payload?.vault?.address ?? d.target;
   useEffect(() => { let on = true; api(`/api/vault/plan?decisionId=${d.id}`).then((p) => on && setPlan(p)).catch((e) => on && setErr(e.message)); return () => { on = false; }; }, [d.id]);
   if (err) return <p className="why" role="alert">{err}</p>;
@@ -37,7 +37,11 @@ export default function NearSteps({ d, owner, onDone }) {
       const c = s.call;
       const r = await sendNearTx({ account: owner.address, receiver: c.receiverId, method: c.method || null, args: c.args ?? {}, deposit: BigInt(c.deposit ?? 0), gas: c.gas ? BigInt(c.gas) : undefined, onStage: setStage });
       const p = { ...prog, [i]: { hash: r.hash, explorer: r.explorer } }; setProg(p); save(d.id, p);
-      if (i === steps.length - 1 || !steps.some((_, j) => j > i && !p[j])) { try { setVerdict(await api(`/api/vault/verify?decisionId=${d.id}`)); onDone?.(); } catch (e) { setErr(e.message); } }
+      if (i === steps.length - 1 || !steps.some((_, j) => j > i && !p[j])) { try {
+        const v = await api(`/api/vault/verify?decisionId=${d.id}`); setVerdict(v);
+        if (v.ok || v.fieldsOk) setOn(await api('/api/vault/activate', { method: 'POST', body: { decisionId: d.id } }).catch((e) => ({ activated: false, reason: e.message })));
+        onDone?.();
+      } catch (e) { setErr(e.message); } }
     } catch (e) { setErr(/rejected|denied/i.test(e.message) ? 'You closed the wallet. Nothing was sent.' : e.message); }
     finally { setBusy(-1); setStage(''); }
   };
@@ -55,6 +59,7 @@ export default function NearSteps({ d, owner, onDone }) {
       </ol>
       {err && <p className="why" role="alert">{err}</p>}
       {verdict && <p role="status">{verdict.ok || verdict.fieldsOk ? 'Checked on the network: the limits match what you approved.' : 'The network does not match what you approved yet. Wait a minute and check again.'}</p>}
+      {on && <p role="status">{on.activated ? T.nearOn : `${T.nearNotOn} ${on.reason ?? ''}`.trim()}</p>}
     </div>
   );
 }

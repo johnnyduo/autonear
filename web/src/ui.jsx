@@ -64,6 +64,8 @@ export function Meter({ value = 0, tone, label }) {
 export function ApproverBadge({ approver, compact }) {
   if (!approver) return null;
   const m = /^mandate:/.test(approver);
+  const by = /^mandate:[^+]+\+(.+)$/.exec(approver)?.[1];
+  if (by) return <span className="chip human" title={`The owner approved this (${by}); the agent published it from its vault. The owner did not sign the transaction.`}><Icon name="user" size={13} />{compact ? 'owner approved' : `approved by owner · published by the agent`}</span>;
   return m
     ? <span className="chip mandate" title={`Approved by the autonomy loop under ${approver}. No human clicked approve for this decision.`}><Icon name="bot" size={13} />{compact ? 'under mandate' : `approved under ${approver}`}</span>
     : <span className="chip human" title={`Approved by a human: ${approver}`}><Icon name="user" size={13} />{compact ? 'by human' : `approved by human · ${approver}`}</span>;
