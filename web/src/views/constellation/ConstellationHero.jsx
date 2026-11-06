@@ -10,7 +10,7 @@ import { GLRenderer } from './render-gl.js';
 import { DiscScene } from './disc.js';
 import { Scene } from './scene.js';
 import { ListView } from './ListView.jsx';
-import { ROLES, isRecent, lastIngest, roleStates } from './shared.js';
+import { ROLES, isRecent, lastIngest, roleStates, CountUp } from './shared.js';
 import './hero.css';
 
 const TIERS = [
@@ -172,12 +172,14 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     const ovx = ovCv.current.getContext('2d');
     let W = 0; let H = 0; const forceTier = Number.isInteger(window.__coTier); /* test hook: pins the quality tier so headless software GL cannot step it down */ let tier = forceTier ? window.__coTier : R.tier ?? (st.clientWidth < 640 || matchMedia('(pointer: coarse)').matches ? 1 : 0); let reserved = []; let raf = 0; let last = 0; let ema = 16.7; let nF = 0; let visible = true; let stopped = false; let fpsT = 0; let fpsN = 0; let uiT = 0; let resT = 0; let cooldown = 0;
     const apply = () => {
+      if (!ovCv.current) return;
       const T = TIERS[tier]; const dpr = Math.min(T.dpr, window.devicePixelRatio || 1);
       renderer.resize(W, H, dpr); renderer.bloom = rk === 'gl' ? T.bloom : (tier === 0 ? 1 : 0);
       ovCv.current.width = Math.round(W * dpr); ovCv.current.height = Math.round(H * dpr); R.dpr = dpr;
       sc.setQuality({ dust: calm ? Math.min(T.dust, 500) : T.dust, prov: T.prov, flat: rk !== 'gl', fx: rk === 'gl' ? T.fx : Math.min(T.fx, 0.3) }); R.tier = tier; st.dataset.tier = String(tier);
     };
     const measure = () => {
+      if (stopped || !ovCv.current || !glCv.current) return; // a ResizeObserver callback can land after React detached the canvases (route change): nothing to size
       const r = st.getBoundingClientRect(); W = Math.max(2, Math.round(r.width)); H = Math.max(2, Math.round(r.height));
       sc.resize(W, H); sc.onResize(); setNarrow(W < 640);
       if (R.touch && tier === 0) tier = 1;
@@ -368,12 +370,12 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
       <div className="co-chips" data-ui data-reserve aria-label="Filters">
         <div className="co-chiprow" role="group" aria-label="Filter by source">
           {model.sources.map((s, si) => { const off = filter.srcOff.has(s.id); return (
-            <button type="button" key={s.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view !== 'list' && setFocusK({ t: 'src', i: si })} onMouseLeave={() => setFocusK((f) => (f?.t === 'src' && f.i === si ? null : f))} onClick={() => setFilter((f) => ({ ...f, srcOff: toggle(f.srcOff, s.id) }))}><i style={{ background: srcColor(s.id) }} aria-hidden="true" />{srcShort(s.id)}<span className="num">{counts.src[s.id] ?? 0}</span></button>
+            <button type="button" key={s.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view !== 'list' && setFocusK({ t: 'src', i: si })} onMouseLeave={() => setFocusK((f) => (f?.t === 'src' && f.i === si ? null : f))} onClick={() => setFilter((f) => ({ ...f, srcOff: toggle(f.srcOff, s.id) }))}><i style={{ background: srcColor(s.id) }} aria-hidden="true" />{srcShort(s.id)}<span className="num"><CountUp value={counts.src[s.id] ?? 0} /></span></button>
           ); })}
         </div>
         <div className="co-chiprow" role="group" aria-label="Filter by topic">
           {model.wells.map((w, wi) => { const off = filter.topicOff.has(w.id); return (
-            <button type="button" key={w.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view === 'disc' && setFocusK({ t: 'well', i: wi })} onMouseLeave={() => setFocusK((f) => (f?.t === 'well' && f.i === wi ? null : f))} onClick={() => setFilter((f) => ({ ...f, topicOff: toggle(f.topicOff, w.id) }))}>{w.label}<span className="num">{counts.top[w.id] ?? 0}</span></button>
+            <button type="button" key={w.id} className="chip co-chip" aria-pressed={!off} onMouseEnter={() => view === 'disc' && setFocusK({ t: 'well', i: wi })} onMouseLeave={() => setFocusK((f) => (f?.t === 'well' && f.i === wi ? null : f))} onClick={() => setFilter((f) => ({ ...f, topicOff: toggle(f.topicOff, w.id) }))}>{w.label}<span className="num"><CountUp value={counts.top[w.id] ?? 0} /></span></button>
           ); })}
         </div>
       </div>

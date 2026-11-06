@@ -19,6 +19,13 @@ export function drawDiscOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, narro
   const hot = sc.hover ?? sc.pinned ?? sc.focus; const isHot = (a, i) => hot && hot.t === a && hot.i === i;
   const spin = calm || !sc.auto ? 0 : t;
   ctx.globalAlpha = sc.intro;
+  // Values ease from 0 to the stored number when the view opens and whenever the number changes. The motion is cosmetic; the end value is the stored one.
+  const HUD = sc.hud ?? (sc.hud = { v: {}, last: t });
+  const dtH = Math.min(0.1, Math.max(0, t - HUD.last)); HUD.last = t;
+  const tw = (key, target, rate = 2.2) => { if (calm) return target; const cur = HUD.v[key] ?? 0; const nv = cur + (target - cur) * (1 - Math.exp(-dtH * rate)); HUD.v[key] = Math.abs(target - nv) < 1e-4 * Math.max(1, Math.abs(target)) ? target : nv; return HUD.v[key]; };
+  const comet = (r, a0, a1, key, col, speed = 0.3, len = 0.09) => { // bright short segment running along an arc
+    if (calm || a1 - a0 < 0.02) return; const u = (t * speed + key * 0.137) % 1; const h = a0 + (a1 - a0) * u; ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = ctx.lineWidth + 1.2; ctx.strokeStyle = rgb(col, 0.9); ctx.shadowColor = rgb(col, 0.8); ctx.shadowBlur = 8; arc(ctx, cx, cy, r, Math.max(a0, h - len), h); ctx.restore();
+  };
 
   // ---- sparkles (decorative stars)
   for (const s of ov.sparkles ?? []) { ctx.strokeStyle = `rgba(255,236,200,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(s.x - 6, s.y); ctx.lineTo(s.x + 6, s.y); ctx.moveTo(s.x, s.y - 6); ctx.lineTo(s.x, s.y + 6); ctx.stroke(); }
@@ -58,19 +65,25 @@ export function drawDiscOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, narro
   for (let h = 0; h < 24; h++) { const a = (h / 24) * TAU - Math.PI / 2; const len = h % 6 === 0 ? 8 : 4; ctx.strokeStyle = rgb(CH, h % 6 === 0 ? 0.55 : 0.28); ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * (clockR - len / 2), cy + Math.sin(a) * (clockR - len / 2)); ctx.lineTo(cx + Math.cos(a) * (clockR + len / 2), cy + Math.sin(a) * (clockR + len / 2)); ctx.stroke(); }
   if (!narrow && z < 3) { ctx.font = MONO(fs - 1.5); ctx.fillStyle = COL.chalk3; ctx.textAlign = 'center'; [['00', 0], ['06', 1], ['12', 2], ['18', 3]].forEach(([l, q]) => { const a = (q / 4) * TAU - Math.PI / 2; ctx.fillText(l, cx + Math.cos(a) * (clockR + 15), cy + Math.sin(a) * (clockR + 15)); }); ctx.fillText('UTC', cx + 20, cy - clockR - 15); }
 
+  { // current UTC time of day on the clock ring, so a source's last-ingest angle can be read against "now"
+    const d = new Date(); const day = (d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds()) / 86400; const na = day * TAU - Math.PI / 2; const pu = calm ? 0.5 : 0.5 + 0.5 * Math.sin(t * 2.6);
+    ctx.save(); ctx.strokeStyle = `rgba(255,248,225,${0.65 + 0.3 * pu})`; ctx.lineWidth = 2; ctx.shadowColor = 'rgba(255,240,200,0.8)'; ctx.shadowBlur = 6 + 6 * pu;
+    ctx.beginPath(); ctx.moveTo(cx + Math.cos(na) * (clockR - 11), cy + Math.sin(na) * (clockR - 11)); ctx.lineTo(cx + Math.cos(na) * (clockR + 11), cy + Math.sin(na) * (clockR + 11)); ctx.stroke(); ctx.restore();
+  }
   // ---- source-share ring (stored counts per source)
   const sh = R * 1.135; const gapA = 0.035; let a0 = -Math.PI / 2 + 0.01; const tot = st.N; ctx.lineWidth = 2.2;
   m.sources.forEach((s, i) => {
-    const frac = st.src[i] / tot; const span = Math.max(0, frac * (TAU - gapA * m.sources.length)); const col = m.nodes.find((n) => n.src === i)?.color ?? [0.7, 0.7, 0.7]; const off = sc.filter.srcOff.has(s.id);
+    const frac = st.src[i] / tot; const span = Math.max(0, frac * (TAU - gapA * m.sources.length)) * tw('ring', 1, 1.3); const col = m.nodes.find((n) => n.src === i)?.color ?? [0.7, 0.7, 0.7]; const off = sc.filter.srcOff.has(s.id);
     ctx.strokeStyle = rgb(col, off ? 0.2 : 0.9); arc(ctx, cx, cy, sh, a0, a0 + span); a0 += span + gapA;
   });
+  if (!calm) { const ph = (t * 0.5) % TAU; ctx.lineWidth = 3.4; ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(255,250,235,0.5)'; ctx.shadowColor = 'rgba(255,250,235,0.7)'; ctx.shadowBlur = 8; arc(ctx, cx, cy, sh, ph, ph + 0.3); ctx.shadowBlur = 0; ctx.lineCap = 'butt'; }
 
   // ---- topic / opportunity rim: track + score fill
   const rim = R * 1.055; ctx.lineWidth = 3;
   for (const s of sc.sectors) {
     if (!s) continue; const wl = m.wells[s.w]; const on = !sc.filter.topicOff.has(wl.id); const hl = isHot('well', s.w);
     ctx.strokeStyle = rgb(CH, (hl ? 0.6 : 0.22) * (on ? 1 : 0.4)); arc(ctx, cx, cy, rim, s.a0, s.a1);
-    if (wl.opp) { const sc2 = Math.max(0, Math.min(1, wl.opp.score)); ctx.strokeStyle = rgb(LIMEC, (hl ? 1 : 0.9) * (on ? 1 : 0.3)); ctx.lineWidth = hl ? 4 : 3; arc(ctx, cx, cy, rim, s.a0, s.a0 + (s.a1 - s.a0) * sc2); ctx.lineWidth = 3; }
+    if (wl.opp) { const sc2 = Math.max(0, Math.min(1, wl.opp.score)) * tw(`rim${s.w}`, 1, 1.6); ctx.strokeStyle = rgb(LIMEC, (hl ? 1 : 0.9) * (on ? 1 : 0.3)); ctx.lineWidth = hl ? 4 : 3; const e1 = s.a0 + (s.a1 - s.a0) * sc2; arc(ctx, cx, cy, rim, s.a0, e1); if (on) comet(rim, s.a0, e1, s.w + 1, [0.95, 1, 0.7], 0.28, 0.07); ctx.lineWidth = 3; }
     const lx = cx + Math.cos(s.mid) * rim; const ly = cy + Math.sin(s.mid) * rim; const ax = cx + Math.cos(s.mid) * R * 1.78; const ay = cy + Math.sin(s.mid) * R * 1.78;
     const l2 = wl.opp ? `${wl.opp.score.toFixed(2)} score · ${s.n} rec` : `${s.n} rec · no hub`;
     if (z < 3.5) items.push({ key: `w${s.w}`, x: ax, y: ay, r: 3, a: on ? 1 : 0.5, pr: hl ? 0 : 1, pref: Math.cos(s.mid) >= 0 ? 0 : 1, lead: { x: lx, y: ly }, lines: [[wl.label.toUpperCase(), fs + 0.5, COL.chalk, 600], [l2, fs - 1, wl.opp ? COL.lime : COL.chalk2, 500]] });
@@ -80,10 +93,10 @@ export function drawDiscOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, narro
   if (st.top >= 0 && !(narrow && z > 1.5)) {
     const w = m.wells[st.top]; const o = w.opp; const g0 = Math.PI * 0.75; const sw = Math.PI * 1.5; const gr = R * 1.215;
     ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.strokeStyle = rgb(LIMEC, 0.1); arc(ctx, cx, cy, gr, g0, g0 + sw);
-    ctx.shadowColor = 'rgba(198,244,50,0.5)'; ctx.shadowBlur = 10; ctx.strokeStyle = rgb(LIMEC, 0.95); arc(ctx, cx, cy, gr, g0, g0 + sw * o.score); ctx.shadowBlur = 0;
-    ctx.lineWidth = 2; ctx.setLineDash([7, 4]); ctx.strokeStyle = rgb([0.85, 0.88, 0.8], 0.75); arc(ctx, cx, cy, gr + 8, g0, g0 + sw * o.confidence); ctx.setLineDash([]); ctx.lineCap = 'butt';
-    const ea = g0 + sw * o.score; const ex = cx + Math.cos(ea) * (gr + 20); const ey = cy + Math.sin(ea) * (gr + 20);
-    if (!narrow) { ctx.textAlign = Math.cos(ea) > 0 ? 'left' : 'right'; ctx.fillStyle = COL.lime; ctx.font = MONO(15, 500); ctx.fillText(o.score.toFixed(2), ex + (Math.cos(ea) > 0 ? 4 : -4), ey - 5); ctx.fillStyle = COL.chalk2; ctx.font = MONO(fs - 1.5); ctx.fillText(`TOP SCORE · ${w.label.toUpperCase()}`, ex + (Math.cos(ea) > 0 ? 4 : -4), ey + 9); ctx.fillText(`CONF ${o.confidence.toFixed(2)}`, ex + (Math.cos(ea) > 0 ? 4 : -4), ey + 21); }
+    const gsc = tw('gs', o.score, 1.8); const gcf = tw('gc', o.confidence, 1.8); ctx.shadowColor = 'rgba(198,244,50,0.5)'; ctx.shadowBlur = 10; ctx.strokeStyle = rgb(LIMEC, 0.95); arc(ctx, cx, cy, gr, g0, g0 + sw * gsc); ctx.shadowBlur = 0; comet(gr, g0, g0 + sw * gsc, 11, [0.95, 1, 0.7], 0.22, 0.12); ctx.lineWidth = 4;
+    ctx.lineWidth = 2; ctx.strokeStyle = rgb([0.85, 0.88, 0.8], 0.75); ctx.setLineDash([7, 4]); ctx.lineDashOffset = calm ? 0 : -t * 6; arc(ctx, cx, cy, gr + 8, g0, g0 + sw * gcf); ctx.setLineDash([]); ctx.lineDashOffset = 0; ctx.lineCap = 'butt';
+    const ea = g0 + sw * gsc; const ex = cx + Math.cos(ea) * (gr + 20); const ey = cy + Math.sin(ea) * (gr + 20);
+    if (!narrow) { ctx.textAlign = Math.cos(ea) > 0 ? 'left' : 'right'; ctx.fillStyle = COL.lime; ctx.font = MONO(15, 500); ctx.fillText(gsc.toFixed(2), ex + (Math.cos(ea) > 0 ? 4 : -4), ey - 5); ctx.fillStyle = COL.chalk2; ctx.font = MONO(fs - 1.5); ctx.fillText(`TOP SCORE · ${w.label.toUpperCase()}`, ex + (Math.cos(ea) > 0 ? 4 : -4), ey + 9); ctx.fillText(`CONF ${gcf.toFixed(2)}`, ex + (Math.cos(ea) > 0 ? 4 : -4), ey + 21); }
   }
 
   // ---- agent roles (dark when idle; lit only from real run events)
@@ -95,7 +108,7 @@ export function drawDiscOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, narro
   }
 
   // ---- centre readout (stored aggregate)
-  if (z < 2.2) { ctx.textAlign = 'center'; ctx.fillStyle = `rgba(236,233,223,${0.95 * fade})`; ctx.font = SERIF(Math.max(16, Math.min(46, R * 0.17))); ctx.fillText(String(st.N), cx, cy - 4); ctx.font = MONO(fs - 1.5); ctx.fillStyle = `rgba(180,178,168,${fade})`; ctx.fillText('STORED RECORDS', cx, cy + Math.max(14, R * 0.1)); }
+  if (z < 2.2) { ctx.textAlign = 'center'; ctx.fillStyle = `rgba(236,233,223,${0.95 * fade})`; ctx.font = SERIF(Math.max(16, Math.min(46, R * 0.17))); ctx.fillText(String(Math.round(tw('N', st.N, 2.4))), cx, cy - 4); ctx.font = MONO(fs - 1.5); ctx.fillStyle = `rgba(180,178,168,${fade})`; ctx.fillText('STORED RECORDS', cx, cy + Math.max(14, R * 0.1)); }
 
   // ---- marks (glyph brackets)
   for (const mk of ov.marks) {
@@ -105,12 +118,20 @@ export function drawDiscOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, narro
     ctx.beginPath(); for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { ctx.moveTo(mk.x + sx * h, mk.y + sy * (h - L)); ctx.lineTo(mk.x + sx * h, mk.y + sy * h); ctx.lineTo(mk.x + sx * (h - L), mk.y + sy * h); } ctx.stroke();
   }
 
-  // ---- relevance stripes (right edge): share of stored records with relevance >= 0.95
+  // ---- relevance stripes (right edge): share of stored records with relevance >= 0.95. The fill and the numbers ease up from 0; a light wave runs up the lit stripes and a scan line crosses the column.
   if (W >= 900 && z < 2.5) {
-    const n = 26; const x1 = W - 20; const x0 = x1 - 46; const y1 = cy + R * 0.9; const fill = Math.round(st.high * n);
-    for (let i = 0; i < n; i++) { const y = y1 - i * 6; const on = i < fill; ctx.fillStyle = on ? 'rgba(198,244,50,0.9)' : 'rgba(140,139,130,0.32)'; ctx.fillRect(x0 + (n - i) * 0.35, y, 46 - (n - i) * 0.35, 2.4); }
-    ctx.textAlign = 'right'; ctx.fillStyle = COL.lime; ctx.font = MONO(20, 500); ctx.fillText(`${Math.round(st.high * 100)}%`, x1, y1 + 22); ctx.fillStyle = COL.chalk2; ctx.font = MONO(fs - 1.5); ctx.fillText('RELEVANCE ≥ 0.95', x1, y1 + 38);
-    ctx.fillStyle = COL.chalk; ctx.font = MONO(15, 500); ctx.fillText(`${st.flagged} FLAGGED`, x1, cy - R * 0.9 - 8); ctx.fillStyle = COL.chalk2; ctx.font = MONO(fs - 1.5); ctx.fillText(`${(st.flagged / st.N * 100).toFixed(1)}% OF RECORDS`, x1, cy - R * 0.9 + 8);
+    const n = 26; const x1 = W - 20; const x0 = x1 - 46; const y1 = cy + R * 0.9; const hi = tw('hi', st.high, 1.8); const fillF = hi * n; const fl = tw('fl', st.flagged, 2.2);
+    const scan = calm ? -1 : ((t * 0.32) % 1.25) * n - 1.5; // row index of the scan line, mostly inside the column
+    for (let i = 0; i < n; i++) {
+      const y = y1 - i * 6; const lit = Math.max(0, Math.min(1, fillF - i));
+      const wave = calm ? 0 : Math.max(0, Math.sin((i / n) * TAU * 1.5 - t * 2.4)) ** 4; const near = Math.max(0, 1 - Math.abs(i - scan) / 2.2);
+      const a = lit > 0 ? (0.62 + 0.3 * wave) * Math.max(0.35, lit) + 0.4 * near : 0.32 + 0.35 * near;
+      ctx.fillStyle = lit > 0 ? `rgba(${198 + Math.round(40 * near)},${244 + Math.round(10 * near)},${50 + Math.round(120 * near)},${Math.min(1, a)})` : `rgba(140,139,130,${Math.min(0.8, a)})`;
+      ctx.fillRect(x0 + (n - i) * 0.35, y, 46 - (n - i) * 0.35, 2.4);
+    }
+    ctx.textAlign = 'right'; ctx.fillStyle = COL.lime; ctx.font = MONO(20, 500); ctx.fillText(`${Math.round(hi * 100)}%`, x1, y1 + 22); ctx.fillStyle = COL.chalk2; ctx.font = MONO(fs - 1.5); ctx.fillText('RELEVANCE ≥ 0.95', x1, y1 + 38);
+    const fy = cy - R * 0.9; ctx.fillStyle = COL.chalk; ctx.font = MONO(15, 500); ctx.fillText(`${Math.round(fl)} FLAGGED`, x1, fy - 8); ctx.fillStyle = COL.chalk2; ctx.font = MONO(fs - 1.5); ctx.fillText(`${(st.flagged / st.N * 100).toFixed(1)}% OF RECORDS`, x1, fy + 8);
+    if (st.flagged > 0) { const pr = calm ? 0.5 : 0.5 + 0.5 * Math.sin(t * 2.2); ctx.font = MONO(15, 500); const w2 = ctx.measureText(`${Math.round(fl)} FLAGGED`).width; ctx.fillStyle = `rgba(255,106,61,${0.55 + 0.4 * pr})`; ctx.beginPath(); ctx.arc(x1 - w2 - 12, fy - 8, 3.2 + pr * 1.4, 0, TAU); ctx.fill(); }
   }
   ctx.globalAlpha = 1;
   placeLabels(ctx, sc, items, { W, H, reserved, narrow, labelsOn });

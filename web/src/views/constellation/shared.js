@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 // Tiny, dependency-free helpers shared by the Overview shell (main bundle) and the lazy constellation chunk.
 export const RECENT_MS = 20 * 60e3;
 
@@ -18,4 +19,17 @@ export function roleStates(events) {
     m[e.agent_role] = e.status === 'started' ? 'working' : e.status === 'completed' ? 'done' : ['failed', 'blocked', 'cancelled', 'dead_letter'].includes(e.status) ? 'halted' : m[e.agent_role];
   }
   return m;
+}
+
+/** Eases a whole number from its previous value to `value` (reduced motion: shows it straight away). */
+export function CountUp({ value, ms = 900 }) {
+  const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [shown, setShown] = useState(calm || typeof value !== 'number' ? value : 0); const from = useRef(0);
+  useEffect(() => {
+    if (typeof value !== 'number' || calm) { setShown(value); return undefined; }
+    const a = from.current; const t0 = performance.now(); let raf = 0;
+    const step = (now) => { const u = Math.min(1, (now - t0) / ms); const e = 1 - (1 - u) ** 3; const v = Math.round(a + (value - a) * e); from.current = v; setShown(v); if (u < 1) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step); return () => cancelAnimationFrame(raf);
+  }, [value, ms, calm]);
+  return shown;
 }

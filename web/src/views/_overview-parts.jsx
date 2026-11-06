@@ -5,7 +5,7 @@ import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 import { fmt } from '../api.js';
 import { useCalm } from '../ui.jsx';
 import { srcColor, srcShort } from './_evidence-parts.jsx';
-import { RECENT_MS, isRecent, lastIngest, roleStates } from './constellation/shared.js';
+import { RECENT_MS, isRecent, lastIngest, roleStates, CountUp } from './constellation/shared.js';
 import './constellation/panel.css';
 
 export { RECENT_MS, isRecent, lastIngest, roleStates };
@@ -52,7 +52,7 @@ export function ConstellationPanel({ status, opps, evidenceCount, full = false, 
         <header className="co-title" data-reserve>
           <p className="eyebrow">Evidence</p>
           <h2 id={hid}>Everything the agent has <em>read</em>.</h2>
-          <p className="co-title-s mono">{typeof total === 'number' ? `${total} records` : '…'} · {src.length || '…'} sources · {oppN ?? '…'} opportunities</p>
+          <p className="co-title-s mono">{typeof total === 'number' ? <><CountUp value={total} /> records</> : '…'} · {src.length ? <CountUp value={src.length} /> : '…'} sources · {typeof oppN === 'number' ? <CountUp value={oppN} /> : '…'} opportunities</p>
         </header>
         {mount && (
           <Suspense fallback={null}>
