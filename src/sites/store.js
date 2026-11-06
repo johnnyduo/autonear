@@ -1,7 +1,8 @@
-// Storage for the example pages (table `sites`, created in src/db.js SCHEMA_V4). One row per (slug, content hash).
+// Storage for the concept pages (table `sites`, created in src/db.js SCHEMA_V4). One row per (slug, content hash).
 // published_at is set on at most one row per slug: the partial unique index enforces it and publish() clears the others first.
 import { parse, j, now } from '../db.js';
 import { PolicyError } from '../policy.js';
+import { validateContent } from './schema.js';
 
 const row = (r) => (r ? { slug: r.slug, hash: r.hash, opp_id: r.opp_id, content: parse(r.content, null), meta: parse(r.meta, {}), created_at: r.created_at, published_at: r.published_at ?? null } : null);
 
@@ -33,4 +34,11 @@ export async function unpublish(db, slug) {
 /** Tokens spent on page text since `sinceMs` (the daily budget check). */
 export async function tokensSince(db, sinceMs) {
   return (await db.all('SELECT meta FROM sites WHERE created_at>=?', [sinceMs])).reduce((a, r) => a + (Number(parse(r.meta, {}).tokens) || 0), 0);
+}
+
+/** Keys ("slug/hash") of the stored versions whose content no longer passes the current schema (for example pages written before the contract field existed). */
+export async function staleKeys(db) {
+  const out = new Set();
+  for (const r of await db.all('SELECT slug,hash,content FROM sites')) if (!validateContent(parse(r.content, null)).ok) out.add(`${r.slug}/${r.hash}`);
+  return out;
 }
