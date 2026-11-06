@@ -47,6 +47,7 @@
     "cf:dry": "npx wrangler deploy --dry-run --outdir .wrangler/dry",
     "test:web": "node --test web/src/app/",
     "scan:secrets": "node scripts/secret-scan.mjs",
+    "owner:onboard": "node scripts/owner-onboard.mjs",
     "scan:secrets:history": "node scripts/secret-scan.mjs --history",
     "hooks:install": "git config core.hooksPath .githooks",
     "e2e:near-loop": "ENABLE_EVM=1 node scripts/e2e-near-loop.mjs",

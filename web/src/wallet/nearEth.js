@@ -96,6 +96,19 @@ export async function viewNear({ contract, method, args = {}, fetchImpl }) {
 }
 
 /**
+ * MetaMask refuses to let a website send a transaction WITH DATA to one of the user's own accounts ("External transactions to internal accounts cannot include data").
+ * The one-time relayer setup is exactly that: the wallet contract only accepts AddKey from the account to itself (types.rs: SelfNearNativeAction), so tx.to is the user's own address.
+ * Turn that into something the owner can act on. Every other error passes through unchanged.
+ */
+export function explainWalletError(e) {
+  if (/External transactions to internal accounts cannot include data/i.test(String(e?.message ?? e))) {
+    const err = new Error('MetaMask will not let a website send the one-time setup to your own address. Run "npm run owner:onboard" once on your computer (it signs with your own key and sends nothing else), or use a wallet that allows it, then try again.');
+    err.code = 'WALLET_SELF_DATA_BLOCKED'; err.cause = e; return err;
+  }
+  return e;
+}
+
+/**
  * Sign and send one NEAR action from the connected 0x account. Returns { hash } once the relayer accepted it; use waitForReceipt for the outcome.
  * `provider` is an EIP-1193 provider (MetaMask or any injected wallet).
  */
@@ -107,7 +120,7 @@ export async function callNear({ provider, account, receiver, method, args, depo
   const ob = await onboardingStatus(account, fetchImpl);
   if (!ob.onboarded) {
     const nonce0 = await relayer('eth_getTransactionCount', [account, 'latest'], fetchImpl); const gp0 = await relayer('eth_gasPrice', [], fetchImpl);
-    const h = await provider.request({ method: 'eth_sendTransaction', params: [buildTx({ account, nonce: nonce0, gasPrice: gp0, onboard: ob.relayerKeyHex })] });
+    let h; try { h = await provider.request({ method: 'eth_sendTransaction', params: [buildTx({ account, nonce: nonce0, gasPrice: gp0, onboard: ob.relayerKeyHex })] }); } catch (e) { throw explainWalletError(e); }
     for (let i = 0; i < 40; i++) { if ((await onboardingStatus(account, fetchImpl)).onboarded) break; if (i === 39) throw new Error('The one-time setup was sent but is not visible yet. Try again in a minute.'); await new Promise((ok) => setTimeout(ok, 2500)); }
     void h;
   }

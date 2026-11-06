@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeAbiParameters, parseAbiParameters, keccak256, toBytes, hexToString } from 'viem';
-import { accountToAddress, b58encode, buildTx, encodeAction, encodeOnboarding, onboardingStatus, nearRpc, SELECTORS, NEAR_EVM } from '../wallet/nearEth.js';
+import { accountToAddress, b58encode, buildTx, encodeAction, encodeOnboarding, onboardingStatus, nearRpc, explainWalletError, callNear, SELECTORS, NEAR_EVM } from '../wallet/nearEth.js';
 
 test('selectors match the wallet contract (near/near-wallet-contract types.rs)', () => {
   assert.equal(SELECTORS.functionCall, '0x6179b707'); assert.equal(SELECTORS.transfer, '0x3ed64124'); assert.equal(SELECTORS.addKey, '0x753ce5ab');
@@ -86,4 +86,20 @@ test('nearRpc raises a { result: { error } } answer, and still returns ordinary 
   await assert.rejects(nearRpc('query', {}, fakeNet({ result: { error: 'boom', logs: [] } })), /boom/);
   assert.deepEqual(await nearRpc('query', {}, fakeNet({ result: { amount: '1' } })), { amount: '1' });
   assert.deepEqual(await nearRpc('x', {}, fakeNet({ result: [1, 2] })), [1, 2]);
+});
+
+test('the MetaMask self-address rule is explained in plain words; every other error passes through untouched', () => {
+  const mm = Object.assign(new Error('External transactions to internal accounts cannot include data'), { code: -32602 });
+  const e = explainWalletError(mm); assert.equal(e.code, 'WALLET_SELF_DATA_BLOCKED'); assert.match(e.message, /owner:onboard/); assert.equal(e.cause, mm);
+  const other = new Error('User rejected the request.'); assert.equal(explainWalletError(other), other);
+  assert.equal(explainWalletError('External transactions to internal accounts cannot include data').code, 'WALLET_SELF_DATA_BLOCKED');
+});
+test('callNear: when the wallet refuses the one-time setup the owner gets the explanation, and no second transaction is attempted', async () => {
+  const sent = [];
+  const provider = { async request({ method }) { if (method === 'eth_requestAccounts') return [ACCT]; if (method === 'eth_chainId') return NEAR_EVM.chainIdHex; if (method === 'eth_sendTransaction') { sent.push(method); throw new Error('External transactions to internal accounts cannot include data'); } return null; } };
+  const fx = async (url, init) => { const b = JSON.parse(init.body); const reply = (o) => ({ ok: true, status: 200, json: async () => ({ jsonrpc: '2.0', id: 1, ...o }) });
+    if (String(url) === NEAR_EVM.rpc) return reply({ result: b.method === 'near_getPublicKey' ? { public_key: RELAYER_KEY } : '0x0' });
+    return reply({ result: { block_hash: 'x', block_height: 1, error: 'access key does not exist while viewing', logs: [] } }); };
+  await assert.rejects(callNear({ provider, account: ACCT, receiver: 'v.testnet', method: 'm', args: {}, fetchImpl: fx }), (e) => e.code === 'WALLET_SELF_DATA_BLOCKED');
+  assert.equal(sent.length, 1, 'only the setup was attempted');
 });
