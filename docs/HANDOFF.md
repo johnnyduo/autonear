@@ -51,6 +51,9 @@ The vault's `pending_owner` is the user's `0x…9988`. It becomes the owner only
 6. 3D glyph sphere view (deferred on the user's request; a first attempt was stopped, no files left).
 7. Demo video, X post, submission form (the user's).
 
+- Landing (2026-11-06): the hero is an ILLUSTRATION (`web/src/app/landing-demo.js` makes ~300 made-up records on hype topics, `LandingCard.jsx` + `landing-cards.js` cycle made-up council scores with TV-static and streaming text). Labelled EXAMPLE; real data stays on Home and `#/constellation`. The logo links to `#/welcome` (landing, works when connected). A wallet choice opens as a modal on `document.body`.
+- MetaMask warnings: hosts are not on MetaMask's phishing list, but `*.vercel.app` and `*.workers.dev` are heavily abused, so warnings are likely; the fix is a subdomain of an older domain the user owns plus a Blockaid false-positive report.
+
 ## Rules that apply
 - Honesty: no invented data; no "audited" for AI or automated checks; human signing is never simulated; label the demo-owner signatures as automated; testnet only.
 - Git discipline: other sessions edit this repo at the same time. Run `git status` first and `git add` only the files you changed (never `git add web/src web/dist` wholesale: that once pushed someone else's half-finished app and a stale dist and blacked out production). Build `web/dist` from committed source plus your own files (for example `git archive HEAD web` into a temp dir, copy your files in, `vite build`, copy `dist` back), because `web/dist` is tracked and served.
