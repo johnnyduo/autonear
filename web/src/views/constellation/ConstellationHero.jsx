@@ -400,7 +400,6 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   }, [model]);
 
   const toggle = (set, id) => { const n = new Set(set); n.has(id) ? n.delete(id) : n.add(id); return n; };
-  const startReplay = () => { const sc = sceneRef.current; if (!sc) return; setPinnedK(null); sc.startReplay(replay.mode); setReplay((r) => ({ ...r, active: true, playing: true, pos: 0, cur: null })); };
   const rp = (fn) => () => { const sc = sceneRef.current; if (sc) fn(sc); };
   const shown = pinnedK ?? hoverK ?? focusK;
   const kbFocus = !pinnedK && !hoverK && Boolean(focusK);
@@ -437,7 +436,6 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
         </a>
         {view !== 'list' && (
           <>
-            <button type="button" className="co-ib" aria-pressed={replay.active} onClick={replay.active ? () => { sceneRef.current?.stopReplay(); setReplay((r) => ({ ...r, active: false, playing: false })); } : startReplay}><Icon name="loop" size={15} />{replay.active ? 'Exit replay' : 'Replay ingestion'}</button>
             <div className="co-cam" role="group" aria-label="Camera">
               <button type="button" className="co-ib sq" aria-label={auto ? 'Pause camera orbit' : 'Resume camera orbit'} aria-pressed={auto} onClick={() => setAuto(!auto)} disabled={calm}><Icon name={auto ? 'pause' : 'play'} size={15} /></button>
               <button type="button" className="co-ib sq" aria-label="Zoom in" onClick={rp((s) => s.zoom(0.85))}><span aria-hidden="true">+</span></button>
