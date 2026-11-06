@@ -107,7 +107,7 @@ export class CouncilStar {
     this.lane = []; this.podV = null; const jr = this.data?.journey; const oc = jr?.outcome; const occ = OUT[oc?.state ?? 'not_started'];
     if (main && fade > 0.4) {
       const st = jr?.stages ?? []; const nodes = [{ label: 'Verdict', state: e ? 'verdict' : 'todo', detail: e ? (verdict === 'go' ? 'GO: backed' : verdict === 'watch' ? 'WATCH: not yet' : 'DROP') : '' }, ...st]; const narrow = W < 640; const y = Math.min((f.bottomSafe ?? H - 24) - (narrow ? 66 : 64), cy + R * 2.05);
-      const x0 = W * (narrow ? 0.07 : 0.1); const x1 = W * (narrow ? 0.76 : 0.8); const n = nodes.length; const podX = W * (narrow ? 0.89 : 0.915); const podR = narrow ? 24 : 40;
+      const Wl = W - (f.rightInset ?? 0); const x0 = Wl * (narrow ? 0.07 : 0.08); const x1 = Wl * (narrow ? 0.76 : 0.8); const n = nodes.length; const podX = Wl * (narrow ? 0.89 : 0.915); /* the lane ends before the scoring box when it is shown */ const podR = narrow ? 24 : 40;
       const col = (s2) => (s2 === 'verdict' ? vc : s2 === 'done' ? [0.78, 0.96, 0.2] : s2 === 'active' ? [0.97, 0.72, 0.3] : s2 === 'blocked' ? [1, 0.25, 0.5] : [0.42, 0.45, 0.5]);
       const xs = (i) => x0 + ((x1 - x0) * i) / (n - 1); const dot = (x, y2, sz, c, a, sq) => pushP(x, y2, sz, c[0], c[1], c[2], a, sq ? -1 : 0.15);
       for (let i = 0; i < n; i++) {
