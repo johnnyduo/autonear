@@ -51,6 +51,7 @@ export default function Shell() {
 
   const advancedVault = route.name === 'vault' && ['grant', 'advanced'].includes(route.params[0]);
   const isApp = APP_ROUTES.includes(route.name) && !advancedVault;
+  if (route.name === 'welcome') return <Landing data={data} connected={connected} />;
   if (isApp && !connected && !route.demo) return <Landing data={data} />;
 
   const Legacy = LEGACY[route.name] ?? (advancedVault ? LegacyVault : null);
@@ -62,7 +63,7 @@ export default function Shell() {
     <div className={`ap${demo ? ' is-demo' : ''}`}>
       <a className="skip" href="#main">Skip to content</a>
       <header className="ap-top">
-        <a className="ap-brand" href={href('', opts)} aria-label={`${T.brand} home`}>
+        <a className="ap-brand" href={href('welcome')} aria-label={`${T.brand}: welcome page`}>
           <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0f1317" stroke="#232c34" /><path d="M8 24V8l16 16V8" fill="none" stroke="#c6f432" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" /></svg>
           <b>{T.brand}</b>
         </a>

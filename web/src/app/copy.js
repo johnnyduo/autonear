@@ -2,7 +2,7 @@
 // Jargon map (internal -> shown): mandate -> limits, dossier -> finding, run -> check, circuit open -> paused, retrying, decision -> request, ledger -> history.
 export const BANNED = ['mandate', 'dossier', 'circuit', 'hash', 'epoch', 'calldata', 'ledger', 'nonce', 'payload', 'allowlist'];
 
-export const ROUTES = { home: 'Home', council: 'Council', approvals: 'Approvals', watch: 'Watch', vault: 'Vault' };
+export const ROUTES = { welcome: 'Welcome', home: 'Home', council: 'Council', approvals: 'Approvals', watch: 'Watch', vault: 'Vault' };
 
 export const T = {
   brand: 'AutoNEAR',
