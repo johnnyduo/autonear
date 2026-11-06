@@ -6,6 +6,7 @@
 //   drop   = anything else
 // A veto (Skeptic or Security support below its floor) turns a go into watch. In Auto mode the vault loop executes a decision only when the council says go for its opportunity
 // (src/autonomy.js); in Manual mode the council is advice shown next to the decision.
+import { createHash } from 'node:crypto';
 import { now, j, parse, audit } from './db.js';
 
 export const RULES = Object.freeze({
@@ -17,6 +18,21 @@ export const BUILDABLE_TOPICS = Object.freeze(['treasury']);
 export const SEATS = Object.freeze([
   ['signal_collector', 'Collector'], ['evidence_analyst', 'Analyst'], ['skeptic', 'Skeptic'], ['product_architect', 'Architect'], ['builder', 'Builder'], ['security_reviewer', 'Security'], ['launch_planner', 'Planner'],
 ]);
+/** What each seat is: an off-chain rule in this file, with a stable AutoNEAR id. The id is ours, not an EIP, ERC or NEP number, and a seat is not a contract or an agent with a key. */
+export const SEAT_INFO = Object.freeze({
+  signal_collector: 'Is there real demand, from several independent sources?',
+  evidence_analyst: 'What does the published scoring formula say, and how far can it be trusted?',
+  skeptic: 'What argues against it: contradicting records and existing competitors?',
+  product_architect: 'Does it fit what NEAR can do? (a hand-set estimate)',
+  builder: 'Can it be built and checked with a contract template we already have?',
+  security_reviewer: 'Are the supporting records clean, or flagged as bot, duplicate or injection?',
+  launch_planner: 'Is interest speeding up or slowing down?',
+});
+const sha = (x) => createHash('sha256').update(typeof x === 'string' ? x : JSON.stringify(x)).digest('hex');
+const canon = (x) => JSON.stringify(x, (_, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, v[k]])) : v));
+/** Hash of the published thresholds and of the code that turns stored numbers into votes and a verdict. Anyone with the source recomputes it; it changes when a rule changes. */
+export const rulesHash = () => sha(canon({ rules: RULES, buildable: BUILDABLE_TOPICS, code: [votesFor.toString(), verdictOf.toString()] }));
+export const seatId = (role) => `autonear:council-seat:${role}@1`;
 const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 const pct = (v) => `${Math.round(v * 100)}%`;
 const stance = (s) => (s >= 0.6 ? 'back' : s >= 0.4 ? 'abstain' : 'object');
@@ -63,12 +79,15 @@ export async function evaluate(db, { nowMs = Date.now() } = {}) {
     const evidence = ids.length ? await db.all(`SELECT id, observed_at, published_at, flags FROM evidence WHERE id IN (${ids.map(() => '?').join(',')})`, ids) : [];
     const { votes, momentum, recent, prior, buildable } = votesFor(o, evidence, links, { nowMs });
     const S = votes.reduce((a, x) => a + x.weight * x.support, 0); const v = verdictOf(S, o.confidence ?? 0, votes, buildable);
-    out.push({ oppId: o.id, topic: o.topic, title: o.title, score: o.score, confidence: o.confidence, support: Number(S.toFixed(3)), momentum, recent, prior, buildable, ...v, votes });
+    for (const x of votes) x.digest = sha(canon({ seat: seatId(x.role), opp: o.id, weight: x.weight, support: x.support, reason: x.reason }));
+    const entry = { oppId: o.id, topic: o.topic, title: o.title, score: o.score, confidence: o.confidence, support: Number(S.toFixed(3)), momentum, recent, prior, buildable, ...v, votes };
+    entry.digest = sha(canon({ opp: o.id, support: entry.support, verdict: entry.verdict, vetoes: entry.vetoes, votes: votes.map((x) => x.digest) }));
+    out.push(entry);
   }
   const rank = { go: 0, watch: 1, drop: 2 };
   out.sort((a, b) => rank[a.verdict] - rank[b.verdict] || b.support - a.support || b.momentum - a.momentum);
   const winner = out.find((x) => x.verdict === 'go')?.oppId ?? null;
-  return { at: nowMs, rules: RULES, buildableTopics: BUILDABLE_TOPICS, opportunities: out, winner };
+  return { at: nowMs, rules: RULES, rulesHash: rulesHash(), seats: SEATS.map(([role, label]) => ({ role, label, id: seatId(role), question: SEAT_INFO[role], weight: RULES.weights[role], kind: 'off-chain rule' })), buildableTopics: BUILDABLE_TOPICS, opportunities: out, winner };
 }
 
 /** Evaluate, remember the result, and write an audit line only when a verdict changed (so the log is not spammed every tick). */

@@ -107,3 +107,39 @@
 .co-sc-more { display: inline-block; margin-top: .8em; font: 500 1em var(--f-mono); color: #7ee9ff; text-decoration: none; } .co-sc-more:hover { text-decoration: underline; } .co-sc-replay { float: right; margin-top: .9em; font: 500 .8em var(--f-mono); color: var(--chalk-3); }
 @media (max-width: 900px) { .co-score { top: auto; bottom: 104px; left: 10px; right: 10px; width: auto; max-height: 52%; overflow: auto; font-size: 12.5px; } }
 @media (prefers-reduced-motion: reduce) { .co-sc-bar i, .co-sc-meter i, .co-sc-seats li { transition: none; } }
+
+/* Typed text: cursor while typing; the untyped rest keeps its space (invisible) so cards do not jump in height */
+.co-ghost { visibility: hidden; }
+.co-cur { display: inline-block; width: .5em; height: 1em; margin-left: 1px; vertical-align: -.12em; background: var(--signal); }
+.co-cur.blink { animation: co-blink 1s steps(2, start) infinite; }
+@keyframes co-blink { to { visibility: hidden; } }
+.co-card-x { display: grid; gap: 4px; }
+.co-card-x .eyebrow { font-size: 10.5px; }
+.co-card-x p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--chalk-2); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.co-ev-ls { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.co-ev-ls li { display: grid; gap: 2px; padding-left: 8px; border-left: 1px solid var(--line-hi); }
+.co-ev-m { font: 500 11px/1.35 var(--f-mono); color: var(--chalk-2); overflow-wrap: anywhere; }
+.co-ev-d { font-size: 12.5px; line-height: 1.4; color: var(--chalk); overflow-wrap: anywhere; }
+
+/* Agent feed: bottom-left of the stage, stored lines only */
+.co-feedwrap { position: absolute; z-index: 4; left: 12px; bottom: 112px; width: min(320px, 30%); pointer-events: none; }
+.co-feedwrap[hidden] { display: none; }
+.co-feed { pointer-events: auto; cursor: default; border: 1px solid var(--line-hi); border-radius: 10px; background: color-mix(in srgb, var(--ink-0) 80%, transparent); backdrop-filter: blur(12px); font-family: var(--f-mono); }
+.co-feed summary { list-style: none; cursor: pointer; padding: 7px 10px; font: 600 10.5px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--chalk-2); }
+.co-feed summary::-webkit-details-marker { display: none; }
+.co-feed summary::before { content: '\25B8'; display: inline-block; margin-right: 6px; color: var(--chalk-3); transition: transform .15s; }
+.co-feed[open] summary::before { transform: rotate(90deg); }
+.co-feed summary .faint { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.co-feed-b { padding: 0 10px 9px; display: grid; gap: 6px; }
+.co-feed-run { margin: 0; font: 500 10px var(--f-mono); color: var(--chalk-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-feed-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 3px 4px; }
+.co-fchip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid var(--line-hi); border-radius: 99px; font: 500 9.5px/1.5 var(--f-mono); color: var(--chalk-3); }
+.co-fchip i { width: 5px; height: 5px; border-radius: 50%; background: var(--chalk-3); }
+.co-fchip em { font-style: normal; color: var(--chalk-3); }
+.co-fchip.working { color: var(--chalk); border-color: var(--signal); } .co-fchip.working i { background: var(--signal); animation: co-pulse 1.4s ease-in-out infinite; } .co-fchip.working em { color: var(--signal); }
+.co-fchip.done { color: var(--chalk-2); } .co-fchip.done i { background: var(--signal); } .co-fchip.halted i { background: var(--risk); } .co-fchip.halted em { color: var(--risk); }
+@keyframes co-pulse { 50% { opacity: .25; transform: scale(1.5); } }
+.co-feed-ls { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 10em; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--chalk-3) transparent; font-size: 10.5px; line-height: 1.4; align-content: start; }
+.co-feed-l { font: 500 10.5px/1.4 var(--f-mono); color: var(--chalk-2); overflow-wrap: anywhere; }
+.co-feed-hb { color: var(--chalk-3); }
+@media (prefers-reduced-motion: reduce) { .co-cur.blink, .co-fchip.working i { animation: none; } .co-feed summary::before { transition: none; } }

@@ -40,7 +40,7 @@ export default {
   async fetch(request, env, ctx) {
     applyEnv(env);
     const url = new URL(request.url);
-    if (!url.pathname.startsWith('/api/') && url.pathname !== WELL_KNOWN_PATH) return env.ASSETS.fetch(request);
+    if (!url.pathname.startsWith('/api/') && !url.pathname.startsWith('/develop/') && url.pathname !== WELL_KNOWN_PATH) return env.ASSETS.fetch(request);
     const d = await getDb(env);
     const app = createApp({ db: d, trustCfIp: true, signingSupported: false, agentPublicUrl: env.AGENT_PUBLIC_URL ?? '', operatorToken: env.OPERATOR_TOKEN ?? '', cronSecret: env.CRON_SECRET ?? '', defer: (p) => ctx.waitUntil(p.catch((e) => console.error('deferred', e))), schedulerMode: 'cloudflare-cron', schedulerNote: 'Workers Cron Trigger (wrangler.jsonc triggers.crons)' });
     return app(request);

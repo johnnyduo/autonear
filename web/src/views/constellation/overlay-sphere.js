@@ -69,19 +69,38 @@ export function drawSphereOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, nar
     }
   }
 
-  // ---- pipeline panel: the four stage bars are an ILLUSTRATION (a looping animation, not live events); the countdown and last-ingest lines are real
+  const panelY = sc.tickInfo ? cy - R * 0.62 + 150 : cy + R * 0.3; // real mode: right under the score readout, so the agent feed (bottom-left) has the space below
+  // ---- scheduler panel. Real mode (sc.tickInfo set from status.scheduler.lastTick): the bars are the last tick's own numbers.
+  // Landing illustration (no tickInfo): the four stage bars are an ILLUSTRATION (a looping animation, not live events). The countdown and last-ingest lines are real.
   if (evMain && W >= 900 && z < 2.2 && !narrow) {
-    const x0 = 28; let y = cy + R * 0.3; const stages = ['FETCH', 'DEDUPE', 'SCORE', 'LINK']; const ph = calm ? 0 : ((t % 6) / 6) * 4; const bw = 112;
-    ctx.textAlign = 'left'; ctx.font = MONO(fs - 1.5, 600); ctx.fillStyle = COL.chalk2; ctx.fillText('PIPELINE', x0, y); ctx.font = MONO(fs - 2.5); ctx.fillStyle = COL.chalk3; ctx.fillText('ILLUSTRATION · NOT LIVE EVENTS', x0 + 62, y);
-    stages.forEach((nm, i) => {
-      const yy = y + 18 + i * 17; const act = !calm && Math.floor(ph) === i; const prog = calm ? 1 : act ? ph - i : i < ph ? 1 : 0; const glow = act ? 1 : Math.max(0.28, 1 - (((ph - i - 1) % 4) + 4) % 4 * 0.3);
-      ctx.fillStyle = act ? COL.lime : COL.chalk2; ctx.font = MONO(fs - 1, act ? 600 : 500); ctx.fillText(nm, x0, yy);
-      ctx.fillStyle = 'rgba(180,178,168,0.16)'; ctx.fillRect(x0 + 62, yy - 2, bw, 3);
-      ctx.save(); ctx.globalAlpha = sc.intro * glow; ctx.fillStyle = rgb(LIMEC, 0.9); ctx.fillRect(x0 + 62, yy - 2, bw * prog, 3);
-      if (act) { ctx.shadowColor = 'rgba(198,244,50,0.9)'; ctx.shadowBlur = 8; ctx.fillStyle = '#f4ffc8'; ctx.fillRect(x0 + 62 + bw * prog - 2, yy - 3, 3, 5); }
-      ctx.restore();
-    });
-    const d = Date.now(); const rem = Math.max(0, Math.ceil(d / 900000) * 900000 - d) / 1000; const mm = String(Math.floor(rem / 60)).padStart(2, '0'); const ss = String(Math.floor(rem % 60)).padStart(2, '0');
+    const ti = sc.tickInfo; const x0 = 28; let y = panelY; const bw = 112; const bx = x0 + 62;
+    ctx.textAlign = 'left'; ctx.font = MONO(fs - 1.5, 600); ctx.fillStyle = COL.chalk2;
+    if (!ti) {
+      const stages = ['FETCH', 'DEDUPE', 'SCORE', 'LINK']; const ph = calm ? 0 : ((t % 6) / 6) * 4;
+      ctx.fillText('PIPELINE', x0, y); ctx.font = MONO(fs - 2.5); ctx.fillStyle = COL.chalk3; ctx.fillText('ILLUSTRATION · NOT LIVE EVENTS', x0 + 62, y);
+      stages.forEach((nm, i) => {
+        const yy = y + 18 + i * 17; const act = !calm && Math.floor(ph) === i; const prog = calm ? 1 : act ? ph - i : i < ph ? 1 : 0; const glow = act ? 1 : Math.max(0.28, 1 - (((ph - i - 1) % 4) + 4) % 4 * 0.3);
+        ctx.fillStyle = act ? COL.lime : COL.chalk2; ctx.font = MONO(fs - 1, act ? 600 : 500); ctx.fillText(nm, x0, yy);
+        ctx.fillStyle = 'rgba(180,178,168,0.16)'; ctx.fillRect(bx, yy - 2, bw, 3);
+        ctx.save(); ctx.globalAlpha = sc.intro * glow; ctx.fillStyle = rgb(LIMEC, 0.9); ctx.fillRect(bx, yy - 2, bw * prog, 3);
+        if (act) { ctx.shadowColor = 'rgba(198,244,50,0.9)'; ctx.shadowBlur = 8; ctx.fillStyle = '#f4ffc8'; ctx.fillRect(bx + bw * prog - 2, yy - 3, 3, 5); }
+        ctx.restore();
+      });
+    } else {
+      ctx.fillText('LAST TICK', x0, y); ctx.font = MONO(fs - 2.5); ctx.fillStyle = COL.chalk3; ctx.fillText(ti.missing ? 'no scheduler data stored' : `${Math.round(ti.ms / 1000)} s · ${fmt.ago(ti.at)}`, x0 + 62, y);
+      if (!ti.missing) {
+        const tot = Math.max(1, ti.total);
+        const rows = [['FETCH', ti.ok / tot, `${ti.ok}/${ti.total}`, false], ['FRESH', ti.fresh / tot, `${ti.fresh}/${ti.total}`, false], ['SCORE', 1, String(ti.rescored), false], ['RUN', ti.started ? 1 : 0, ti.started ? 'started' : ti.reasonShort, !ti.started]];
+        rows.forEach(([nm, f, txt, dim], i) => {
+          const yy = y + 18 + i * 17; const v = tw(`tk${i}`, f, 1.8);
+          ctx.fillStyle = dim ? COL.chalk3 : COL.chalk2; ctx.font = MONO(fs - 1, 500); ctx.fillText(nm, x0, yy);
+          ctx.fillStyle = 'rgba(180,178,168,0.16)'; ctx.fillRect(bx, yy - 2, bw, 3);
+          ctx.save(); ctx.globalAlpha = sc.intro; ctx.fillStyle = rgb(LIMEC, 0.9); ctx.fillRect(bx, yy - 2, bw * v, 3); ctx.restore();
+          ctx.font = MONO(fs - 1.5); ctx.fillStyle = dim ? COL.chalk3 : COL.chalk; ctx.fillText(txt, bx + bw + 8, yy);
+        });
+      }
+    }
+    const d = Date.now(); const rem = (ti?.nextRunAt ? Math.max(0, ti.nextRunAt - d) : Math.max(0, Math.ceil(d / 900000) * 900000 - d)) / 1000; const mm = String(Math.floor(rem / 60)).padStart(2, '0'); const ss = String(Math.floor(rem % 60)).padStart(2, '0');
     let li = -1; let lt = 0; (sc.srcInfo ?? []).forEach((s2, i) => { if (s2?.last > lt) { lt = s2.last; li = i; } });
     const yb = y + 18 + 4 * 17 + 8; ctx.font = MONO(fs - 1.5); ctx.fillStyle = COL.chalk2; ctx.fillText('NEXT SCHEDULED TICK', x0, yb); ctx.fillStyle = COL.lime; ctx.font = MONO(13, 500); ctx.fillText(`${mm}:${ss}`, x0 + 128, yb);
     if (li >= 0) { ctx.font = MONO(fs - 1.5); ctx.fillStyle = COL.chalk2; ctx.fillText('LAST INGEST', x0, yb + 17); ctx.fillStyle = COL.chalk; ctx.fillText(`${srcShort(m.sources[li]?.id)} · ${fmt.ago(lt)}`, x0 + 128, yb + 17); }
@@ -103,7 +122,7 @@ export function drawSphereOverlay(ctx, sc, { W, H, dpr, reserved = [], calm, nar
   }
   const cRes = councilOverlay(ctx, sc, { W, H, narrow, calm, fs, items, hot, isHot, evMain, t });
   ctx.globalAlpha = 1;
-  const hud = evMain && W >= 900 && z < 2.2 && !narrow ? [{ x: 16, y: cy - R * 0.62 - 34, w: 240, h: 150 }, { x: 16, y: cy + R * 0.3 - 16, w: 270, h: 160 }] : []; // keep point labels off the left readouts
+  const hud = evMain && W >= 900 && z < 2.2 && !narrow ? [{ x: 16, y: cy - R * 0.62 - 34, w: 240, h: 150 }, { x: 16, y: panelY - 16, w: 320, h: 160 }] : []; // keep point labels off the left readouts
   placeLabels(ctx, sc, items, { W, H, reserved: [...reserved, ...hud, ...(cRes ?? [])], narrow, labelsOn });
 }
 

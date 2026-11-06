@@ -101,10 +101,20 @@ CREATE INDEX IF NOT EXISTS mandate_runs_by_vault ON mandate_runs(vault_id, creat
 CREATE UNIQUE INDEX IF NOT EXISTS mandate_runs_one_inflight ON mandate_runs(vault_id) WHERE status IN ('claimed','submitted');
 `;
 
-/** Schema v4: token payouts (NEW table only; migrations/0004_payments.sql is generated from this, existing tables are never altered).
+/** Schema v4: example landing pages written from the council result (NEW table only; migrations/0004_sites.sql is generated from this).
+ *  One row per (slug, content hash). The partial unique index makes "at most one published version per slug" a database fact. */
+export const SCHEMA_V4 = `
+CREATE TABLE IF NOT EXISTS sites(
+  slug TEXT NOT NULL, hash TEXT NOT NULL, opp_id TEXT NOT NULL, content TEXT NOT NULL, meta TEXT NOT NULL,
+  created_at INTEGER NOT NULL, published_at INTEGER, PRIMARY KEY(slug, hash));
+CREATE UNIQUE INDEX IF NOT EXISTS sites_one_published ON sites(slug) WHERE published_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS sites_by_created ON sites(created_at DESC);
+`;
+
+/** Schema v5: token payouts (NEW table only; migrations/0005_payments.sql is generated from this, existing tables are never altered).
  *  One row per executed pay_testnet decision. decision_id UNIQUE = one payment per decision; tx_hash UNIQUE = one chain transaction can
  *  prove only one payment. `verification` is the adapter's check list (JSON). Written ONLY after the transfer was verified on chain. */
-export const SCHEMA_V4 = `
+export const SCHEMA_V5 = `
 CREATE TABLE IF NOT EXISTS payments(
   id TEXT PRIMARY KEY, decision_id TEXT NOT NULL UNIQUE, vault_id TEXT NOT NULL, token TEXT NOT NULL, payee TEXT NOT NULL,
   amount TEXT NOT NULL, tx_hash TEXT NOT NULL UNIQUE, status TEXT NOT NULL, verification TEXT NOT NULL, created_at INTEGER NOT NULL);
@@ -183,6 +193,7 @@ export async function openDb({ url = '', authToken = '', path = ':memory:', d1 =
   await db.exec(SCHEMA_V2);
   await db.exec(SCHEMA_V3);
   await db.exec(SCHEMA_V4);
+  await db.exec(SCHEMA_V5);
   return db;
 }
 

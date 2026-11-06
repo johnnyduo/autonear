@@ -43,7 +43,7 @@ export default function Home({ data, owner, canWrite, demo, opts, toast }) {
         {watching && <span className="chip" title={T.readOnly}><Icon name="lock" size={12} />Watching only</span>}
         <a className={`btn sm ${pending.length ? 'primary' : 'ghost'}`} href={href('approvals', opts)}>{pending.length ? `${pending.length} waiting for you · Review` : 'Nothing needs you'}</a>
         <div className="hm-bar-mode" role="radiogroup" aria-label="Who decides">
-          {[['manual', 'I approve'], ['auto', 'Auto']].map(([k, t]) => (
+          {[['manual', 'Manual'], ['auto', 'Auto']].map(([k, t]) => (
             <button key={k} type="button" role="radio" aria-checked={mode === k} className={mode === k ? 'on' : ''} disabled={busy} aria-disabled={!canWrite} onClick={() => setMode(k)} title={!canWrite ? why : k === 'auto' ? T.modeAutoBody : T.modeManualBody}>{t}</button>
           ))}
         </div>

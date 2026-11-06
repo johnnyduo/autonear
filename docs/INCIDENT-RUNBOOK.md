@@ -68,7 +68,7 @@ Which key does what is listed in `GET /api/security` `keyScopes`:
 | `GITHUB_TOKEN` | read-only public GitHub search | revoke at GitHub, create a new fine-grained token with no scopes, `wrangler secret put GITHUB_TOKEN` |
 | Wallet keys | none, never held by this system | not applicable; if a deployer wallet key was exposed elsewhere, move funds and stop using that account |
 
-CI uses no secrets by design (`.github/workflows/ci.yml`), so there is nothing to rotate there.
+There is no CI in this repository, so no CI secrets exist to rotate.
 
 ## 4. Compromised or leaked LLM key
 

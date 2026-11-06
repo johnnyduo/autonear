@@ -20,6 +20,8 @@ import { getMode, setMode, topUpConfig } from './autonomy-mode.js';
 import { currentCouncil, journeyFor } from './council.js';
 import { getWatch, setWatch } from './watch.js';
 import { WELL_KNOWN_PATH } from './identity/erc8004.js';
+import { buildSite, listView, view as siteView, pageResponse } from './sites/service.js';
+import { publish as publishSite, unpublish as unpublishSite } from './sites/store.js';
 import { buildChallenge, checkSignedChallenge, consumeNonce, deriveSecret, issueSession, readSession, resolveOwner, SESSION_TTL_MS } from './owner-session.js';
 
 const SEC_HEADERS = {
@@ -65,6 +67,8 @@ const ALLOW = [
   [/^\/api\/autonomy$/, 'GET, HEAD'],
   [/^\/api\/council$/, 'GET, HEAD'],
   [/^\/api\/watch$/, 'GET, HEAD, PUT'],
+  [/^\/api\/sites$/, 'GET, HEAD'],
+  [/^\/api\/sites\/[\w-]+\/(build|publish|unpublish)$/, 'POST'],
   [/^\/api\/autonomy\/mode$/, 'PUT'],
 ];
 const safeEq = (a, b) => { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
@@ -145,6 +149,10 @@ export function createApp(deps) {
     const p = url.pathname; const m = req.method === 'HEAD' ? 'GET' : req.method;
     let g;
 
+    if ((g = p.match(/^\/develop\/(.*)$/))) { // public example pages (strict CSP, see src/sites/service.js)
+      if (m !== 'GET') return new Response('method not allowed', { status: 405, headers: { allow: 'GET, HEAD', 'content-type': 'text/plain; charset=utf-8' } });
+      return pageResponse(db, g[1]);
+    }
     if (p === '/api/health' && m === 'GET') return out({ ok: true, time: now() });
     if (p === '/api/watch' && m === 'GET') return out({ ...(await getWatch(db)), sourceIds: CONNECTORS.map((c) => c.id) });
     if (p === '/api/watch' && m === 'PUT') {
@@ -155,6 +163,34 @@ export function createApp(deps) {
       const council = await currentCouncil(db); const focusId = (council.opportunities.find((o) => o.oppId === council.winner) ?? council.opportunities.find((o) => o.buildable) ?? council.opportunities[0])?.oppId;
       const mode = await getMode(db); const fe = council.opportunities.find((o) => o.oppId === focusId);
       return out({ council, journey: focusId ? await journeyFor(db, focusId, { verdict: fe?.verdict, mode }) : null, mode });
+    }
+    if (p === '/api/sites' && m === 'GET') return out({ items: await listView(db, await currentCouncil(db)), thresholds: { go: 62, watch: 48 } });
+    if ((g = p.match(/^\/api\/sites\/([\w-]{1,64})\/build$/)) && m === 'POST') { // owner only: one model call per product, then the page is stored
+      const who = await needOwner(req);
+      const b = await body(req, { type: 'object', properties: { override: { type: 'boolean' }, regenerate: { type: 'boolean' } } });
+      const entry = (await currentCouncil(db)).opportunities.find((o) => o.oppId === g[1]);
+      try {
+        const r = await buildSite(db, { oppId: g[1], entry, override: b.override === true, regenerate: b.regenerate === true, actor: who.actor });
+        return out({ site: siteView(r.site), created: r.created }, r.created ? 201 : 200);
+      } catch (e) {
+        if (e?.message === 'No LLM is configured') return out({ error: e.message, code: 'llm' }, 503);
+        if (e instanceof PolicyError && e.code === 'llm_format') return out({ error: e.message, code: 'llm' }, 502);
+        throw e;
+      }
+    }
+    if ((g = p.match(/^\/api\/sites\/([a-z0-9-]{1,40})\/publish$/)) && m === 'POST') {
+      const who = await needOwner(req);
+      const b = await body(req, { type: 'object', required: ['hash'], properties: { hash: { type: 'string', maxLength: 16 } } });
+      if (!/^[0-9a-f]{10}$/.test(b.hash)) throw new PolicyError('hash must be 10 hex characters', 'input');
+      const site = await publishSite(db, g[1], b.hash);
+      await audit(db, who.actor, 'site.publish', { slug: g[1], hash: b.hash });
+      return out({ site: siteView(site) });
+    }
+    if ((g = p.match(/^\/api\/sites\/([a-z0-9-]{1,40})\/unpublish$/)) && m === 'POST') {
+      const who = await needOwner(req);
+      const changed = await unpublishSite(db, g[1]);
+      await audit(db, who.actor, 'site.unpublish', { slug: g[1], changed });
+      return out({ slug: g[1], unpublished: changed });
     }
     if (p === '/api/autonomy' && m === 'GET') {
       const evm = topUpConfig(process.env, 'evm'); const near = topUpConfig(process.env, 'near');
@@ -401,7 +437,7 @@ export function createApp(deps) {
       ?? req.headers.get('x-peer-ip') ?? 'local';
     try {
       const wellKnown = url.pathname === WELL_KNOWN_PATH;
-      if (!wellKnown && !url.pathname.startsWith('/api/')) return out({ error: 'not found' }, 404);
+      if (!wellKnown && !url.pathname.startsWith('/api/') && !url.pathname.startsWith('/develop/')) return out({ error: 'not found' }, 404);
       const write = req.method !== 'GET' && req.method !== 'HEAD';
       if (limited(ip, write ? 'write' : 'read')) return out({ error: 'rate limited' }, 429, { 'retry-after': '30' });
       if (wellKnown) { // ERC-8004 registration file (DRAFT standard), only when AGENT_PUBLIC_URL is set. Nothing is registered or sent by this server.

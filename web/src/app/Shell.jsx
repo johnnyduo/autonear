@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { setToken, useToken } from '../api.js';
 import { CommandPalette, Dialog, ErrorPanel, Icon, SkeletonRows, useToast } from '../ui.jsx';
 import { useAppData } from './data.js';
-import { APP_ROUTES, goto, href, parseRoute } from './nav.js';
+import { APP_ROUTES, SUB_ROUTES, goto, href, parseRoute } from './nav.js';
 import { ROUTES, T } from './copy.js';
 import { shortAddr, signOut, useOwner, verifySession } from './session.js';
 import WalletButton from './WalletButton.jsx';
@@ -14,6 +14,7 @@ const Home = lazy(() => import('./Home.jsx'));
 const Approvals = lazy(() => import('./Approvals.jsx'));
 const Watch = lazy(() => import('./Watch.jsx'));
 const Council = lazy(() => import('./Council.jsx'));
+const Build = lazy(() => import('./Build.jsx'));
 const VaultPage = lazy(() => import('./VaultPage.jsx'));
 const Activity = lazy(() => import('./Activity.jsx'));
 // Technical screens kept as deep links (reachable from Activity), not in the menu.
@@ -25,7 +26,7 @@ const LEGACY = {
   dashboard: lazy(() => import('../views/Overview.jsx')), constellation: lazy(() => import('../views/ConstellationFull.jsx')),
 };
 const LegacyVault = lazy(() => import('../views/vault/Vault.jsx'));
-const PAGES = { home: Home, council: Council, approvals: Approvals, watch: Watch, vault: VaultPage };
+const PAGES = { home: Home, council: Council, approvals: Approvals, watch: Watch, vault: VaultPage, build: Build };
 
 export default function Shell() {
   const [route, setRoute] = useState(parseRoute());
@@ -42,7 +43,7 @@ export default function Shell() {
   const pending = useMemo(() => data.decisions.filter((d) => d.effectiveStatus === 'pending').length, [data.decisions]);
   const opts = { demo: route.demo };
   const commands = useMemo(() => [
-    ...APP_ROUTES.map((r) => ({ label: `Go to ${ROUTES[r]}`, hint: '', run: () => goto(r === 'home' ? '' : r, opts) })),
+    ...[...APP_ROUTES, ...SUB_ROUTES].map((r) => ({ label: `Go to ${ROUTES[r]}`, hint: '', run: () => goto(r === 'home' ? '' : r, opts) })),
     { label: 'Open Activity', hint: '', run: () => goto(route.name === 'home' ? '' : route.name, { ...opts, activity: true }) },
     { label: 'Open the evidence constellation (full screen)', hint: 'constellation', run: () => goto('constellation', opts) },
     ...['dashboard', 'radar', 'run', 'studio', 'security', 'engines'].map((r) => ({ label: `Technical: ${r}`, hint: 'details', run: () => goto(r, opts) })),
@@ -50,7 +51,7 @@ export default function Shell() {
   ], [route.name, route.demo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const advancedVault = route.name === 'vault' && ['grant', 'advanced'].includes(route.params[0]);
-  const isApp = APP_ROUTES.includes(route.name) && !advancedVault;
+  const isApp = (APP_ROUTES.includes(route.name) || SUB_ROUTES.includes(route.name)) && !advancedVault;
   if (route.name === 'welcome') return <Landing data={data} connected={connected} />;
   if (isApp && !connected && !route.demo) return <Landing data={data} />;
 
@@ -69,7 +70,7 @@ export default function Shell() {
         </a>
         <nav className="ap-tabs" aria-label="Main">
           {APP_ROUTES.map((r) => (
-            <a key={r} href={href(r === 'home' ? '' : r, opts)} aria-current={route.name === r ? 'page' : undefined}>
+            <a key={r} href={href(r === 'home' ? '' : r, opts)} aria-current={route.name === r || (r === 'council' && route.name === 'build') ? 'page' : undefined}>
               {ROUTES[r]}{r === 'approvals' && pending > 0 && <span className="ap-count" aria-label={`${pending} waiting`}>{pending}</span>}
             </a>
           ))}
@@ -90,7 +91,7 @@ export default function Shell() {
         </Suspense>
       </main>
       <nav className="ap-bottom" aria-label="Main (mobile)">
-        {APP_ROUTES.map((r) => <a key={r} href={href(r === 'home' ? '' : r, opts)} aria-current={route.name === r ? 'page' : undefined}>{ROUTES[r]}{r === 'approvals' && pending > 0 && <span className="ap-count">{pending}</span>}</a>)}
+        {APP_ROUTES.map((r) => <a key={r} href={href(r === 'home' ? '' : r, opts)} aria-current={route.name === r || (r === 'council' && route.name === 'build') ? 'page' : undefined}>{ROUTES[r]}{r === 'approvals' && pending > 0 && <span className="ap-count">{pending}</span>}</a>)}
       </nav>
       {route.activity && <Suspense fallback={null}><Activity data={data} opts={opts} base={base} canWrite={canWrite} /></Suspense>}
       {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ingestSource, registerSources } from '../src/ingest.js';
 import { refreshOpportunities } from '../src/scoring.js';
-import { RULES, SEATS, evaluate, convene, currentCouncil, councilGate, journeyFor, verdictOf, votesFor } from '../src/council.js';
+import { RULES, SEATS, rulesHash, seatId, evaluate, convene, currentCouncil, councilGate, journeyFor, verdictOf, votesFor } from '../src/council.js';
 import { createApp } from '../src/app.js';
 import { memDb, fakeConnector, gh } from './helpers.js';
 
@@ -108,4 +108,17 @@ test('a checked build recorded against the decision (not the run) still counts, 
   await db.run("INSERT INTO decisions(id,run_id,artifact_hash,action,chain_id,target,method,max_spend,expiry,nonce,payload,payload_hash,status,created_at) VALUES('dec_k','run_k','hk','deploy_testnet','near:testnet','t','m','0',?,'nk','{}','ph','pending',?)", [now + 3600e3, now]);
   const j = await journeyFor(db, oid, { mode: 'auto' });
   assert.equal(j.stages.find((x) => x.id === 'build').state, 'done'); assert.equal(j.outcome.state, 'waiting'); assert.notEqual(j.outcome.headline, 'Held at the build step');
+});
+
+test('every seat and verdict has a recomputable digest and a stable AutoNEAR id; none claims to be a contract', async () => {
+  const db = await seeded(); const a = await evaluate(db); const b = await evaluate(db);
+  assert.match(a.rulesHash, /^[0-9a-f]{64}$/); assert.equal(a.rulesHash, rulesHash());
+  assert.equal(a.seats.length, 7);
+  for (const s of a.seats) { assert.equal(s.id, seatId(s.role)); assert.equal(s.kind, 'off-chain rule'); assert.ok(s.question.length > 10); }
+  for (const o of a.opportunities) {
+    assert.match(o.digest, /^[0-9a-f]{64}$/);
+    for (const v of o.votes) assert.match(v.digest, /^[0-9a-f]{64}$/);
+    assert.equal(o.digest, b.opportunities.find((x) => x.oppId === o.oppId).digest, 'same stored data gives the same digest');
+  }
+  assert.equal(new Set(a.opportunities[0].votes.map((v) => v.digest)).size, 7, 'each seat has its own digest');
 });

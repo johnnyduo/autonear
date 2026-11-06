@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { assertGrantPayload, assertPayPayload, assertDecisionAllowed, tokenTotalCeiling, payPerPaymentCeiling, vaultLimits, DECISION_LIMITS, TOKEN_CEILINGS } from '../src/policy.js';
 import { normalizeLimits, enforceCall, LimitError, VAULT_METHODS, DEFAULT_METHODS } from '../src/agent/limits.js';
 import * as near from '../src/agent/near-signer.js';
-import { SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, openDb } from '../src/db.js';
+import { SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V5, openDb } from '../src/db.js';
 
 const VAULT = 'vault.testnet', OWNER = 'owner.testnet', AGENT = 'ab'.repeat(32), USDC = 'usdc.testnet', USDT = 'usdt.testnet', ALICE = 'alice.testnet', BOB = 'bob.testnet';
 const M = 10n ** 6n;
@@ -264,11 +264,11 @@ describe('agent signer: pay', () => {
 });
 
 describe('payments migration', () => {
-  test('migrations/0004_payments.sql is exactly the generated SCHEMA_V4, additive only, and applies twice (idempotent) on top of 0001..0003', () => {
-    const sql = readFileSync(new URL('../migrations/0004_payments.sql', import.meta.url), 'utf8');
-    assert.ok(sql.endsWith(SCHEMA_V4), 'regenerate with: node scripts/gen-migration.mjs');
-    assert.doesNotMatch(SCHEMA_V4, /ALTER TABLE|DROP |DELETE |UPDATE /i);
-    const files = ['0001_init.sql', '0002_indexes.sql', '0003_vault.sql', '0004_payments.sql'].map((f) => readFileSync(new URL(`../migrations/${f}`, import.meta.url), 'utf8'));
+  test('migrations/0005_payments.sql is exactly the generated SCHEMA_V5, additive only, and applies twice (idempotent) on top of 0001..0003', () => {
+    const sql = readFileSync(new URL('../migrations/0005_payments.sql', import.meta.url), 'utf8');
+    assert.ok(sql.endsWith(SCHEMA_V5), 'regenerate with: node scripts/gen-migration.mjs');
+    assert.doesNotMatch(SCHEMA_V5, /ALTER TABLE|DROP |DELETE |UPDATE /i);
+    const files = ['0001_init.sql', '0002_indexes.sql', '0003_vault.sql', '0005_payments.sql'].map((f) => readFileSync(new URL(`../migrations/${f}`, import.meta.url), 'utf8'));
     for (const [i, f] of ['0001', '0002', '0003'].entries()) assert.ok(files[i].endsWith([SCHEMA, SCHEMA_V2, SCHEMA_V3][i]), `${f} unchanged`);
     const raw = new DatabaseSync(':memory:');
     for (const s of files) raw.exec(s);
@@ -283,7 +283,7 @@ describe('payments migration', () => {
   });
   test('openDb creates the table and can be re-opened over an existing database (idempotent exec of every schema)', async () => {
     const db = await openDb({ path: ':memory:' });
-    await db.exec(SCHEMA_V4); await db.exec(SCHEMA_V4);
+    await db.exec(SCHEMA_V5); await db.exec(SCHEMA_V5);
     assert.equal((await db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='payments'")).name, 'payments');
     assert.ok(await db.get("SELECT name FROM sqlite_master WHERE type='index' AND name='payments_by_vault'"));
   });

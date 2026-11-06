@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fmt, useApi } from '../api.js';
 import { CountUp } from '../views/constellation/shared.js';
+import { href } from './nav.js';
+import ProofDialog from './CouncilProof.jsx';
 
 const COL = { back: '#c6f432', abstain: '#f2b84b', object: '#ff6a3d' };
 const SEAT_LABEL = { signal_collector: 'Collector', evidence_analyst: 'Analyst', skeptic: 'Skeptic', product_architect: 'Architect', builder: 'Builder', security_reviewer: 'Security', launch_planner: 'Planner' };
@@ -12,7 +14,7 @@ const CX = 300; const CY = 262; const SR = 240; const GR = 70;
 const seatPos = (i) => { const a = Math.PI * (1.08 + (i / 6) * 0.84); return [CX + Math.cos(a) * SR, CY + Math.sin(a) * SR * 0.82]; };
 const gaugeAt = (f) => { const a = Math.PI * (1 + f); return [CX + Math.cos(a) * GR, CY + Math.sin(a) * GR]; };
 
-function Chamber({ entry, rules, replayKey }) {
+function Chamber({ entry, rules, replayKey, onSeat, onVerdict }) {
   const [cast, setCast] = useState(0);
   useEffect(() => {
     if (reduce()) { setCast(8); return undefined; }
@@ -32,7 +34,7 @@ function Chamber({ entry, rules, replayKey }) {
         {entry.votes.map((v, i) => {
           const [x, y] = seatPos(i); const on = cast > i; const c = on ? COL[v.stance] : '#3a423f';
           return (
-            <g key={v.role} className={on ? 'cn-seat on' : 'cn-seat'}>
+            <g key={v.role} className={on ? 'cn-seat on' : 'cn-seat'} role="button" tabIndex={0} aria-label={`${SEAT_LABEL[v.role]} seat, ${q(v.support)} out of 100. Open the proof.`} onClick={() => onSeat(v)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeat(v); } }}>
               <circle cx={x} cy={y} r="22" fill="#0f1317" stroke={c} strokeWidth={on ? 2.4 : 1.2} />
               {on && <circle cx={x} cy={y} r="22" fill="none" stroke={c} strokeOpacity=".5" className="cn-pulse" />}
               <text x={x} y={y + 4} textAnchor="middle" className="cn-seatn" fill={on ? c : '#8c8b82'}>{on ? q(v.support) : '·'}</text>
@@ -45,6 +47,7 @@ function Chamber({ entry, rules, replayKey }) {
       </svg>
       <div className={`cn-stamp${done ? ' on' : ''}`} style={{ '--c': vd[2] }} aria-live="polite">
         <b>{done ? vd[0] : 'VOTING…'}</b><span>{done ? entry.reason : 'Seats vote one after another from stored numbers.'}</span>
+        {done && <button type="button" className="btn sm cn-proofbtn" onClick={onVerdict}>Proof and chain links</button>}
       </div>
     </div>
   );
@@ -123,9 +126,9 @@ function Pod({ oc }) {
   );
 }
 
-export default function Council({ data }) {
+export default function Council({ data, opts }) {
   const api = useApi('/api/council', { poll: 30000 });
-  const [pick, setPick] = useState(null); const [replay, setReplay] = useState(0);
+  const [pick, setPick] = useState(null); const [replay, setReplay] = useState(0); const [proof, setProof] = useState(null);
   const council = api.data?.council; const journey = api.data?.journey; const mode = api.data?.mode ?? data.autonomy?.mode ?? 'manual';
   const list = council?.opportunities ?? [];
   const entry = useMemo(() => list.find((o) => o.oppId === pick) ?? list.find((o) => o.oppId === journey?.oppId) ?? list[0], [list, pick, journey]);
@@ -151,7 +154,7 @@ export default function Council({ data }) {
     <div className="ap-wrap cn">
       <header className="cn-head">
         <div><h1 className="ap-h1">Council</h1><p className="dim">One product, one story: what the agent saw, who voted, what was decided, and where it stands on the way to a deployed contract.</p></div>
-        <a className="btn sm" href="#/constellation">See it in the constellation</a>
+        <div className="row"><a className="btn sm primary" href={href('build', opts)}>Build a product page</a><a className="btn sm" href="#/constellation">See it in the constellation</a></div>
       </header>
       <p className="cn-now" role="status"><span className="cn-pulse-dot" style={{ background: vd[2] }} aria-hidden="true" /><b>{entry.title}</b> · {vd[1].toLowerCase()}. {oc ? `${oc.headline}. ${oc.next}` : 'Pick the top opportunity in the ranking to follow it all the way.'}</p>
       <Story stops={stops} here={here} />
@@ -170,9 +173,9 @@ export default function Council({ data }) {
 
       <Chapter id="ch-voted" n="2" title="Who voted, and how?" lead="Seven seats, each with its own question. A vote is a number from stored data, with the reason beside it.">
         <div className="cn-row"><div><span className="eyebrow">Voting on</span><h3>{entry.title}</h3></div><button type="button" className="btn sm" onClick={() => setReplay(replay + 1)}>Replay the vote</button></div>
-        <Chamber entry={entry} rules={rules} replayKey={replay} />
+        <Chamber entry={entry} rules={rules} replayKey={replay} onSeat={(v) => setProof(v)} onVerdict={() => setProof('verdict')} />
         <ul className="cn-reasons">{entry.votes.map((v) => <li key={v.role}><i style={{ background: COL[v.stance] }} aria-hidden="true" /><b>{SEAT_LABEL[v.role]}</b><span className="num">{q(v.support)}</span><span className="dim">{v.reason}</span></li>)}</ul>
-        <p className="faint cn-note">Each seat gives a number from 0 to 100 for its own question. The animation replays the stored votes; it is not a live vote and no AI opinion is involved.</p>
+        <p className="faint cn-note">Each seat gives a number from 0 to 100 for its own question. The animation replays the stored votes; it is not a live vote and no AI opinion is involved. Click a seat or the verdict to see its proof and the chain links.</p>
       </Chapter>
 
       <Chapter id="ch-decide" n="3" title="What did it decide?" lead="Four plain checks. All four must pass for a GO.">
@@ -206,6 +209,7 @@ export default function Council({ data }) {
             {journey?.deployment?.explorer && <a className="btn sm" href={journey.deployment.explorer} target="_blank" rel="noopener noreferrer">View on the explorer</a>}</div>
         </div>
       </Chapter>
+      {proof && <ProofDialog entry={entry} seat={proof === 'verdict' ? null : proof} council={council} journey={journey} onClose={() => setProof(null)} />}
     </div>
   );
 }
