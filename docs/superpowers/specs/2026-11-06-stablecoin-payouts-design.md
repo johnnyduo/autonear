@@ -62,23 +62,38 @@ Vault page: USDC balance, payout limits, payee list, "Add test USDC" (mock mint)
 ### 5. Verification
 `cargo test` for both contracts, conformance, `npm test`, `npm run e2e:near-loop` extended (Manual waits then pays after approval, Auto pays, over-cap and unlisted payee refused, failed transfer reverses, kill switch), then one real testnet run with a new vault `vault-v2…` and the mock token. Browser run of the changed pages before any deploy.
 
-## Stage 2: seed a product's pool, then hand the product over
-**Seeding.** New vault method `fund_product(product, token, amount)`: `product` must be a sub-account this vault created in `deploy` (the vault records name -> template id), the token must be allowlisted, and the amount counts against the same token limits as `pay`. The vault sends `ft_transfer` to the product; what the product does with it is the behaviour of the template the owner approved. The agent never calls the product directly with the vault's money.
+## Stage 2: an arena of competing products, seeded pools, and who owns each product
+Owner's input (2026-11-06): there may be more than one platform. The council proposes DEX1; if the trend keeps rising it may propose DEX2 for the same trend; stakers choose which they back; a latecomer can enter and ask to own one. Only that arena's products are involved, never the vault.
 
-**Handover (only for that proposal).** A small per-proposal contract `proposal-claim` (new template, deployed by the vault like the registry) becomes the *owner* of the product at birth (the product's init arguments name the claim contract as owner; today's registry already takes `owner_id` as an init argument). The claim contract can do exactly one thing: move that product's ownership once.
-- Owner path: the vault owner can hand the product to themselves at any time (`claim_to_owner`).
-- Vote path: the owner opens a claim window for the proposal. Anyone may **lock NEAR** in the claim contract for the window plus a lock period. When the window ends, the highest lock above a minimum, from at least N distinct accounts, may call `finalize`. After a timelock in which the vault owner can veto, ownership moves to the winner. Locks are refunded after the lock period; nothing is slashed.
-- Scope limits: the claim contract holds only locks, never the pool's money. The winner gets the product (and what is in it), never the vault, the mandate or other proposals.
+**Two separate questions, two separate deciders** (this is the main guard against stakers draining the vault):
+- *Who gets seed money* is decided by the council plus the vault owner's approval (Manual) or the on-chain limits (Auto). Each seeding is its own `fund_product` request with its own approval.
+- *Who owns (administers) a product* is decided by stakers through locked NEAR. Stakers never move the vault's money. Their lock totals are also published as evidence the council can read.
 
-**Why guards.** "Highest stake wins" taken literally lets one large holder take a funded product for the price of a refundable lock. So: a time-locked stake, a minimum number of distinct stakers, a cap per account, and the owner's veto during the timelock. The vote is on NEAR locked in this contract, not on delegation in a staking pool, because a contract cannot cheaply read a staking-pool balance. (Whether NEAR's own governance staking could be read instead was not checked.)
+**Arena.** One arena per trend/proposal topic with: at most K products (default 4), a per-token seed budget for the whole arena (inside the vault's token limits), and one `proposal-claim` contract per product. Adding a product is a normal owner-approved deploy decision; the arena rejects a fifth.
 
-**What this adds.** Two new Rust contracts (`proposal-claim`, and a minimal seeded pool template to demonstrate it, which is the only part that needs product logic), two vault methods (`fund_product`, product registry), conformance and e2e for the handover, and UI for the claim window. It is the largest part and is built last.
+**Seeding without gifting.** The usual hole: if ownership of a funded pool can be won, the winner can take the seed. So the seed stays the vault's. A product that accepts seed must come from a template that keeps two roles apart: `seed_owner` (the vault, can `recall` its principal after a cooldown, can never be changed by the claim contract) and `admin` (fees, parameters, listing; this is what changes hands). The vault sends tokens with `ft_transfer` to a product it deployed itself (the vault records name -> template id), and the amount counts against the same token limits as `pay`. Templates that do not keep the roles apart cannot be seeded: the vault checks the template id against an owner-allowlist of seedable templates.
+
+**Claiming a product.** Each product has a claim contract that is its `admin` from birth and can do one thing: move that admin role once.
+- Anyone may lock NEAR on one product; a staker can back only one product per arena at a time (moving needs unlock and a cooldown), so one balance is not counted twice. A late entrant is allowed.
+- Weight = locked amount x min(1, lock age / lock period), so a lock made at the last minute counts for little. Per-account cap on weight. To win, a product needs a leader above a minimum weight and at least N distinct accounts.
+- Anti-sniping: if the lead changes in the last hours of the window, the window extends once, up to a maximum.
+- `finalize` can be called by anyone and is deterministic (ties go to the earliest lock). The result takes effect after a timelock in which the vault owner may veto; a veto is an event, not a silent switch.
+- Locks are refunded after the lock period. Nothing is slashed. The claim contract never holds the pool's money and cannot call anything but the one admin transfer on its own product.
+- The owner can always take the admin role back to themselves before any window opens (`claim_to_owner`), and cannot after a finalized handover except by a new product.
+
+**Candid list of the holes this design is meant to close, and the ones it does not.**
+Closed on paper (each gets a test): stakers draining the vault; the winner stealing the seed; one whale or borrowed stake buying a product (age weighting, distinct accounts, cap, veto); last-second sniping; double-counting one stake across rivals; an arena flooded with products (cap K, each needs an owner-approved deploy); a claim contract acting beyond its one transfer; stale locks stuck after a product dies (refund always possible after the lock period).
+Not closed: the owner's veto is a central power (it is visible and logged, not removable in this version); a product's admin can still harm the users who put their own money into that pool, which is a risk of the product itself, so every seedable template is testnet-only and labelled; stake-weighted choice is still plutocratic by nature, softened but not removed; whether NEAR's governance staking could be read instead of a lock was not checked.
+
+**Before any of this is built:** the Stage 2 design gets its own independent review (Codex, AI-assisted, not an audit) and a written threat table, because it is the part that holds value and changes who controls it.
+
+**What this adds.** Contracts: `proposal-claim`, a minimal seedable pool template (the only part with product logic), vault methods `fund_product`, a seedable-template allowlist and a product registry; conformance and e2e for seed, recall, claim, veto and sniping; arena and claim windows in the app. It is the largest part and is built last.
 
 ## Phases and fit to the deadline
 1. Mock token + vault v1.1 (`pay`, tokens, payees) + Rust tests + conformance.
 2. Backend: model, adapter, policy, decisions, loop rule (l), sandbox e2e.
 3. App changes, testnet deployment of the new vault and token, live run, docs.
-4. Stage 2, only if phases 1 to 3 are verified and there is time: `fund_product`, owner handover, then the vote handover. Cut order if time runs out: vote handover first, then the demo pool, then `fund_product`.
+4. Stage 2, only if phases 1 to 3 are verified and there is time, and only after its design review: seedable template and `fund_product`, owner path, then the arena and vote handover. Cut order if time runs out: multi-product arena first, then the vote handover, then the demo pool, then `fund_product`.
 Each phase ends with passing tests and its own commit on a branch; nothing reaches `main` until its phase is verified, so production keeps working if time runs out. The cut line if time is short: phases 1 and 2 plus a command-line payment, with the UI changes dropped.
 
 ## Risks
