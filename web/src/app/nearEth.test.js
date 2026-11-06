@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { parseTransaction, recoverTransactionAddress } from 'viem';
 import { decodeAbiParameters, parseAbiParameters, keccak256, toBytes, hexToString } from 'viem';
 import { onboardRows, ONBOARD_STEPS } from './onboardHelp.js';
-import { accountToAddress, b58encode, buildTx, encodeAction, encodeOnboarding, onboardingStatus, nearRpc, explainWalletError, callNear, SELECTORS, NEAR_EVM } from '../wallet/nearEth.js';
+import { accountToAddress, b58encode, buildTx, encodeAction, encodeOnboarding, onboardingStatus, nearRpc, explainWalletError, explainEthSignError, sendSetupWithEthSign, callNear, SELECTORS, NEAR_EVM } from '../wallet/nearEth.js';
 
 test('selectors match the wallet contract (near/near-wallet-contract types.rs)', () => {
   assert.equal(SELECTORS.functionCall, '0x6179b707'); assert.equal(SELECTORS.transfer, '0x3ed64124'); assert.equal(SELECTORS.addKey, '0x753ce5ab');
@@ -111,4 +113,45 @@ test('onboardRows: lists the values to enter in MetaMask, and refuses anything m
   assert.equal(by.to.copy, ACCT); assert.equal(by.amount.copy, '0'); assert.equal(by.data.copy, setup.data); assert.equal(by.gas.copy, '220000'); assert.match(by.price.value, /^100 gwei$/); assert.match(by.network.value, /chain id 398/);
   assert.equal(onboardRows(null), null); assert.equal(onboardRows({ ...setup, to: 'nope' }), null); assert.equal(onboardRows({ ...setup, data: 'zz' }), null);
   assert.ok(ONBOARD_STEPS.length === 4 && ONBOARD_STEPS.every((s) => s.length > 20));
+});
+
+// ---- the one-time setup through eth_sign (MetaMask only: no transaction from the wallet to itself) ------------------------------------------------------------------
+function setupWorld(account, { ethSign }) {
+  const w = { onboarded: false, raws: [] };
+  const fx = async (url, init) => { const b = JSON.parse(init.body); const reply = (o) => ({ ok: true, status: 200, json: async () => ({ jsonrpc: '2.0', id: 1, ...o }) });
+    if (String(url) === NEAR_EVM.rpc) {
+      if (b.method === 'near_getPublicKey') return reply({ result: { public_key: RELAYER_KEY } });
+      if (b.method === 'eth_getTransactionCount') return reply({ result: '0x0' });
+      if (b.method === 'eth_gasPrice') return reply({ result: '0x174876e800' });
+      if (b.method === 'eth_sendRawTransaction') { w.raws.push(b.params[0]); w.onboarded = true; return reply({ result: '0xabc' }); }
+    }
+    return reply(w.onboarded ? { result: { nonce: 0, permission: 'FullAccess', block_hash: 'x', block_height: 1 } } : { result: { block_hash: 'x', block_height: 1, error: 'access key does not exist while viewing', logs: [] } }); };
+  const provider = { calls: [], async request({ method, params }) { this.calls.push(method); if (method === 'eth_requestAccounts') return [account.address.toLowerCase()]; if (method === 'eth_sign') return ethSign(params); throw new Error(`unexpected ${method}`); } };
+  return { w, fx, provider };
+}
+test('sendSetupWithEthSign: signs the hash of the exact setup transaction, sends it, and the transaction recovers to the wallet', async () => {
+  const acct = privateKeyToAccount(generatePrivateKey()); const A = acct.address.toLowerCase();
+  const { w, fx, provider } = setupWorld(acct, { ethSign: (p) => acct.sign({ hash: p[1] }) });
+  const r = await sendSetupWithEthSign({ provider, account: A, fetchImpl: fx, pollMs: 1 });
+  assert.ok(r.hash); assert.equal(w.raws.length, 1); assert.deepEqual(provider.calls.filter((c) => c === 'eth_sign'), ['eth_sign']);
+  const tx = parseTransaction(w.raws[0]);
+  assert.equal(tx.to, A, 'self-targeted, as the wallet contract requires for AddKey'); assert.equal(tx.chainId, 398); assert.equal(tx.gas, 220000n); assert.equal(tx.value ?? 0n, 0n);
+  assert.ok(tx.data.startsWith(SELECTORS.addKey)); assert.equal((await recoverTransactionAddress({ serializedTransaction: w.raws[0] })).toLowerCase(), A);
+  const keyBytes = decodeAbiParameters(parseAbiParameters('uint8, bytes, uint64, bool, bool, uint128, string, string[]'), `0x${tx.data.slice(10)}`)[1];
+  assert.equal(String(keyBytes).slice(2), RELAYER_KEY, 'the key being added is the relayer key');
+});
+test('sendSetupWithEthSign: a wallet that signs something else (a prefixed message, or another account) sends NOTHING', async () => {
+  const acct = privateKeyToAccount(generatePrivateKey()); const A = acct.address.toLowerCase(); const other = privateKeyToAccount(generatePrivateKey());
+  for (const ethSign of [(p) => other.sign({ hash: p[1] }), (p) => acct.signMessage({ message: { raw: p[1] } })]) {
+    const { w, fx, provider } = setupWorld(acct, { ethSign });
+    await assert.rejects(sendSetupWithEthSign({ provider, account: A, fetchImpl: fx, pollMs: 1 }), /Nothing was sent/); assert.equal(w.raws.length, 0);
+  }
+});
+test('sendSetupWithEthSign: already set up -> nothing is asked of the wallet; eth_sign switched off -> plain instructions', async () => {
+  const acct = privateKeyToAccount(generatePrivateKey()); const A = acct.address.toLowerCase();
+  const done = setupWorld(acct, { ethSign: () => { throw new Error('should not be called'); } }); done.w.onboarded = true;
+  assert.deepEqual(await sendSetupWithEthSign({ provider: done.provider, account: A, fetchImpl: done.fx }), { already: true }); assert.equal(done.provider.calls.includes('eth_sign'), false);
+  const off = setupWorld(acct, { ethSign: () => { throw Object.assign(new Error('The eth_sign method has been disabled. Enable it in Advanced settings.'), { code: -32601 }); } });
+  await assert.rejects(sendSetupWithEthSign({ provider: off.provider, account: A, fetchImpl: off.fx }), (e) => e.code === 'ETH_SIGN_DISABLED' && /Eth_sign requests/.test(e.message)); assert.equal(off.w.raws.length, 0);
+  const rej = new Error('User rejected the request.'); assert.equal(explainEthSignError(rej), rej);
 });

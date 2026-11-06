@@ -41,5 +41,11 @@ export async function sendNearTx({ account, receiver, method, args = {}, deposit
   return { hash, explorer: near.explorerTx(hash) };
 }
 
+/** The one-time relayer setup through a raw-hash signature (eth_sign), for wallets (MetaMask) that refuse to let a website send it to the wallet's own address. */
+export async function sendSetupSigned({ account }) {
+  const near = await import('../wallet/nearEth.js'); const provider = await walletProvider(account);
+  return near.sendSetupWithEthSign({ provider, account: account.toLowerCase() });
+}
+
 /** Read the vault's own config (owner, pending owner, paused) straight from NEAR. */
 export async function readNearVault(vault) { const near = await import('../wallet/nearEth.js'); return near.viewNear({ contract: vault, method: 'config' }); }

@@ -8,7 +8,7 @@
 //                               transfer(string receiver, uint32 yocto)                                           0x3ed64124
 //   1 EVM gas = 1e8 NEAR gas, so gas_limit = NEAR gas / 1e8. One action per transaction (no batching).
 // No key is held here: signing happens in the wallet through an EIP-1193 provider.
-import { encodeAbiParameters, keccak256, parseAbiParameters, toBytes, toHex } from 'viem';
+import { encodeAbiParameters, keccak256, parseAbiParameters, parseSignature, recoverTransactionAddress, serializeTransaction, toBytes, toHex } from 'viem';
 
 export const NEAR_EVM = Object.freeze({
   chainId: 398, chainIdHex: '0x18e', name: 'NEAR testnet (EVM wallet)', rpc: 'https://eth-rpc.testnet.near.org',
@@ -106,6 +106,42 @@ export function explainWalletError(e) {
     err.code = 'WALLET_SELF_DATA_BLOCKED'; err.cause = e; return err;
   }
   return e;
+}
+
+/** MetaMask's wording when `eth_sign` is switched off (Settings > Advanced > Eth_sign requests) or the wallet has no such method. */
+export function explainEthSignError(e) {
+  const m = String(e?.message ?? e);
+  if (/eth_sign.*(disabled|advanced|enable)|has been disabled|method.*(not (found|supported|available))|does not exist|unsupported method/i.test(m) || e?.code === -32601 || e?.code === 4200) {
+    const err = new Error('MetaMask has "Eth_sign requests" switched off. In MetaMask open Settings, then Advanced, turn on "Eth_sign requests", and try again (turn it off again afterwards).');
+    err.code = 'ETH_SIGN_DISABLED'; err.cause = e; return err;
+  }
+  return e;
+}
+
+/**
+ * The one-time relayer setup WITHOUT a transaction from the wallet to itself (which MetaMask refuses for websites). The app builds the exact setup transaction, the wallet signs its
+ * 32-byte hash with `eth_sign` (a raw-hash signature: MetaMask warns about it and keeps it switched off by default), and the app sends the signed transaction to the relayer.
+ * Before anything is sent the signature is checked: the transaction must recover to `account`, otherwise nothing is sent (for example a wallet that added a message prefix).
+ * Resolves { already: true } when the account is already set up, else { hash } once the relayer key is visible on chain.
+ */
+export async function sendSetupWithEthSign({ provider, account, fetchImpl, waitMs = 100_000, pollMs = 2500 }) {
+  if (!isEthImplicit(account)) throw new Error('This account is not an Ethereum-style NEAR account.');
+  const [from] = await provider.request({ method: 'eth_requestAccounts' });
+  if (String(from).toLowerCase() !== account.toLowerCase()) throw new Error(`Switch your wallet to ${account.slice(0, 6)}…${account.slice(-4)} and try again.`);
+  const ob = await onboardingStatus(account, fetchImpl);
+  if (ob.onboarded) return { already: true };
+  const [nonce, gasPrice] = await Promise.all([relayer('eth_getTransactionCount', [account, 'latest'], fetchImpl), relayer('eth_gasPrice', [], fetchImpl)]);
+  const t = buildTx({ account, nonce, gasPrice, onboard: ob.relayerKeyHex });
+  const unsigned = { type: 'legacy', chainId: Number(t.chainId), nonce: Number(BigInt(t.nonce)), to: t.to, value: BigInt(t.value), data: t.data, gas: BigInt(t.gas), gasPrice: BigInt(t.gasPrice) };
+  const digest = keccak256(serializeTransaction(unsigned));
+  let sig; try { sig = await provider.request({ method: 'eth_sign', params: [account, digest] }); } catch (e) { throw explainEthSignError(e); }
+  const { r, s, yParity } = parseSignature(sig);
+  const raw = serializeTransaction(unsigned, { r, s, v: 27n + BigInt(yParity) }); // viem derives the EIP-155 v from the chain id and this 27/28 form
+  const signer = await recoverTransactionAddress({ serializedTransaction: raw }).catch(() => '');
+  if (signer.toLowerCase() !== account.toLowerCase()) throw new Error('The wallet signed something the network cannot use as this setup. Nothing was sent.');
+  const hash = await relayer('eth_sendRawTransaction', [raw], fetchImpl);
+  for (let waited = 0; waited < waitMs; waited += pollMs) { if ((await onboardingStatus(account, fetchImpl)).onboarded) return { hash }; await new Promise((ok) => setTimeout(ok, pollMs)); }
+  throw new Error('The setup was sent but is not visible yet. Wait a minute and press the button again.');
 }
 
 /**
