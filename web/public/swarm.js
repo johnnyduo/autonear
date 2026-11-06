@@ -16,15 +16,16 @@
   const root = doc.documentElement;
 
   const AGENTS = [
-    { name: 'Copy', color: '#5fb8ff' },
-    { name: 'Layout', color: '#c6f432' },
-    { name: 'Style', color: '#ff7ad9' },
-    { name: 'Media', color: '#ffb23f' },
-    { name: 'Check', color: '#4be3b0' },
+    // `name` is the key used in data-sw-agent and by the planner; `label` is what the page shows (names of the council's agents, colours of the app theme)
+    { name: 'Copy', label: 'Analyst', color: '#80d9ff' },
+    { name: 'Layout', label: 'Architect', color: '#c6f432' },
+    { name: 'Style', label: 'Builder', color: '#f2b84b' },
+    { name: 'Media', label: 'Planner', color: '#59ffd1' },
+    { name: 'Check', label: 'Security', color: '#ff6b8b' },
   ];
   const NAMES = AGENTS.map((a) => a.name);
-  const INTRO = 1200; // cursors flock near the centre before the first task
-  const TASK_MS = 16800; // all tasks finish inside this window (intro + this + idle = about 20 s)
+  const INTRO = 0; // no orbiting intro: the cursors start working at once
+  const TASK_MS = 17800; // all tasks finish inside this window (plus the idle end = about 20 s)
   const IDLE = 2000; // cursors follow the pointer after the build
   const FADE = 400;
   const WATCHDOG = 40000; // the page is never left blank longer than this
@@ -152,7 +153,7 @@
     lastPost = now;
     if (win.parent === win) return;
     try {
-      const agents = run ? run.cursors.map((c) => ({ name: c.name, color: c.color, doing: c.doing })) : AGENTS.map((a) => ({ name: a.name, color: a.color, doing: '' }));
+      const agents = run ? run.cursors.map((c) => ({ name: c.label, color: c.color, doing: c.doing })) : AGENTS.map((a) => ({ name: a.label, color: a.color, doing: '' }));
       win.parent.postMessage({ type: 'swarm-state', phase, progress: Math.round(progress * 1000) / 1000, agents }, win.location.origin);
     } catch (e) { /* opaque origin or detached parent: nothing to tell */ }
   }
@@ -176,12 +177,12 @@
       '.sw-world{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}',
       '.sw-cur{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}',
       '.sw-cur svg{position:absolute;left:0;top:0;width:24px;height:24px;overflow:visible;transform-origin:0 0}',
-      '.sw-lab{position:absolute;left:12px;top:15px;padding:1px 6px;border-radius:4px;font:600 11px/16px system-ui,-apple-system,sans-serif;color:#0a0c0f;white-space:nowrap}',
+      '.sw-lab{position:absolute;left:12px;top:15px;padding:2px 7px;border-radius:4px;border:1px solid;background:rgba(8,11,14,.9);font:600 10.5px/14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}',
       '.sw-g{position:absolute;box-sizing:border-box;pointer-events:none}',
       '.sw-caret{position:absolute;width:2px;pointer-events:none}',
-      '.sw-tag{position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:99px;background:rgba(10,12,15,.82);color:#ece9df;font:500 12px/16px system-ui,-apple-system,sans-serif;border:1px solid rgba(255,255,255,.18)}',
+      '.sw-tag{position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:99px;background:rgba(10,12,15,.82);color:#ece9df;font:500 11px/16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,255,255,.18)}',
       '.sw-ctl{position:fixed;right:16px;bottom:16px;z-index:2147483001;display:flex;gap:8px}',
-      '.sw-ctl button{font:600 13px/1 system-ui,-apple-system,sans-serif;padding:10px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:rgba(10,12,15,.88);color:#fff;cursor:pointer}',
+      '.sw-ctl button{font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-radius:99px;border:1px solid rgba(198,244,50,.45);background:rgba(8,11,14,.9);color:#c6f432;cursor:pointer}',
       '.sw-ctl button:focus-visible{outline:2px solid #c6f432;outline-offset:2px}',
       '.sw-ctl button[aria-pressed=true]{background:#c6f432;color:#10160a;border-color:#c6f432}',
     ].join('\n');
@@ -262,11 +263,11 @@
     for (const k in shapes) svg.appendChild(shapes[k]);
     const lab = doc.createElement('span');
     lab.className = 'sw-lab';
-    lab.textContent = agent.name;
-    lab.style.background = agent.color;
+    lab.textContent = agent.label;
+    lab.style.color = agent.color; lab.style.borderColor = agent.color; lab.style.boxShadow = '0 0 10px ' + agent.color + '55';
     el.appendChild(svg);
     el.appendChild(lab);
-    const c = { name: agent.name, color: agent.color, i, el, svg, shapes, shape: '', scale: 1, x: 0, y: 0, vx: 0, vy: 0, doing: 'idle', busy: false };
+    const c = { name: agent.name, label: agent.label, color: agent.color, i, el, svg, shapes, shape: '', scale: 1, x: 0, y: 0, vx: 0, vy: 0, doing: 'idle', busy: false };
     setShape(c, 'arrow');
     return c;
   }
@@ -580,6 +581,8 @@
     if (!items.length) { revealAll(); setPhase('still'); return; }
     const plan = planTasks(items, { agents: NAMES, totalMs: TASK_MS });
     const cursors = AGENTS.map(makeCursor);
+    // no intro: start spread along the top of the view, then each cursor goes straight to its first task
+    cursors.forEach((c, i) => { c.x = win.pageXOffset + win.innerWidth * (0.28 + 0.11 * i); c.y = win.pageYOffset + 24; });
     const tasks = plan.map((p, i) => Object.assign({ cur: cursors[NAMES.indexOf(p.agent)], shown: false, ghost: null }, meta[i], { start: p.start, duration: p.duration }));
     tasks.sort((a, b) => a.start - b.start);
 
@@ -643,7 +646,7 @@
   win.AutoSwarm = {
     play,
     skip,
-    state: () => ({ phase, progress, agents: run ? run.cursors.map((c) => ({ name: c.name, color: c.color, doing: c.doing })) : AGENTS.map((a) => ({ name: a.name, color: a.color, doing: '' })) }),
+    state: () => ({ phase, progress, agents: run ? run.cursors.map((c) => ({ name: c.label, color: c.color, doing: c.doing })) : AGENTS.map((a) => ({ name: a.label, color: a.color, doing: '' })) }),
   };
 
   win.addEventListener('message', (e) => {
