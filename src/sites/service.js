@@ -1,12 +1,14 @@
-// The server side of the Build show: build a stored page from the council result, list the pages, serve /develop/<slug>[/<hash>].
+// The server side of the Build show: build a stored concept page from the council result, list the pages, serve /develop/<slug>[/<hash>].
 import { now, audit } from '../db.js';
 import { PolicyError, Budget } from '../policy.js';
 import { oppEvidence, getOpp } from '../store.js';
+import { BUILDABLE_TOPICS } from '../council.js';
+import { findAttestedBuild } from '../orchestrator/agents.js';
 import { isSocialSource } from '../connectors/source-weights.js';
 import { slugOf, validateContent } from './schema.js';
 import { generateContent } from './content.js';
 import { renderSite, shortHash, esc, SITE_CSP, TEMPLATE_VERSION } from './render.js';
-import { saveSite, getSite, latestPublished, latestBuilt, listSites, tokensSince } from './store.js';
+import { saveSite, getSite, latestPublished, latestBuilt, listSites, tokensSince, staleKeys } from './store.js';
 
 const DAY = 864e5;
 const dailyTokenCap = () => Number(process.env.SITE_DAILY_TOKENS) || 40_000;
@@ -37,6 +39,7 @@ export const view = (r) => r && ({
 /** Public list: one row per council opportunity, with its newest stored version and the published one. */
 export async function listView(db, council) {
   const all = await listSites(db); // newest first
+  const stale = await staleKeys(db);
   return council.opportunities.map((o) => {
     const slug = slugOf(o); const mine = all.filter((s) => s.slug === slug);
     const built = mine[0] ?? null; const pub = mine.find((s) => s.published_at != null) ?? null;
@@ -44,6 +47,7 @@ export async function listView(db, council) {
       opp_id: o.oppId, slug, title: o.title, verdict: o.verdict, support: o.support, buildable: o.verdict === 'go', can_override: o.verdict === 'watch',
       hash: built?.hash ?? null, built_at: built?.created_at ?? null, published: Boolean(pub), published_hash: pub?.hash ?? null,
       override: Boolean(built?.meta.override), model: built?.meta.model ?? null, tokens: built?.meta.tokens ?? 0, cost: built?.meta.cost ?? 0,
+      ...(built && stale.has(`${slug}/${built.hash}`) ? { stale: true } : {}),
     };
   });
 }
@@ -55,7 +59,7 @@ export async function buildSite(db, { oppId, entry, override = false, regenerate
   if (entry.verdict !== 'go' && override !== true) throw new PolicyError(`The council says ${String(entry.verdict).toUpperCase()}, not GO. Send override: true to build on the owner's call.`, 'state');
   const opp = await getOpp(db, oppId); if (!opp) throw new PolicyError('unknown product', 'not_found');
   const slug = slugOf(opp);
-  if (!regenerate) { const have = await latestBuilt(db, slug); if (have) return { site: have, created: false }; }
+  if (!regenerate) { const have = await latestBuilt(db, slug); if (have && validateContent(have.content).ok) return { site: have, created: false }; } // a stored page that no longer passes the schema is written again
   const used = await tokensSince(db, now() - DAY);
   if (used >= dailyTokenCap()) throw new PolicyError('The daily token budget for page text is used up. Try again tomorrow.', 'state');
   const evidence = await evidenceFor(db, oppId);
@@ -65,6 +69,48 @@ export async function buildSite(db, { oppId, entry, override = false, regenerate
   const site = await saveSite(db, { slug, oppId, hash, content: gen.content, meta, createdAt: now() });
   await audit(db, actor, 'site.build', { opp: oppId, slug, hash, override: meta.override });
   return { site, created: true };
+}
+
+// ---- path to production: real stored state only -----------------------------------------------------------------------------------------------
+const day = (ms) => (Number.isFinite(Number(ms)) && Number(ms) > 0 ? new Date(Number(ms)).toISOString().slice(0, 10) : 'an unknown date');
+
+/** Four steps {key, state: 'done'|'next'|'later', note} for one product. A step is done only when a stored row says so; the first step that is not done is next. */
+export async function pathFor(db, oppId) {
+  const opp = await getOpp(db, oppId);
+  const template = Boolean(opp && BUILDABLE_TOPICS.includes(opp.topic));
+  const done = {}; const note = {};
+  done.contract = template;
+  note.contract = template ? 'A contract template exists for this topic.' : 'A contract for this product has to be written and tested. None exists yet.';
+
+  const att = template ? await findAttestedBuild(db, 'near') : null;
+  done.build = Boolean(att);
+  const passed = Number(att?.test_results?.passed);
+  note.build = att ? `An attested build is stored${Number.isFinite(passed) && passed > 0 ? ` (${passed} tests passed)` : ''}, recorded ${day(att.created_at)}.` : template ? 'No attested build is stored yet. It is made by building the contract, running its tests and recording the hashes.' : 'There is nothing to build until a contract exists.';
+
+  const run = await db.get('SELECT id FROM runs WHERE opportunity_id=? ORDER BY started_at DESC LIMIT 1', [oppId]);
+  const decision = run ? await db.get("SELECT id, status, approver, decided_at, expiry FROM decisions WHERE run_id=? AND action='deploy_testnet' ORDER BY created_at DESC LIMIT 1", [run.id]) : null;
+  const approved = Boolean(decision && ['approved', 'executed'].includes(decision.status));
+  const byMandate = Boolean(decision?.approver && String(decision.approver).startsWith('mandate:'));
+  done.approval = approved;
+  note.approval = approved
+    ? (byMandate ? `The deploy request was approved on ${day(decision.decided_at)} under a standing mandate. No person signed this deployment.` : `The owner approved the deploy request on ${day(decision.decided_at)}.`)
+    : decision ? `A deploy request exists and is ${decision.status === 'pending' && decision.expiry < Date.now() ? 'expired' : decision.status}.` : 'No deploy request exists for this product yet.';
+
+  const dep = decision ? await db.get('SELECT network, account, status, time FROM deployments WHERE decision_id=? ORDER BY time DESC LIMIT 1', [decision.id]) : null;
+  const live = Boolean(dep && dep.status === 'verified' && dep.network === 'near-testnet');
+  const viaVault = live && Boolean(await db.get("SELECT 1 x FROM mandate_runs WHERE decision_id=? AND status='confirmed'", [decision.id]));
+  done.testnet = viaVault;
+  note.testnet = viaVault
+    ? `Deployed through the vault on NEAR testnet as ${dep.account} on ${day(dep.time)}, checked against the build.`
+    : live ? `Deployed on NEAR testnet as ${dep.account} on ${day(dep.time)}, signed by the owner. It was not run through the vault.`
+    : dep ? `A deployment is stored but it is ${dep.status} on ${dep.network}, not a checked NEAR testnet deployment.` : 'Nothing is deployed for this product.';
+
+  let nextTaken = false;
+  return ['contract', 'build', 'approval', 'testnet'].map((key) => {
+    const state = done[key] ? 'done' : nextTaken ? 'later' : 'next';
+    if (state === 'next') nextTaken = true;
+    return { key, state, note: note[key] };
+  });
 }
 
 // ---- public pages -------------------------------------------------------------------------------------------------------------------------
@@ -79,8 +125,10 @@ export async function pageResponse(db, rest) {
   if (parts.length > 2 || !/^[a-z0-9-]{1,40}$/.test(slug) || (hash !== null && !/^[0-9a-f]{10}$/.test(hash))) return plain(404, 'This page does not exist.');
   const site = hash ? await getSite(db, slug, hash) : await latestPublished(db, slug);
   if (!site) return plain(404, hash ? 'This page does not exist.' : 'No page is published here.');
-  const v = validateContent(site.content); // the stored text is checked again before it is rendered
-  if (!v.ok) return plain(500, 'This stored page failed its check and is not shown.');
-  const html = renderSite({ content: v.value, meta: { slug, title: site.meta.title, verdict: site.meta.verdict, support: site.meta.support, builtAt: site.created_at, hash: site.hash, override: Boolean(site.meta.override), model: site.meta.model, evidence: site.meta.evidence ?? [] } });
+  const v = validateContent(site.content); // the stored text is checked again before it is rendered; an older version (no contract) or a damaged row is not shown
+  if (!v.ok) return plain(404, 'This version is out of date.');
+  let path = null;
+  try { path = await pathFor(db, site.opp_id); } catch { path = null; } // the page still shows; the renderer says the status is not available
+  const html = renderSite({ content: v.value, meta: { slug, title: site.meta.title, verdict: site.meta.verdict, support: site.meta.support, builtAt: site.created_at, hash: site.hash, override: Boolean(site.meta.override), model: site.meta.model, evidence: site.meta.evidence ?? [], path } });
   return new Response(html, { status: 200, headers: { ...PAGE_HEADERS, 'cache-control': site.published_at != null ? 'public, max-age=60' : 'no-store' } });
 }

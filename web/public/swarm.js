@@ -195,7 +195,7 @@
       audio.noise = audio.ctx.createBuffer(1, n, audio.ctx.sampleRate);
       const d = audio.noise.getChannelData(0);
       for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-      const wake = () => { if (audio.ctx && audio.ctx.state === 'suspended') audio.ctx.resume(); };
+      const wake = () => { if (audio.ctx && audio.ctx.state === 'suspended') { const r = audio.ctx.resume(); if (r && r.catch) r.catch(() => {}); } };
       wake();
       ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => win.addEventListener(ev, wake, { passive: true }));
       audio.wake = wake;
@@ -509,7 +509,7 @@
     win.removeEventListener('touchstart', r.onUser);
     if (r.ov && r.ov.parentNode) r.ov.parentNode.removeChild(r.ov);
     if (audio.wake) { ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => win.removeEventListener(ev, audio.wake)); audio.wake = null; }
-    if (audio.ctx) { try { audio.ctx.close(); } catch (e) { /* already closed */ } audio.ctx = null; audio.on = false; }
+    if (audio.ctx) { try { const c = audio.ctx.close(); if (c && c.catch) c.catch(() => {}); } catch (e) { /* already closed */ } audio.ctx = null; audio.on = false; }
   }
   function revealAll() {
     root.classList.remove('sw-on');
