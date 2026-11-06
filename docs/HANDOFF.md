@@ -66,4 +66,4 @@ The vault's `pending_owner` is the user's `0x…9988`. It becomes the owner only
 - Dev servers used so far: API `DB_PATH=<scratch copy> PORT=8787 node src/server.js`, web `npx vite --host 127.0.0.1 --port 5191` in `web/`. Screenshot helper scripts lived in the old session's scratchpad and are gone; `window.__coTier = 0` pins the constellation quality tier in headless runs (software WebGL is about 2 fps).
 - Vercel CLI: link a scratch directory with `vercel link --yes --project autonear --scope copycatfinance`; do not link inside the repo.
 - npm cache under `~/.npm` is root-owned: use `npm_config_cache=<some temp dir>` for installs.
-- CI is ignored by the user (billing blocked); keep the factual line in PROGRESS.md that it has never run.
+- There is no CI: the user does not use it and the workflow file was removed. Run `npm test` and `npm run test:web` locally before every push (the secret scan runs as a git hook).
