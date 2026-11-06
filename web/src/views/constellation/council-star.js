@@ -44,7 +44,7 @@ export class CouncilStar {
 
   /** f: { pushP, pushL, cx, cy, k, W, H, T, calm, main, fade, hot } -> fills this.seats / this.cry / this.lane (screen positions) for picking and labels. */
   build(f) {
-    const { pushP, pushL, cx, cy, k, W, H, T, calm, main, fade } = f; const O = this.O; const e = this.entry; const votes = e?.votes ?? []; const S = e?.support ?? 0; const verdict = e?.verdict ?? 'watch'; const vc = VERD[verdict];
+    const { pushP, pushL, cx, cy, k, W, H, T, calm, main, fade } = f; this.topSafe = f.topSafe ?? 0; const O = this.O; const e = this.entry; const votes = e?.votes ?? []; const S = e?.support ?? 0; const verdict = e?.verdict ?? 'watch'; const vc = VERD[verdict];
     const M = mat(this.cam.yaw + this.spin, this.cam.pit); const MW = mat(this.cam.yaw, this.cam.pit);
     const xf = (m, x, y, z) => { O[0] = m[0] * x + m[1] * y + m[2] * z; O[1] = m[3] * x + m[4] * y + m[5] * z; O[2] = m[6] * x + m[7] * y + m[8] * z; };
     const P = (z) => DD / (DD - z); const R = C0 * k; this.view = { cx, cy, R, main };
@@ -106,9 +106,9 @@ export class CouncilStar {
     // Stage colours and the pod come from the stored journey; the pulse that runs along the lane replays the verdict.
     this.lane = []; this.podV = null; const jr = this.data?.journey; const oc = jr?.outcome; const occ = OUT[oc?.state ?? 'not_started'];
     if (main && fade > 0.4) {
-      const st = jr?.stages ?? []; const nodes = [{ label: 'Verdict', state: e ? 'done' : 'todo', detail: e ? verdict.toUpperCase() : '' }, ...st]; const y = Math.min(H - (W < 640 ? 160 : 118), cy + R * 2.05); const narrow = W < 640;
+      const st = jr?.stages ?? []; const nodes = [{ label: 'Verdict', state: e ? 'verdict' : 'todo', detail: e ? (verdict === 'go' ? 'GO: backed' : verdict === 'watch' ? 'WATCH: not yet' : 'DROP') : '' }, ...st]; const narrow = W < 640; const y = Math.min((f.bottomSafe ?? H - 24) - (narrow ? 66 : 64), cy + R * 2.05);
       const x0 = W * (narrow ? 0.07 : 0.1); const x1 = W * (narrow ? 0.76 : 0.8); const n = nodes.length; const podX = W * (narrow ? 0.89 : 0.915); const podR = narrow ? 24 : 40;
-      const col = (s2) => (s2 === 'done' ? [0.78, 0.96, 0.2] : s2 === 'active' ? [0.97, 0.72, 0.3] : s2 === 'blocked' ? [1, 0.25, 0.5] : [0.42, 0.45, 0.5]);
+      const col = (s2) => (s2 === 'verdict' ? vc : s2 === 'done' ? [0.78, 0.96, 0.2] : s2 === 'active' ? [0.97, 0.72, 0.3] : s2 === 'blocked' ? [1, 0.25, 0.5] : [0.42, 0.45, 0.5]);
       const xs = (i) => x0 + ((x1 - x0) * i) / (n - 1); const dot = (x, y2, sz, c, a, sq) => pushP(x, y2, sz, c[0], c[1], c[2], a, sq ? -1 : 0.15);
       for (let i = 0; i < n; i++) {
         const x = xs(i); const c = col(nodes[i].state); const act = nodes[i].state === 'active';
@@ -121,14 +121,17 @@ export class CouncilStar {
       // outcome pod: a small dot-sphere that fills bottom to top with the share of finished stages, coloured by the final judgement
       { const prog = oc ? oc.progress.done / Math.max(1, oc.progress.total) : 0; const spinP = calm ? 0.4 : T * 0.5; const Mp = mat(spinP, 0.35); const nLit = Math.round(prog * (this.pod.length / 5));
         pushP(podX, y, podR * (3.3 + 0.4 * pulse), occ[0], occ[1], occ[2], 0.22 * fade, 0.5);
-        this.podOrder.forEach((idx, rank) => { const o = idx * 5; xf(Mp, this.pod[o] * podR, this.pod[o + 1] * podR, this.pod[o + 2] * podR); const on = rank < nLit; const f = O[2] / podR; const tier = this.pod[o + 3]; const c = on ? occ : VIO; const sz = [2.8, 3.4, 4.6, 6.4][tier] * (0.6 + 0.4 * Math.max(0, f)); pushP(podX + O[0], y - O[1], sz, c[0], c[1], c[2], (on ? 1 : 0.42) * (f > 0 ? 1 : 0.4) * fade, tier === 0 ? -1 : 0.2); });
+        this.podOrder.forEach((idx, rank) => { const o = idx * 5; xf(Mp, this.pod[o] * podR, this.pod[o + 1] * podR, this.pod[o + 2] * podR); const on = rank < nLit; const f = O[2] / podR; const tier = this.pod[o + 3]; const c = on ? occ : VIO; const sz = [2.8, 3.4, 4.6, 6.4][tier] * (0.6 + 0.4 * Math.max(0, f)); pushP(podX + O[0], y - O[1], sz, c[0], c[1], c[2], (on ? 1 : 0.55) * (f > 0 ? 1 : 0.45) * fade, tier === 0 ? -1 : 0.2); });
         if (!calm && oc) { const st2 = oc.state; if (st2 === 'shipped' || st2 === 'live') { for (let q = 0; q < 6; q++) { const u = ((T * 0.6 + q / 6) % 1); const a = (q / 6) * TAU + T * 0.4; pushP(podX + Math.cos(a) * podR * (1.2 + u), y + Math.sin(a) * podR * (1.2 + u), 4, occ[0], occ[1], occ[2], 0.8 * (1 - u), 0.1); } }
           else if (st2 === 'failed') { const g = hash(Math.floor(T * 9)); if (g > 0.55) pushL(podX - podR * 1.5, y + (g - 0.7) * podR * 2, 0.6, podX + podR * 1.5, y + (g - 0.7) * podR * 2, 0.6, occ[0], occ[1], occ[2]); }
           else { const ring = (T * 0.4) % 1; for (let q = 0; q < 20; q++) { const a = (q / 20) * TAU; pushP(podX + Math.cos(a) * podR * (1.15 + ring * 0.8), y + Math.sin(a) * podR * (1.15 + ring * 0.8), 3, occ[0], occ[1], occ[2], 0.5 * (1 - ring), -1); } } }
         this.podV = { x: podX, y, r: podR }; }
       // the verdict pulse running along the lane
       if (!calm && e) { const first = nodes.findIndex((nd, i) => i && nd.state !== 'done'); const end = first < 0 ? n - 1 : Math.max(0, first - 1 + (verdict === 'go' ? 1 : 0)); const u = clamp((cyc - 10.4) / 3, 0, 1); if (cyc > 10.4 && end > 0) { const xx = xs(0) + (xs(end) - xs(0)) * u; pushP(xx, y, 24, vc[0], vc[1], vc[2], 0.9 * (1 - u * 0.4), 0.1); for (let q = 1; q < 6; q++) pushP(xx - q * 8 * u, y, 8 - q, vc[0], vc[1], vc[2], 0.6 * (1 - q / 6), 0.1); } }
-      pushL(cx, cy + R * 0.82, 0.4 * fade, this.lane[0]?.x ?? cx, y - 8, 0.3 * fade, vc[0], vc[1], vc[2]);
+      // the verdict's path: a dotted curve from the star down to the first node of the lane (the verdict is what starts the lane)
+      { const ax = cx; const ay = cy + R * 0.9; const bx = this.lane[0]?.x ?? cx; const by = y - 16; const qx = bx; const qy = ay; // the curve leaves the star sideways and drops onto the first node from above, away from the lane's own dots this.verdictCurve = null;
+        for (let q = 1; q < 22; q++) { const u = q / 22; const a = (1 - u) * (1 - u); const b2 = 2 * u * (1 - u); const d = u * u; const xx = a * ax + b2 * qx + d * bx; const yy = a * ay + b2 * qy + d * by; if (q === 11) this.verdictCurve = { x: xx, y: yy }; dot(xx, yy, q % 4 === 0 ? 6 : 3.4, vc, 0.85 * fade, q % 4); }
+        if (!calm) { const u = clamp((cyc - 10.0) / 1.2, 0, 1); if (cyc > 10 && u < 1) { const a = (1 - u) * (1 - u); const b2 = 2 * u * (1 - u); const d = u * u; pushP(a * ax + b2 * qx + d * bx, a * ay + b2 * qy + d * by, 14, vc[0], vc[1], vc[2], 0.9 * (1 - u * 0.5), 0.1); } } }
     }
     this.cycle = cyc; this.verdict = verdict; this.partial = gaugeS;
   }

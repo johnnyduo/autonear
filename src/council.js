@@ -30,14 +30,15 @@ export function votesFor(opp, evidence, links, { nowMs = Date.now() } = {}) {
   const day = 864e5; const W = RULES.trendWindowDays * day; const t = (e) => e.published_at ?? e.observed_at;
   const recent = evidence.filter((e) => nowMs - t(e) <= W).length; const prior = evidence.filter((e) => nowMs - t(e) > W && nowMs - t(e) <= 2 * W).length;
   const momentum = evidence.length ? clamp(0.5 + 0.5 * Math.tanh((recent - prior) / Math.max(3, prior))) : 0.5;
+  const n100 = (x) => Math.round(clamp(x ?? 0) * 100); const nEv = evidence.length;
   const v = {
-    signal_collector: { support: clamp(c.independent_demand ?? 0), reason: `${counts.demand ?? 0} demand records from ${counts.sources ?? 0} sources; independent demand ${pct(c.independent_demand ?? 0)}` },
-    evidence_analyst: { support: clamp((opp.score ?? 0) * (0.5 + 0.5 * (opp.confidence ?? 0))), reason: `score ${(opp.score ?? 0).toFixed(2)} at confidence ${(opp.confidence ?? 0).toFixed(2)}` },
-    skeptic: { support: clamp(0.6 * (c.competition_gap ?? 0) + 0.4 * (1 - clamp((contradicts / Math.max(1, supports + contradicts)) * 2))), reason: `${contradicts} contradicting and ${competitor} competitor links against ${supports} supporting; competition gap ${pct(c.competition_gap ?? 0)}` },
-    product_architect: { support: clamp(c.near_fit ?? 0), reason: `fit with NEAR ${pct(c.near_fit ?? 0)} (a curated prior, not measured)` },
-    builder: { support: buildable ? clamp(c.feasibility ?? 0) : clamp((c.feasibility ?? 0) * 0.3), reason: buildable ? `an attested build template exists; feasibility ${pct(c.feasibility ?? 0)} (a curated prior)` : 'no attested build template for this topic yet, so nothing can be built and verified' },
-    security_reviewer: { support: clamp(1 - flaggedShare * 2 - (counts.usage ? 0 : 0.1)), reason: `${flagged} of ${evidence.length} linked records carry a bot, duplicate or injection flag${counts.usage ? '' : '; no on-chain usage corroboration'}` },
-    launch_planner: { support: momentum, reason: `${recent} records in the last ${RULES.trendWindowDays} days against ${prior} in the ${RULES.trendWindowDays} before: ${recent > prior ? 'speeding up' : recent < prior ? 'slowing down' : 'flat'}` },
+    signal_collector: { support: clamp(c.independent_demand ?? 0), reason: `${counts.demand ?? 0} demand records from ${counts.sources ?? 0} different sources. Independent demand scores ${n100(c.independent_demand)} out of 100.` },
+    evidence_analyst: { support: clamp((opp.score ?? 0) * (0.5 + 0.5 * (opp.confidence ?? 0))), reason: `The published scoring formula gives this product ${n100(opp.score)} out of 100 and trusts that score ${n100(opp.confidence)} out of 100.` },
+    skeptic: { support: clamp(0.6 * (c.competition_gap ?? 0) + 0.4 * (1 - clamp((contradicts / Math.max(1, supports + contradicts)) * 2))), reason: `${contradicts} records argue against it and ${competitor} point to existing competitors, against ${supports} that support it. Room left in the market: ${n100(c.competition_gap)} out of 100.` },
+    product_architect: { support: clamp(c.near_fit ?? 0), reason: `Fit with NEAR is ${n100(c.near_fit)} out of 100. This is a hand-set estimate, not a measurement.` },
+    builder: { support: buildable ? clamp(c.feasibility ?? 0) : clamp((c.feasibility ?? 0) * 0.3), reason: buildable ? `A contract template exists that can be built and checked. Ease of building is ${n100(c.feasibility)} out of 100 (a hand-set estimate).` : 'No contract template exists for this topic yet, so nothing can be built and checked.' },
+    security_reviewer: { support: clamp(1 - flaggedShare * 2 - (counts.usage ? 0 : 0.1)), reason: `${flagged} of ${nEv} linked records are flagged as bot, duplicate or injection${counts.usage ? '' : '. Nothing on-chain backs this up yet'}.` },
+    launch_planner: { support: momentum, reason: `${recent} new records in the last ${RULES.trendWindowDays} days against ${prior} in the ${RULES.trendWindowDays} days before: ${recent > prior ? 'speeding up' : recent < prior ? 'slowing down' : 'flat'}.` },
   };
   return { votes: SEATS.map(([role, label]) => ({ role, label, weight: RULES.weights[role], support: Number(v[role].support.toFixed(3)), stance: stance(v[role].support), reason: v[role].reason })), momentum: Number(momentum.toFixed(3)), recent, prior, buildable };
 }
@@ -45,11 +46,11 @@ export function votesFor(opp, evidence, links, { nowMs = Date.now() } = {}) {
 export function verdictOf(S, confidence, votes, buildable) {
   const sk = votes.find((x) => x.role === 'skeptic').support; const sec = votes.find((x) => x.role === 'security_reviewer').support;
   const vetoes = []; if (sk < RULES.vetoSkeptic) vetoes.push('Skeptic'); if (sec < RULES.vetoSecurity) vetoes.push('Security');
-  const goGrade = S >= RULES.goAt && confidence >= RULES.minConfidence && !vetoes.length;
-  if (goGrade && buildable) return { verdict: 'go', vetoes, reason: `support ${S.toFixed(2)} clears ${RULES.goAt}, confidence ${confidence.toFixed(2)} clears ${RULES.minConfidence}, no veto, and it can be built and verified` };
-  if (goGrade) return { verdict: 'watch', vetoes, reason: `strong enough (${S.toFixed(2)}) but nothing can be built for this topic yet: a trend we see and cannot ship` };
-  if (S >= RULES.watchAt || (S >= RULES.goAt && vetoes.length)) return { verdict: 'watch', vetoes, reason: vetoes.length ? `${vetoes.join(' and ')} veto: support ${S.toFixed(2)} is not enough on its own` : `support ${S.toFixed(2)} is between ${RULES.watchAt} and ${RULES.goAt}, or confidence ${confidence.toFixed(2)} is under ${RULES.minConfidence}` };
-  return { verdict: 'drop', vetoes, reason: `support ${S.toFixed(2)} is under ${RULES.watchAt}` };
+  const goGrade = S >= RULES.goAt && confidence >= RULES.minConfidence && !vetoes.length; const q = (x) => Math.round(x * 100);
+  if (goGrade && buildable) return { verdict: 'go', vetoes, reason: `The score of ${q(S)} out of 100 is above the ${q(RULES.goAt)} needed, confidence of ${q(confidence)} is above ${q(RULES.minConfidence)}, nobody vetoed, and it can be built and checked.` };
+  if (goGrade) return { verdict: 'watch', vetoes, reason: `Strong enough (${q(S)} out of 100), but nothing can be built for this topic yet: a trend we see and cannot ship.` };
+  if (S >= RULES.watchAt || (S >= RULES.goAt && vetoes.length)) return { verdict: 'watch', vetoes, reason: vetoes.length ? `${vetoes.join(' and ')} vetoed it, so a score of ${q(S)} out of 100 is not enough on its own.` : `The score of ${q(S)} out of 100 is between ${q(RULES.watchAt)} and ${q(RULES.goAt)}, or confidence of ${q(confidence)} is under ${q(RULES.minConfidence)}: keep watching.` };
+  return { verdict: 'drop', vetoes, reason: `The score of ${q(S)} out of 100 is under the ${q(RULES.watchAt)} needed to keep watching.` };
 }
 
 /** Pure over the database: every opportunity, ranked. Does not write. */

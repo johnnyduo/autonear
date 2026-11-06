@@ -112,8 +112,8 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
         <div className="co-card-in">
           <div className="co-card-h"><span className="co-sw ring" style={{ borderColor: '#7ee9ff' }} aria-hidden="true" /><b>{v ? `${['Collector', 'Analyst', 'Skeptic', 'Architect', 'Builder', 'Security', 'Planner'][k.i]} seat` : 'Seat'}</b>{v && <span className={v.stance === 'object' ? 'bad' : v.stance === 'back' ? 'ok' : 'faint'}>{v.stance}</span>}</div>
           <p className="co-card-t">{v ? v.reason : 'No vote yet.'}</p>
-          {v && <div className="co-card-kv"><span className="eyebrow">support</span><b className="num">{v.support.toFixed(2)}</b><span className="eyebrow">weight</span><b className="num">{Math.round(v.weight * 100)}%</b></div>}
-          <p className="co-card-hint faint">Computed from stored data by published rules. The bolts replay the stored votes.</p>
+          {v && <div className="co-card-kv"><span className="eyebrow">this seat gives</span><b className="num">{Math.round(v.support * 100)} / 100</b><span className="eyebrow">weight</span><b className="num">{Math.round(v.weight * 100)}%</b></div>}
+          <p className="co-card-hint faint">Each seat answers one question with a number from 0 to 100, worked out from stored data. The bolts replay the stored votes.</p>
           {pinned && <div className="co-card-a"><a className="btn sm primary" href="#/council">Open Council</a><button type="button" className="btn sm ghost" onClick={onClose}>Release<kbd>Esc</kbd></button></div>}
         </div>
       );
@@ -121,7 +121,7 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
     const o = c?.opportunities?.[k.i];
     return (
       <div className="co-card-in">
-        <div className="co-card-h"><span className="co-sw" style={{ background: o?.verdict === 'go' ? '#c6f432' : o?.verdict === 'watch' ? '#f2b84b' : '#8c8b82' }} aria-hidden="true" /><b>{o ? o.verdict.toUpperCase() : 'Product'}</b>{o && <span className="faint">support {o.support.toFixed(2)}</span>}</div>
+        <div className="co-card-h"><span className="co-sw" style={{ background: o?.verdict === 'go' ? '#c6f432' : o?.verdict === 'watch' ? '#f2b84b' : '#8c8b82' }} aria-hidden="true" /><b>{o ? o.verdict.toUpperCase() : 'Product'}</b>{o && <span className="faint">council score {Math.round(o.support * 100)} / 100</span>}</div>
         <p className="co-card-t">{o ? o.title : ''}</p>
         {o && <p className="co-card-t dim">{o.reason}</p>}
         {o && <div className="co-card-kv"><span className="eyebrow">trend</span><b className="num">{o.momentum > 0.55 ? 'rising' : o.momentum < 0.45 ? 'cooling' : 'steady'}</b><span className="eyebrow">can be built</span><b className="num">{o.buildable ? 'yes' : 'not yet'}</b></div>}
