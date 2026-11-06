@@ -16,6 +16,9 @@
 //  (j) gas top-up (AUTO mode only): when the agent balance is under a low-water mark, ONE bounded draw to the agent's own address, inside the mandate
 //      (never above the per-draw cap or the remaining budget), parity-checked like every draw, under a durable per-vault claim (kv topup:<vault>) so a crash,
 //      a pending receipt or a restart can never repeat it, and capped per 24h. MANUAL mode (the default): the loop only reconciles in-flight work and acts on nothing.
+//  (k) OWNER-APPROVED EXECUTION (both modes, NEAR only): a deploy_testnet the owner already approved is run by the agent through the vault, inside the same
+//      limits and checks as any other (rules a-h). The record keeps who approved it (`mandate:<vault>:<epoch>+<owner>`) and never says the owner signed the tx.
+//      Manual therefore means "nothing happens without the owner's yes", not "nothing happens". A failed attempt goes back to pending and needs a new yes.
 //  (i) errors are redacted by the keystore before they reach the ledger/audit/logs; key material never reaches this module.
 import { now, parse, getBlob } from './db.js';
 import { autonomyEnabled, autonomyMaxPerDay } from './config.js';
@@ -123,9 +126,12 @@ async function processVault(ctx, vault) {
 
   await reconcile(ctx, vault, adapter, net);
   if ((await getLoop(db)).state === 'blocked') return { blocked: true };
-  if ((await getMode(db)) !== 'auto') return { manual: true }; // MANUAL (default): in-flight work was reconciled above; nothing new starts, decisions wait for the owner
-
-  const candidates = await db.all("SELECT * FROM decisions WHERE action='deploy_testnet' AND chain_id=? AND status='pending' AND expiry>? AND bound_signer IS NULL AND approver IS NULL AND id NOT IN (SELECT decision_id FROM mandate_runs) ORDER BY created_at", [vault.chain_id, now()]);
+  const auto = (await getMode(db)) === 'auto';
+  // Work the OWNER already approved runs in both modes (that is what Manual means: nothing happens without the owner's yes). NEAR only: on EVM the owner signs the deploy.
+  const ownerApproved = net.protocol === 'near' ? (await db.all("SELECT * FROM decisions WHERE action='deploy_testnet' AND chain_id=? AND status='approved' AND approver IS NOT NULL AND approver NOT LIKE 'mandate:%' AND bound_signer IS NOT NULL AND expiry>? AND id NOT IN (SELECT decision_id FROM mandate_runs) ORDER BY decided_at", [vault.chain_id, now()])).map((c) => ({ ...c, byOwner: true })) : [];
+  if (!auto && !ownerApproved.length) return { manual: true }; // MANUAL (default): in-flight work was reconciled above; nothing new starts, decisions wait for the owner
+  const pendingForAuto = auto ? await db.all("SELECT * FROM decisions WHERE action='deploy_testnet' AND chain_id=? AND status='pending' AND expiry>? AND bound_signer IS NULL AND approver IS NULL AND id NOT IN (SELECT decision_id FROM mandate_runs) ORDER BY created_at", [vault.chain_id, now()]) : [];
+  const candidates = [...ownerApproved, ...pendingForAuto];
   if (await db.get("SELECT 1 x FROM mandate_runs WHERE vault_id=? AND status IN ('claimed','submitted')", [vault.id])) return { busy: true };
 
   // vault-level gates need chain state
@@ -155,7 +161,7 @@ async function processVault(ctx, vault) {
   const grantTemplates = new Map((grant.templates ?? []).map((t) => [low(t.templateId), t]));
 
   const out = { done: [], left: [] };
-  const tu = await topUp(ctx, { vault, adapter, net, agent }).catch(async (e) => { ctx.errors.push(ctx.redact(e)); await appendLedgerOnce(db, vault.id, 'topup-error', { kind: 'refused', status: 'refused', detail: `gas top-up failed: ${ctx.redact(e)}` }, { redact: ctx.redact }).catch(() => {}); return { refused: 'top-up failed' }; });
+  const tu = !auto ? null : await topUp(ctx, { vault, adapter, net, agent }).catch(async (e) => { ctx.errors.push(ctx.redact(e)); await appendLedgerOnce(db, vault.id, 'topup-error', { kind: 'refused', status: 'refused', detail: `gas top-up failed: ${ctx.redact(e)}` }, { redact: ctx.redact }).catch(() => {}); return { refused: 'top-up failed' }; });
   if (tu?.blocked) return { blocked: true, refused: tu.refused };
   if (!candidates.length) return tu?.toppedUp ? { idle: true, toppedUp: tu.amount } : { idle: true };
   for (const cand of candidates) {
@@ -216,8 +222,10 @@ async function parity(ctx, { vault, adapter, net, state, kind, args, decisionId 
 async function runDecision(ctx, { vault, adapter, net, agent, cand, grantTemplates, epoch }) {
   const { db } = ctx;
   const leave = async (detail) => { await appendLedgerOnce(db, vault.id, `left:${cand.id}`, { kind: 'refused', status: 'refused', decisionId: cand.id, detail: `left for a human: ${detail}` }, { redact: ctx.redact }); return { leftForHuman: true, refused: detail }; };
-  const gate = await councilGate(db, cand, ctx.env ?? process.env); // the decision layer: Auto only acts on a product the council backs
-  if (!gate.ok) return leave(gate.reason);
+  if (!cand.byOwner) { // the decision layer: Auto only acts on a product the council backs. The owner's own approval replaces it.
+    const gate = await councilGate(db, cand, ctx.env ?? process.env);
+    if (!gate.ok) return leave(gate.reason);
+  }
   const payload = parse(cand.payload, {});
   const att = await db.get('SELECT * FROM artifacts WHERE hash=? AND kind=?', [cand.artifact_hash, `contract-build:${net.protocol}`]);
   if (!att) return leave('attested artifact for this decision not found');
@@ -262,11 +270,11 @@ async function runDecision(ctx, { vault, adapter, net, agent, cand, grantTemplat
   }
 
   // ---- claim: approve under the mandate (re-runs every approveDecision check except the human-only ones) + mandate_runs row
-  try { await approveUnderMandate(db, cand.id, { vault, epoch }); } catch (e) {
+  try { await approveUnderMandate(db, cand.id, { vault, epoch, byOwner: Boolean(cand.byOwner) }); } catch (e) {
     if (e instanceof PolicyError) return { refused: await refusedMsg(ctx, vault, cand, 'claim', `not approved under mandate: ${e.message}`), stop: e.code === 'paused' || /in flight/.test(e.message) };
     throw e;
   }
-  await appendLedger(db, vault.id, { kind: 'loop', status: 'confirmed', decisionId: cand.id, detail: `approved under mandate:${vault.id}:${epoch}; target ${target.predicted ?? target.nameOrSalt}; no human signs this deployment` }, { redact: ctx.redact });
+  await appendLedger(db, vault.id, { kind: 'loop', status: 'confirmed', decisionId: cand.id, detail: cand.byOwner ? `approved by the owner (${cand.approver}); executed under mandate:${vault.id}:${epoch}; target ${target.predicted ?? target.nameOrSalt}; the agent signs, the owner does not` : `approved under mandate:${vault.id}:${epoch}; target ${target.predicted ?? target.nameOrSalt}; no human signs this deployment` }, { redact: ctx.redact });
 
   let submitted = false; let txHash = null;
   try {
@@ -275,7 +283,7 @@ async function runDecision(ctx, { vault, adapter, net, agent, cand, grantTemplat
     const stillOk = async (what) => {
       if (await killSwitch(db)) throw new Error(`kill switch engaged before ${what}`);
       const l = await getLoop(db); if (l.state !== 'running') throw new Error(`loop is ${l.state} before ${what}`);
-      if ((await getMode(db)) !== 'auto') throw new Error(`mode switched to manual before ${what}`);
+      if (!cand.byOwner && (await getMode(db)) !== 'auto') throw new Error(`mode switched to manual before ${what}`);
       const d = await db.get('SELECT status, approver FROM decisions WHERE id=?', [cand.id]);
       if (d?.status !== 'approved' || !String(d.approver).startsWith('mandate:')) throw new Error(`decision is ${d?.status} before ${what}`);
     };
@@ -399,6 +407,19 @@ async function topUp(ctx, { vault, adapter, net, agent }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------- reconcile (crash / timeout recovery)
+/** 'taken' | 'free' | 'unknown': is the decision's deploy target already occupied on chain (so the lost submission may have landed)? */
+async function targetState(ctx, { vault, adapter, net, d }) {
+  try {
+    const att = await ctx.db.get('SELECT * FROM artifacts WHERE hash=? AND kind=?', [d.artifact_hash, `contract-build:${net.protocol}`]);
+    if (!att) return 'unknown';
+    const expected = adapter.expectedTemplate({ manifest: parse(await getBlob(ctx.db, att.immutable_ref), {}), payload: parse(d.payload, {}), vault: vault.address });
+    const target = adapter.deployTarget({ decision: d, vault: vault.address, expected });
+    const code = previewCode(await adapter.preview('deploy', { net, vault: vault.address, template: expected.templateId, nameOrSalt: target.nameOrSalt, fetchImpl: ctx.fetchImpl }));
+    // Only a clean preview proves the target is free. A limit or pause refusal (DeployLimit, Paused, ...) is checked BEFORE the name on the vault, so a landed deploy can look like one.
+    return code === 'AddressTaken' ? 'taken' : code === '' ? 'free' : 'unknown';
+  } catch { return 'unknown'; }
+}
+
 async function reconcile(ctx, vault, adapter, net) {
   const { db } = ctx;
   // a decision stuck `executing` (process died inside recordDeployment) with no deployment row goes back to `approved`; it is then recorded or released below
@@ -420,8 +441,16 @@ async function reconcile(ctx, vault, adapter, net) {
         if (!noReceipt) await blockLoop(db, `reconcile: tx ${run.tx_hash} did not verify`, { vaultId: vault.id, decisionId: run.decision_id, txHash: run.tx_hash, redact: ctx.redact });
       } catch (e) { ctx.errors.push(ctx.redact(e)); }
     } else if (age > SUBMIT_STALE_MS) {
-      await appendLedger(db, vault.id, { kind: 'deploy', status: 'failed', decisionId: run.decision_id, detail: 'submitted without a recorded tx hash and no outcome after the window; released to a human' }, { redact: ctx.redact });
-      await releaseToHuman(db, run.decision_id, 'no tx hash');
+      // The deploy was sent but the process died before it saved the hash. Only hand it back if the chain POSITIVELY shows the target is still free;
+      // a taken or unreadable target means it may have landed, and releasing it could lead to a second deploy or an unrecorded one.
+      const outcome = await targetState(ctx, { vault, adapter, net, d });
+      if (outcome !== 'free') {
+        await appendLedger(db, vault.id, { kind: 'deploy', status: 'failed', decisionId: run.decision_id, detail: `submitted without a recorded tx hash; the target ${outcome === 'taken' ? 'is taken, so the deploy may have LANDED' : 'could not be checked'}` }, { redact: ctx.redact });
+        await blockLoop(db, `deploy of ${run.decision_id} was sent but its transaction hash was never saved, and the target ${outcome === 'taken' ? 'is now taken' : 'cannot be read'}; find the transaction, record it with POST /api/decisions/${run.decision_id}/receipt, then resume`, { vaultId: vault.id, decisionId: run.decision_id, redact: ctx.redact });
+      } else {
+        await appendLedger(db, vault.id, { kind: 'deploy', status: 'failed', decisionId: run.decision_id, detail: 'submitted without a recorded tx hash, no outcome after the window, and the target is still free; released to a human' }, { redact: ctx.redact });
+        await releaseToHuman(db, run.decision_id, 'no tx hash');
+      }
     }
   }
   void adapter; void net;

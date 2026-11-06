@@ -45,7 +45,10 @@
     "e2e:near-testnet": "node scripts/e2e-near-testnet.mjs",
     "test:vault": "PATH=\"$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH\" node --test tests/vault-model.test.js tests/vault-service.test.js tests/autonomy.test.js tests/vault-near.test.js",
     "cf:dry": "npx wrangler deploy --dry-run --outdir .wrangler/dry",
-    "test:web": "node --test web/src/app/"
+    "test:web": "node --test web/src/app/",
+    "scan:secrets": "node scripts/secret-scan.mjs",
+    "scan:secrets:history": "node scripts/secret-scan.mjs --history",
+    "hooks:install": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

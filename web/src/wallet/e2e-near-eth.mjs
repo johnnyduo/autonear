@@ -16,7 +16,7 @@ const { createNearAdmin, deleteKey } = await import(`${ROOT}/src/agent/near-admi
 const { generateSeed, formatSecretKey, formatPublicKey, ed25519PublicKey } = await import(`${ROOT}/src/agent/near-signer.js`);
 const { adapter, VAULT_WASM_PATH, REGISTRY_WASM_PATH, sha256Hex } = await import(`${ROOT}/src/vault/near.js`);
 
-const NEAR = 10n ** 24n; const TGAS = 10n ** 12n; const RPC = 'https://rpc.testnet.near.org';
+const NEAR = 10n ** 24n; const TGAS = 10n ** 12n; const RPC = 'https://rpc.testnet.fastnear.com';
 const TAG = process.env.NEAR_ETH_TAG ?? 'e2e1';
 const D = 'autonear-fund-1106-d.testnet'; const E = 'autonear-fund-1106-e.testnet'; const VAULT = `vault-${TAG}.${D}`;
 const nearStr = (y) => `${(Number(BigInt(y) / 10n ** 20n) / 1e4).toFixed(4)} NEAR`;

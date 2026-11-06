@@ -4,6 +4,7 @@ import { api, fmt } from '../api.js';
 import { Empty, Icon, SkeletonRows } from '../ui.jsx';
 import { STATUS_WORD, T, describeDecision } from './copy.js';
 import { pendingOf } from './data.js';
+import { agentPublishState } from './agent-state.js';
 import { href } from './nav.js';
 import HoldButton from './HoldButton.jsx';
 
@@ -14,7 +15,7 @@ function Technical({ d }) {
   return <details className="tech"><summary>Technical details</summary><dl><dt>Request</dt><dd className="mono-v">{d.id}</dd><dt>Network</dt><dd className="mono-v">{d.chain_id}</dd><dt>Fingerprint</dt><dd className="mono-v">{d.payload_hash}</dd></dl></details>;
 }
 
-function Finish({ d, reload, opts, toast, owner }) {
+function Finish({ d, reload, opts, toast, owner, data }) {
   const [rc, setRc] = useState({ busy: false, msg: '' });
   const evm = String(d.chain_id).startsWith('evm:');
   const submit = async (txHash) => {
@@ -24,6 +25,12 @@ function Finish({ d, reload, opts, toast, owner }) {
   };
   if (d.action === 'grant_mandate' && String(d.chain_id).startsWith('near')) return <Suspense fallback={<SkeletonRows n={3} />}><NearSteps d={d} owner={owner} onDone={reload} /></Suspense>;
   if (d.action === 'grant_mandate') return <p className="why">Approved. Now send the on-chain steps from your wallet. <a className="btn sm primary" href={href(`vault/grant/${d.id}`, opts)}>Continue</a></p>;
+  if (!evm && d.action === 'deploy_testnet') {
+    const st = agentPublishState(d, data.vault, data.ledger);
+    return <p className="why" role="status"><Icon name={st === 'held' ? 'alert' : 'bot'} size={14} />{st === 'waiting' ? T.agentWaiting : st === 'held' ? T.agentHeld : T.agentNoVault}{' '}
+      {st === 'held' && <a className="btn sm" href={href('approvals', { ...opts, activity: true })}>See why</a>}
+      {st === 'novault' && <a className="btn sm primary" href={href('vault', opts)}>Open Vault</a>}</p>;
+  }
   if (!evm) return <p className="why">Approved. This network is finished from the command line. <a className="btn sm" href={href('approval', opts)}>Show me how</a></p>;
   return (
     <div className="finish">
@@ -71,7 +78,7 @@ export default function Approvals({ data, owner, canWrite: canOwn, opts, toast }
         {approved.map((d) => (
           <li key={d.id} className="card live">
             <div className="row sp"><h2>{describeDecision(d).title}</h2><span className="chip ok">{STATUS_WORD.approved}</span></div>
-            {canWrite ? <Finish d={d} reload={data.reload} opts={opts} toast={toast} owner={owner} /> : <p className="why">{why}</p>}
+            {canWrite ? <Finish d={d} reload={data.reload} opts={opts} toast={toast} owner={owner} data={data} /> : <p className="why">{why}</p>}
             <Technical d={d} />
           </li>
         ))}

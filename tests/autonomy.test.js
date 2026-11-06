@@ -137,9 +137,10 @@ describe('rule (a): the loop does nothing unless every gate is open (no RPC is t
     await w.db.run("UPDATE mandate_runs SET status='submitted', created_at=? WHERE decision_id=?", [Date.now() - 2 * 3600_000, d2.id]);
     await w.run();
     dec = await getDecision(w.db, d2.id);
-    assert.equal(dec.status, 'pending');
-    assert.ok((await w.ledger()).some((x) => x.kind === 'deploy' && x.status === 'failed' && /no tx hash|without a recorded tx hash/.test(x.detail)));
-    assert.equal((await w.db.get("SELECT COUNT(*) n FROM mandate_runs WHERE status IN ('claimed','submitted')")).n, 0);
+    // offline: the chain cannot say whether the lost submission landed, so it is NOT handed back; the loop stops until an operator looks (online cases: the anvil tests below)
+    assert.equal(dec.status, 'approved');
+    assert.ok((await w.ledger()).some((x) => x.kind === 'deploy' && x.status === 'failed' && /could not be checked/.test(x.detail)));
+    assert.equal((await getLoop(w.db)).state, 'blocked');
     w.keys.cleanup();
   });
   test('compiled-in fee ceilings exist for both chains', () => {
@@ -362,6 +363,40 @@ describe('autonomous cycle on a LOCAL anvil (31337)', { skip: !haveAnvil && 'anv
       assert.equal(await balanceOf(w.agent), bal, 'no transaction was sent');
       assert.equal((await ledgerOf(w)).filter((x) => x.kind === 'draw').length, 0);
       w.cleanup();
+    });
+    test('an owner-approved EVM decision is left to the owner (the owner signs EVM deploys) in both modes: the agent never takes it', async () => {
+      for (const mode of ['manual', 'auto']) {
+        const w = await makeWorld(anvil, { mode }); const d = await w.newDecision();
+        const { approveDecision } = await import('../src/decisions.js');
+        await approveDecision(w.db, d.id, { nonce: d.nonce, payloadHash: d.payload_hash, confirm: `approve ${d.id}`, signer: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', actor: 'owner:0xabc' });
+        await lowGas(w); const bal = await balanceOf(w.agent);
+        await w.tick();
+        await noDeploy(w, []);
+        assert.equal((await w.db.get('SELECT COUNT(*) n FROM mandate_runs WHERE decision_id=?', [d.id])).n, 0, mode);
+        assert.equal((await w.db.get('SELECT approver FROM decisions WHERE id=?', [d.id])).approver, 'owner:0xabc', mode);
+        if (mode === 'manual') assert.equal(await balanceOf(w.agent), bal, 'manual: no transaction at all');
+        w.cleanup();
+      }
+    });
+    test('a deploy sent but never saved (no tx hash): released only if the target is still free; if the target is taken the loop BLOCKS instead', async () => {
+      const w = await makeWorld(anvil, { mode: 'manual' }); const d = await w.newDecision();
+      await approveUnderMandate(w.db, d.id, { vault: { ...(await w.db.get('SELECT * FROM vaults WHERE id=?', [w.vaultId])), status: 'active' }, epoch: 1 });
+      await w.db.run("UPDATE mandate_runs SET status='submitted', tx_hash=NULL, created_at=? WHERE decision_id=?", [Date.now() - 2 * 3600_000, d.id]);
+      await w.tick();
+      assert.equal((await w.db.get('SELECT status FROM decisions WHERE id=?', [d.id])).status, 'pending', 'target free: handed back');
+      assert.notEqual((await getLoop(w.db)).state, 'blocked');
+      assert.ok((await ledgerOf(w)).some((x) => /still free/.test(x.detail)));
+      w.cleanup();
+      const a = await makeWorld(anvil, { mode: 'auto' }); const e = await a.newDecision();
+      await a.tick(); assert.equal((await a.db.get('SELECT status FROM decisions WHERE id=?', [e.id])).status, 'executed');
+      await a.db.run('DELETE FROM deployments WHERE decision_id=?', [e.id]);
+      await a.db.run("UPDATE decisions SET status='approved' WHERE id=?", [e.id]);
+      await a.db.run("UPDATE mandate_runs SET status='submitted', tx_hash=NULL, created_at=? WHERE decision_id=?", [Date.now() - 2 * 3600_000, e.id]);
+      await a.tick();
+      assert.equal((await getLoop(a.db)).state, 'blocked', 'target taken: the loop stops');
+      assert.equal((await a.db.get('SELECT status FROM decisions WHERE id=?', [e.id])).status, 'approved', 'not handed back');
+      assert.ok((await ledgerOf(a)).some((x) => /may have LANDED/.test(x.detail)));
+      a.cleanup();
     });
     test('auto mode tops up when the balance is below low-water, once, up to the target', async () => {
       const w = await lowGas(await makeWorld(anvil));
