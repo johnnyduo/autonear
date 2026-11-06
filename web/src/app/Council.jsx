@@ -8,8 +8,8 @@ const COL = { back: '#c6f432', abstain: '#f2b84b', object: '#ff6a3d' };
 const SEAT_LABEL = { signal_collector: 'Collector', evidence_analyst: 'Analyst', skeptic: 'Skeptic', product_architect: 'Architect', builder: 'Builder', security_reviewer: 'Security', launch_planner: 'Planner' };
 const VERDICT = { go: ['GO', 'Build it', '#c6f432'], watch: ['WATCH', 'Keep watching', '#f2b84b'], drop: ['DROP', 'Not now', '#8c8b82'] };
 const reduce = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const CX = 300; const CY = 252; const SR = 240; const GR = 70;
-const seatPos = (i) => { const a = Math.PI * (1.06 + (i / 6) * 0.88); return [CX + Math.cos(a) * SR, CY + Math.sin(a) * SR * 0.78]; };
+const CX = 300; const CY = 262; const SR = 240; const GR = 70;
+const seatPos = (i) => { const a = Math.PI * (1.08 + (i / 6) * 0.84); return [CX + Math.cos(a) * SR, CY + Math.sin(a) * SR * 0.82]; };
 const gaugeAt = (f) => { const a = Math.PI * (1 + f); return [CX + Math.cos(a) * GR, CY + Math.sin(a) * GR]; };
 
 function Chamber({ entry, rules, replayKey }) {
@@ -23,7 +23,7 @@ function Chamber({ entry, rules, replayKey }) {
   const arc = `M ${CX - GR} ${CY} A ${GR} ${GR} 0 0 1 ${CX + GR} ${CY}`;
   return (
     <div className="cn-chamber">
-      <svg viewBox="0 0 600 305" role="img" aria-label={`Council vote on ${entry.title}: ${vd[1]}. Council score ${q(entry.support)} out of 100.`}>
+      <svg viewBox="0 0 600 318" role="img" aria-label={`Council vote on ${entry.title}: ${vd[1]}. Council score ${q(entry.support)} out of 100.`}>
         <path d={arc} className="cn-track" fill="none" strokeWidth="10" strokeLinecap="round" />
         <path d={arc} fill="none" strokeWidth="10" strokeLinecap="round" stroke={done ? vd[2] : '#c6f432'} strokeDasharray={L} strokeDashoffset={L * (1 - partial)} className="cn-fill" />
         {[rules.watchAt, rules.goAt].map((f, k) => { const [x, y] = gaugeAt(f); const [x2, y2] = [CX + (x - CX) * 1.22, CY + (y - CY) * 1.22]; return <g key={k}><line x1={x} y1={y} x2={x2} y2={y2} stroke="#ece9df" strokeOpacity=".55" /><text x={CX + (x - CX) * 1.42} y={CY + (y - CY) * 1.42 + 3} className="cn-t" textAnchor={k ? 'start' : 'end'}>{k ? 'BUILD' : 'WATCH'} {q(f)}</text></g>; })}
