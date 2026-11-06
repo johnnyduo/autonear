@@ -11,6 +11,7 @@
 // Run:  npm run owner:onboard                 (asks for the key, shows the address, asks you to type "yes")
 //       npm run owner:onboard -- --expect 0x5ebaddf71482d40044391923be1fc42938129988      (refuses if the key is for another address)
 //       OWNER_ETH_PRIVATE_KEY=0x... npm run owner:onboard -- --yes                         (no prompts; for scripts)
+//       npm run owner:onboard -- --print --address 0x5eba...9988   (NO key at all: prints the exact values to paste into MetaMask's own Send screen; see below)
 import { createInterface } from 'node:readline';
 import { Writable } from 'node:stream';
 const { onboardingStatus, balanceYocto, buildTx, relayer, waitForReceipt, NEAR_EVM, explorerTx } = await import('../web/src/wallet/nearEth.js');
@@ -22,6 +23,19 @@ const ask = (q, { hidden = false } = {}) => new Promise((ok) => {
   const rl = createInterface({ input: process.stdin, output: out, terminal: true }); rl.question(q, (a) => { rl.close(); if (hidden) process.stdout.write('\n'); ok(a.trim()); }); muted = hidden;
 });
 
+if (flag('--print')) { // MetaMask-only path: MetaMask's OWN Send screen is not a website, so its self-address rule does not apply. Needs Settings > Advanced > "Show hex data" (older send flow) and a manual gas limit.
+  const addr = (opt('--address') ?? '').toLowerCase(); if (!/^0x[0-9a-f]{40}$/.test(addr)) die('Give your wallet address: --address 0x...');
+  try {
+    const ob = await onboardingStatus(addr);
+    if (ob.onboarded) { console.log('Already set up: the relayer key is on this account. Nothing to do.'); process.exit(0); }
+    const [nonce, gasPrice, bal] = await Promise.all([relayer('eth_getTransactionCount', [addr, 'latest']), relayer('eth_gasPrice', []), balanceYocto(addr)]);
+    const tx = buildTx({ account: addr, nonce, gasPrice, onboard: ob.relayerKeyHex });
+    console.log(`\nNetwork:   NEAR testnet (EVM wallet), chain id ${NEAR_EVM.chainId}  (${NEAR_EVM.rpc})\nFrom:      ${addr}\nTo:        ${tx.to}   (your OWN address)\nAmount:    0\nGas limit: ${BigInt(tx.gas)}   (set it by hand: the automatic estimate is far too low and the transaction would fail)\nGas price: ${BigInt(tx.gasPrice)} wei (${Number(BigInt(tx.gasPrice)) / 1e9} gwei), legacy\nHex data:  ${tx.data}\n`);
+    console.log(`Balance ${(Number(bal / 10n ** 20n) / 1e4).toFixed(4)} NEAR; the fee is about ${(Number(BigInt(tx.gas) * BigInt(tx.gasPrice) * 10n ** 6n / 10n ** 18n) / 1e6).toFixed(4)} NEAR.`);
+    console.log('In MetaMask: turn on Settings > Advanced > "Show hex data", switch to the NEAR testnet network, press Send, paste the To address, Amount 0, paste the Hex data, then Edit gas and set the Gas limit above. Confirm, wait a minute, then run this command again: it says "Already set up" when it worked.');
+  } catch (e) { die(`Failed: ${String(e?.message ?? e).slice(0, 300)}`); }
+  process.exit(0);
+}
 let key = process.env.OWNER_ETH_PRIVATE_KEY?.trim();
 if (!key) { if (!process.stdin.isTTY) die('No key: set OWNER_ETH_PRIVATE_KEY or run this in a terminal.'); key = await ask('Private key of the owner wallet (hidden, 0x + 64 hex): ', { hidden: true }); }
 if (!/^0x[0-9a-fA-F]{64}$/.test(key)) die('That is not a 0x-prefixed 64-hex private key.');
