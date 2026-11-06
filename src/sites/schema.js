@@ -1,4 +1,4 @@
-// Content schema for the concept landing pages. The model returns this JSON object and nothing else; our code lays it out (src/sites/render.js).
+// Content schema for the product landing pages. The model returns this JSON object and nothing else; our code lays it out (src/sites/render.js).
 // Every string is plain text: no markup, no links, no control characters. Anything else is rejected, not repaired.
 // The model never writes code: for the contract sketch it gives names and one plain sentence per method. Our renderer composes the signatures.
 

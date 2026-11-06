@@ -3,7 +3,7 @@
 Status: design, waiting for the owner's OK. Nothing in this document is built yet. Date: 2026-11-06. Deadline for the project: 14 Nov 2026 23:59 UTC.
 
 ## Intent
-The pipeline ends today with a pending request and a contract build. Nothing shows the last mile: the council backs a product, the owner says yes, the agents make something, and it is on the web. This feature shows that last mile in about 30 seconds on one internal page, with a published page at `/develop/<slug>`. The visual idea is a small swarm of named cursors that draw the page live (boxes, typing, lines), taken as a concept from github.com/DhvanilPatel/swarm-cursors. That repo has no licence and asks that its code is not reused, so we write our own code and take nothing from it.
+The pipeline ends today with a pending request and a contract build. Nothing shows the last mile: the council backs a product, the owner says yes, the agents make something, and it is on the web. This feature shows that last mile in about 30 seconds on one internal page, with a published page at `/develop/<slug>`. The visual idea is a small swarm of named cursors that draw the page live (boxes, typing, lines), taken as a product idea from github.com/DhvanilPatel/swarm-cursors. That repo has no licence and asks that its code is not reused, so we write our own code and take nothing from it.
 
 ## What is real and what is a show
 | Part | Real or show |
@@ -41,10 +41,10 @@ One Gemini call per product, about 1.5k tokens in and 1k out with `gemini-3.1-fl
 
 ## Publish and URLs
 - `/develop/<slug>`: the latest published version. The slug comes from the product name (`dex`, `treasury`, `ai-agents`).
-- `/develop/<slug>/<hash>`: one exact version (first 10 hex characters of the content hash). It works for built versions that are not published yet (an unlisted link, the content is concept text), which is how the Build page previews before publishing. Visiting plays the swarm rebuild, then leaves the live page; `?still=1` or reduced motion shows the page directly.
+- `/develop/<slug>/<hash>`: one exact version (first 10 hex characters of the content hash). It works for built versions that are not published yet (an unlisted link, the content is page text), which is how the Build page previews before publishing. Visiting plays the swarm rebuild, then leaves the live page; `?still=1` or reduced motion shows the page directly.
 - Publish needs the owner session. Unpublish exists.
 - If the project gets its own domain later, the same paths work there. Right now the host is the Vercel one.
-- Every published page carries a footer: "Concept page written by AutoNEAR agents from stored evidence. Not a live service." with the council score and the date, and a link to the evidence.
+- Every published page carries a footer: "Written by AutoNEAR agents from stored evidence. Not a live service." with the council score and the date, and a link to the evidence.
 
 ## Security
 - Served with `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'` and `X-Content-Type-Options: nosniff`. The only script is our own static replay file.

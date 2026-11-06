@@ -1,5 +1,5 @@
 /*
- * "Try the limits" on the concept pages. Nothing here talks to a network: it reads the form, runs simulate() and prints a short step log.
+ * "Try the limits" on the product pages. Nothing here talks to a network: it reads the form, runs simulate() and prints a short step log.
  * The rules check is a copy of web/src/app/contract-sim-core.js (a test keeps the two identical).
  * Markup contract: one element with data-sim="form" holding data-sim="method" (select), data-sim="allow" (checkboxes, value = method name),
  * "amount", "percall", "perperiod" (inputs), "percall-out", "perperiod-out" (text), "spent" (text), "meter" (bar), "log", "run", "reset".

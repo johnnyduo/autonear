@@ -128,7 +128,6 @@
   }
   // END planTasks
 
-  // ---------- state ----------
   let run = null; // the replay in progress, or null
   let phase = 'still';
   let progress = 0;
@@ -145,7 +144,6 @@
   const easeInOut = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
   const easeBack = (x) => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
 
-  // ---------- messaging ----------
   function post(force) {
     const now = win.performance.now();
     if (!force && now - lastPost < 200) return;
@@ -162,7 +160,6 @@
     post(true);
   }
 
-  // ---------- styles ----------
   function injectStyle() {
     if (styleEl && styleEl.isConnected) return;
     styleEl = doc.createElement('style');
@@ -184,7 +181,6 @@
     (doc.head || root).appendChild(styleEl);
   }
 
-  // ---------- sound (on; a browser keeps it silent until the visitor's first click, tap or key press) ----------
   function audioReady() { return audio.on && audio.ctx && audio.ctx.state === 'running'; }
   function startAudio() {
     if (audio.ctx) return;
@@ -234,7 +230,6 @@
     o.start(t); o.stop(t + 0.45);
   }
 
-  // ---------- cursors ----------
   function svgEl(tag, attrs) {
     const e = doc.createElementNS('http://www.w3.org/2000/svg', tag);
     for (const k in attrs) e.setAttribute(k, attrs[k]);
@@ -280,7 +275,6 @@
     c.y += (ty - c.y) * f;
   }
 
-  // ---------- tasks ----------
   const VERB = { box: 'drawing a box', text: 'typing text', line: 'drawing a line', button: 'placing a button', media: 'filling an image' };
   function reveal(el, pop) { el.classList.add('sw-v'); el.classList.add(pop ? 'sw-p' : 'sw-f'); }
   function ghostBox(T, extra) {
@@ -299,7 +293,6 @@
     T.fx = c.x; T.fy = c.y;
     c.busy = true; c.task = T;
     c.doing = T.kind === 'text' ? 'typing "' + T.text.slice(0, 24) + (T.text.length > 24 ? '...' : '') + '"' : VERB[T.kind];
-    follow(T.r);
     const col = c.color;
     if (T.kind === 'box') {
       T.ghost = ghostBox(T, { width: '0px', height: '0px', border: '1px solid ' + col });
@@ -414,17 +407,6 @@
     if (T.kind === 'box') note(T.cur.i);
   }
 
-  // ---------- following the work ----------
-  function follow(r) {
-    if (!run || run.userScrolled) return;
-    const vh = win.innerHeight;
-    const sy = win.pageYOffset;
-    if (r.y + Math.min(r.h, 60) > sy + 24 && r.y < sy + vh - 80) return;
-    const max = Math.max(0, root.scrollHeight - vh);
-    run.goal = clamp(r.y - vh * 0.3, 0, max);
-  }
-
-  // ---------- the loop ----------
   function drift(c, t, dt) {
     const sx = win.pageXOffset; const sy = win.pageYOffset;
     const a = t * 0.0007 + c.i * (Math.PI * 2 / 5);
@@ -459,11 +441,19 @@
       const dt = clamp((now - r.last) / 1000, 0.001, 0.05);
       r.last = now;
       r.world.style.transform = 'translate3d(' + (-win.pageXOffset) + 'px,' + (-win.pageYOffset) + 'px,0)';
-      if (r.goal !== null && !r.userScrolled) {
+      if (!r.userScrolled) {
+        if (r.stage === 'build' && r.active.length) { // the camera follows the middle of the work in progress and never moves back up while building
+          let sum = 0;
+          for (let k = 0; k < r.active.length; k++) { const q = r.active[k].r; sum += q.y + Math.min(q.h, 120) / 2; }
+          const reach = Math.max(0, root.scrollHeight - win.innerHeight);
+          r.cam = Math.max(r.cam, clamp(sum / r.active.length - win.innerHeight * 0.4, 0, reach));
+        } else if (r.stage === 'idle') r.cam = 0;
         const sy = win.pageYOffset;
-        const ny = sy + (r.goal - sy) * (1 - Math.exp(-4.5 * dt));
-        win.scrollTo(win.pageXOffset, Math.abs(r.goal - ny) < 1 ? r.goal : ny);
-        if (Math.abs(r.goal - ny) < 1) r.goal = null;
+        const rate = r.stage === 'build' ? 3.2 : 2.2; const cap = r.stage === 'build' ? 900 : 2600;
+        let step = (r.cam - sy) * (1 - Math.exp(-rate * dt));
+        step = clamp(step, -cap * dt, cap * dt);
+        if (Math.abs(r.cam - sy) < 0.5) step = r.cam - sy;
+        if (step !== 0) win.scrollTo({ left: win.pageXOffset, top: sy + step, behavior: 'instant' }); // the page sets scroll-behavior: smooth for anchors; following has to move every frame
       }
       if (r.stage === 'build') {
         const bt = t;
@@ -485,7 +475,7 @@
       } else if (r.stage === 'idle') {
         if (!r.ptrOn) { r.ptrOn = true; doc.addEventListener('pointermove', r.onPointer, { passive: true }); }
         flock(t, dt);
-        if (t - r.idleAt > IDLE) { r.stage = 'fade'; r.fadeAt = t; r.ov.style.opacity = '0'; }
+        if (t - r.idleAt > IDLE && (win.pageYOffset < 4 || t - r.idleAt > IDLE + 2500)) { r.stage = 'fade'; r.fadeAt = t; r.ov.style.opacity = '0'; } // wait for the camera to get back to the top
       } else if (r.stage === 'fade') {
         flock(t, dt);
         if (t - r.fadeAt > FADE) { finishAll('done'); return; }
@@ -496,7 +486,6 @@
     } catch (e) { fail(e); }
   }
 
-  // ---------- start and stop ----------
   function stopRun() {
     if (!run) return;
     const r = run;
@@ -588,7 +577,7 @@
     const startW = win.innerWidth;
     const now0 = win.performance.now();
     const r = {
-      ov, world, curLayer, tag, cursors, tasks, active: [], next: 0, stage: 'build', t0: now0, last: now0, raf: 0, goal: null, userScrolled: false,
+      ov, world, curLayer, tag, cursors, tasks, active: [], next: 0, stage: 'build', t0: now0, last: now0, raf: 0, cam: win.pageYOffset, userScrolled: false,
       span: tasks.reduce((m, T) => Math.max(m, T.start + T.duration), 0), px: null, py: 0, pt: 0, ptrOn: false, idleAt: 0, fadeAt: 0,
       onKey: (e) => { if (e.key === 'Escape') skip(); else if (e.key === ' ' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') r.userScrolled = true; },
       onPointer: (e) => { r.px = e.clientX; r.py = e.clientY; r.pt = win.performance.now() - r.t0; },
@@ -609,7 +598,6 @@
     r.raf = win.requestAnimationFrame(frame);
   }
 
-  // ---------- public control ----------
   function play() { try { start(); } catch (e) { fail(e); } }
   function skip() { if (run) finishAll('done'); else if (phase === 'running') finishAll('done'); }
   function still() { finishAll('still'); }
@@ -627,7 +615,6 @@
     if (m.cmd === 'play') play(); else if (m.cmd === 'skip') skip(); else if (m.cmd === 'still') still();
   });
 
-  // ---------- boot ----------
   let wantStill = false;
   try {
     wantStill = new URLSearchParams(win.location.search).get('still') === '1' || (win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);

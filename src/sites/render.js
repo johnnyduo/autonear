@@ -110,7 +110,6 @@ a{color:inherit}
 header.top{position:sticky;top:0;z-index:30;background:rgba(11,14,17,.72);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
 .brand{font:700 19px/1.2 var(--display);letter-spacing:.005em;overflow-wrap:anywhere}
-.chip{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--blue);border:1px solid rgba(127,182,207,.55);border-radius:999px;padding:6px 11px;white-space:nowrap}
 
 .hero{position:relative;isolation:isolate;overflow:hidden;padding:104px 0 120px}
 .hero::before{content:'';position:absolute;inset:0;z-index:-1;background-image:linear-gradient(rgba(236,233,225,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(236,233,225,.05) 1px,transparent 1px);background-size:72px 72px;-webkit-mask-image:radial-gradient(ellipse 65% 75% at 70% 45%,#000,transparent 78%);mask-image:radial-gradient(ellipse 65% 75% at 70% 45%,#000,transparent 78%)}
@@ -136,7 +135,6 @@ h1{font:400 clamp(38px,5vw,66px)/1.02 var(--display);letter-spacing:-.022em;marg
 .mark-fb{transition:opacity .5s ease}
 .mark.is-live .mark-fb{opacity:0}
 html.sw-on .mark-fb{visibility:hidden}
-.mark-cap{position:absolute;left:0;bottom:-6px;font:11px/1.4 var(--mono);letter-spacing:.06em;color:var(--dim)}
 
 .sec{padding:112px 0;border-top:1px solid var(--line)}
 .sec.alt{background:linear-gradient(180deg,var(--bg2),var(--bg))}
@@ -230,7 +228,7 @@ input[type=range]:hover::-webkit-slider-thumb{box-shadow:0 0 0 7px rgba(198,244,
 footer{border-top:1px solid var(--line);padding:56px 0 64px;color:var(--muted);font-size:14px}
 footer .wrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:32px 56px}
 footer p{margin:0 0 10px}
-footer .concept{font:400 21px/1.4 var(--display);color:var(--text);max-width:24em}
+footer .lede{font:400 21px/1.4 var(--display);color:var(--text);max-width:24em}
 footer .meta{font:12px/1.7 var(--mono);color:var(--muted)}
 footer .meta a{color:var(--text);text-underline-offset:3px}
 footer .meta a:hover{color:var(--accent)}
@@ -244,7 +242,7 @@ footer .meta a:hover{color:var(--accent)}
 @media (max-width:1024px){.hero .wrap{gap:36px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.council{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:760px){
 .wrap{padding:0 20px}
-.hero{padding:56px 0 72px}.hero .wrap{grid-template-columns:minmax(0,1fr)}.mark{max-width:420px;margin:0 auto}.mark-cap{left:50%;transform:translateX(-50%);white-space:nowrap}
+.hero{padding:56px 0 72px}.hero .wrap{grid-template-columns:minmax(0,1fr)}.mark{max-width:420px;margin:0 auto}
 .sec{padding:72px 0}.lead{margin-bottom:40px}
 .cards{grid-template-columns:minmax(0,1fr)}.card{padding:26px 24px 28px}
 .flow{grid-template-columns:minmax(0,1fr);gap:34px}.flow .rail{left:22px;right:auto;top:22px;bottom:22px;width:1px;height:auto;background:linear-gradient(180deg,var(--accent),var(--line2) 45%,var(--line))}
@@ -289,14 +287,15 @@ export function renderSite({ content, meta }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
-<title>${esc(m.title)} · concept</title>
+<title>${esc(m.title)}</title>
 <link rel="icon" href="data:,">
 <style>${CSS}
 </style>
 ${NOSCRIPT}
+<script src="/swarm.js"></script>
 </head>
 <body data-template="${esc(TEMPLATE_VERSION)}">
-<header class="top" ${sw('box')}><div class="wrap"><div class="brand" ${sw('text')}>${esc(m.title)}</div><div class="chip" ${sw('text')}>Concept</div></div></header>
+<header class="top" ${sw('box')}><div class="wrap"><div class="brand" ${sw('text')}>${esc(m.title)}</div></div></header>
 <main>
 <section class="hero" ${sw('box')}><div class="wrap">
 <div>
@@ -305,7 +304,7 @@ ${NOSCRIPT}
 <p class="sub" ${sw('text')}>${esc(c.sub)}</p>
 <div class="actions"><a class="btn" href="#how" ${sw('button')}>${esc(c.cta)}</a><a class="ghost" href="#contract" ${sw('text')}>See the contract</a></div>
 </div>
-<div class="mark-box"><div class="mark">${markSvg(seed)}<canvas data-mark data-seed="${hash}" aria-hidden="true" ${sw('media')}></canvas></div><div class="mark-cap" ${sw('text')}>Mark drawn from version ${hash}</div></div>
+<div class="mark-box"><div class="mark">${markSvg(seed)}<canvas data-mark data-seed="${hash}" aria-hidden="true" ${sw('media')}></canvas></div></div>
 </div></section>
 <section class="sec" ${sw('box')}><div class="wrap">
 <p class="kick" ${sw('text')}>The idea</p>
@@ -325,7 +324,7 @@ ${NOSCRIPT}
 <div class="card" ${sw('box')}>
 <div class="card-head"><h3 ${sw('text')}>Interface sketch (not audited, not deployed)</h3><span class="tag">Rust, NEAR</span></div>
 <pre class="code" tabindex="0" aria-label="Interface sketch"><code>${codeLines(c.contract)}</code></pre>
-<p class="note" ${sw('text')}>A sketch for this concept. No code exists behind it.</p>
+<p class="note" ${sw('text')}>No code exists behind this sketch.</p>
 </div>
 <div class="card sim" ${sw('box')}>
 <h3 class="title" ${sw('text')}>Try the limits</h3>
@@ -361,7 +360,7 @@ ${NOSCRIPT}
 </main>
 <footer ${sw('box')}><div class="wrap">
 <div>
-<p class="concept" ${sw('text', 'Check')}>Concept written by AutoNEAR agents from stored evidence. Not a live service.</p>
+<p class="lede" ${sw('text', 'Check')}>Written by AutoNEAR agents from stored evidence. Not a live service.</p>
 </div>
 <div class="meta">
 <p ${sw('text')}>Built ${esc(dateOf(m.builtAt))}${m.model ? ` with ${esc(clip(m.model, 60))}` : ''}.</p>
@@ -370,7 +369,6 @@ ${evidence ? `<p ${sw('text')}>Evidence it was written from</p>\n<ul class="chip
 <p><a href="/">AutoNEAR project</a></p>
 </div>
 </div></footer>
-<script src="/swarm.js" defer></script>
 <script src="/mark.js" defer></script>
 <script src="/contract-sim.js" defer></script>
 </body>

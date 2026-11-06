@@ -1,4 +1,4 @@
-// Pure maths for the hero mark on the concept pages (no DOM, no canvas). The mark is a dot sphere with orbit rings, orbiting nodes and arcs
+// Pure maths for the hero mark on the product pages (no DOM, no canvas). The mark is a dot sphere with orbit rings, orbiting nodes and arcs
 // between surface points. web/public/mark.js (the canvas script) is a static file that cannot import, so it carries a copy of the block
 // between the BEGIN/END markers; the server renderer imports this module to draw the same mark as a still SVG.
 // mark-core.test.js checks the two copies are identical.

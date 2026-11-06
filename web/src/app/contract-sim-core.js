@@ -1,4 +1,4 @@
-// Pure rules check for the "Try the limits" box on the concept pages (no DOM). web/public/contract-sim.js is a static file that
+// Pure rules check for the "Try the limits" box on the product pages (no DOM). web/public/contract-sim.js is a static file that
 // cannot import, so it carries a copy of the block between the BEGIN/END markers. contract-sim-core.test.js checks the two copies are identical.
 // Input: { method, allowed: [method names], amount, perCall, perPeriod, spent } in plain units.
 // Output: { steps: [{ text, ok }], accepted, code, reason }. The code names follow the real vault (E_<Code>).

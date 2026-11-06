@@ -1,4 +1,4 @@
-// Storage for the concept pages (table `sites`, created in src/db.js SCHEMA_V4). One row per (slug, content hash).
+// Storage for the product pages (table `sites`, created in src/db.js SCHEMA_V4). One row per (slug, content hash).
 // published_at is set on at most one row per slug: the partial unique index enforces it and publish() clears the others first.
 import { parse, j, now } from '../db.js';
 import { PolicyError } from '../policy.js';

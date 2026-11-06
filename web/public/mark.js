@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  // Canvas hero mark for the concept pages. Reads <canvas data-mark data-seed="<content hash>">. No network, no dependencies.
+  // Canvas hero mark for the product pages. Reads <canvas data-mark data-seed="<content hash>">. No network, no dependencies.
   // The still SVG under the canvas (drawn by the server from the same maths) stays visible until the first frame is on screen.
   // The block between BEGIN/END is a copy of web/src/app/mark-core.js; mark-core.test.js keeps the two identical.
 

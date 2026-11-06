@@ -1,4 +1,4 @@
-// The server side of the Build show: build a stored concept page from the council result, list the pages, serve /develop/<slug>[/<hash>].
+// The server side of the Build show: build a stored page from the council result, list the pages, serve /develop/<slug>[/<hash>].
 import { now, audit } from '../db.js';
 import { PolicyError, Budget } from '../policy.js';
 import { oppEvidence, getOpp } from '../store.js';

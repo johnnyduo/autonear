@@ -34,7 +34,6 @@ const good = () => ({
 const kindsOf = (html) => [...html.matchAll(/data-sw="(\w+)"/g)];
 const meta = (over = {}) => ({ slug: 'treasury', title: 'DAO treasury', verdict: 'go', support: 0.71, builtAt: Date.UTC(2026, 10, 6, 12), hash: shortHash(good()), override: false, model: 'gemini-test', evidence: [{ title: 'Multisig payout fails', url: 'https://example.org/a?x=1&y=2' }, { title: 'No link here' }], ...over });
 
-// ------------------------------------------------------------------------------------------ schema
 test('schema: a good object passes and is returned with only the known keys', () => {
   const r = validateContent({ ...good(), extra: '<b>x</b>', features: good().features.map((f) => ({ ...f, junk: 1 })) });
   assert.equal(r.ok, true); assert.deepEqual(r.value, good());
@@ -134,7 +133,6 @@ test('schema: slugOf maps the council topics and builds a safe slug otherwise', 
   assert.match(slugOf({ topic: '../../etc', title: '' }), /^[a-z0-9-]+$/);
 });
 
-// ------------------------------------------------------------------------------------------ render
 const HOSTILE = `"><script>alert(1)</script><img src=x onerror=alert(2)>'&amp;`;
 const hostileContent = () => ({ badge: HOSTILE, headline: HOSTILE, sub: HOSTILE, cta: HOSTILE, features: [0, 1, 2].map(() => ({ title: HOSTILE, body: HOSTILE })), steps: [0, 1, 2].map(() => ({ title: HOSTILE, body: HOSTILE })), contract: { name: HOSTILE, methods: [0, 1, 2].map(() => method(HOSTILE, [{ name: HOSTILE, type: HOSTILE }], HOSTILE, HOSTILE)) } });
 // The text a visitor reads: no style/script/noscript blocks, no tags, no attribute values.
@@ -145,7 +143,7 @@ test('render: hostile strings are escaped in every field (renderer does not rely
   assert.ok(!html.includes('<img'), 'no injected tag');
   assert.ok(!/<script>alert/.test(html));
   assert.ok(!html.includes('onerror=alert(2)>'), 'no live attribute');
-  assert.deepEqual(html.match(/<script\b[^>]*>/g), ['<script src="/swarm.js" defer>', '<script src="/mark.js" defer>', '<script src="/contract-sim.js" defer>'], 'only our three static scripts');
+  assert.deepEqual(html.match(/<script\b[^>]*>/g), ['<script src="/swarm.js">', '<script src="/mark.js" defer>', '<script src="/contract-sim.js" defer>'], 'only our three static scripts');
   assert.ok(!/\son[a-z]+\s*=\s*["']/i.test(html.replace(/&quot;|&#39;/g, '')), 'no handler attribute');
   assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
   assert.ok(html.includes('&quot;&gt;&lt;script&gt;'));
@@ -156,7 +154,7 @@ test('render: hostile strings are escaped in every field (renderer does not rely
 test('render: deterministic, only our three static scripts, data-sw markers in order, no external requests', () => {
   const a = renderSite({ content: good(), meta: meta() }); const b = renderSite({ content: good(), meta: meta() });
   assert.equal(a, b);
-  const scripts = a.match(/<script\b[^>]*>/g); assert.deepEqual(scripts, ['<script src="/swarm.js" defer>', '<script src="/mark.js" defer>', '<script src="/contract-sim.js" defer>']);
+  const scripts = a.match(/<script\b[^>]*>/g); assert.deepEqual(scripts, ['<script src="/swarm.js">', '<script src="/mark.js" defer>', '<script src="/contract-sim.js" defer>']);
   assert.ok(!/<script\b(?![^>]*\ssrc="\/(swarm|mark|contract-sim)\.js")/.test(a), 'no inline script');
   assert.ok(!/\son[a-z]+=/i.test(a) && !a.includes('javascript:'), 'no handler attributes');
   assert.ok(kindsOf(a).length < 140, 'the number of marked elements stays small enough for a 10 s replay');
@@ -166,7 +164,7 @@ test('render: deterministic, only our three static scripts, data-sw markers in o
   for (const [, k, ag] of kinds) { assert.ok(['box', 'text', 'button', 'line', 'media'].includes(k)); assert.ok(['Copy', 'Layout', 'Style', 'Media', 'Check'].includes(ag)); }
   const set = new Set(kinds.map((x) => x[1])); for (const k of ['box', 'text', 'button', 'line', 'media']) assert.ok(set.has(k), k);
   // order: top bar, hero, features, steps, council, footer
-  const at = (s) => a.indexOf(s); const order = ['class="brand"', 'class="chip"', 'class="eyebrow"', 'What it would do', 'How it would work', 'The contract it would need', 'Interface sketch (not audited, not deployed)', 'Try the limits', 'What it takes to make this real', 'The council scored this', 'Concept written by AutoNEAR agents'];
+  const at = (s) => a.indexOf(s); const order = ['class="brand"', 'class="eyebrow"', 'What it would do', 'How it would work', 'The contract it would need', 'Interface sketch (not audited, not deployed)', 'Try the limits', 'What it takes to make this real', 'The council scored this', 'Written by AutoNEAR agents'];
   order.reduce((prev, s) => { assert.ok(at(s) > prev, s); return at(s); }, -1);
   // parents before children: the hero box opens before its headline
   assert.ok(a.indexOf('class="hero"') < a.indexOf('<h1'));
@@ -178,8 +176,8 @@ test('render: council line, override line, footer note, evidence as text or esca
   const go = renderSite({ content: good(), meta: meta() });
   assert.match(go, /The council scored this 71 out of 100: GO/);
   assert.ok(!go.includes('on the owner'));
-  assert.ok(go.includes('Concept written by AutoNEAR agents from stored evidence. Not a live service.'));
-  assert.ok(go.includes('<div class="chip" data-sw="text" data-sw-agent="Copy">Concept</div>'), 'the top bar chip says Concept');
+  assert.ok(go.includes('Written by AutoNEAR agents from stored evidence. Not a live service.'));
+  assert.ok(!/concept/i.test(go), 'the word concept does not appear anywhere in the page');
   assert.ok(go.includes('Simulation in your browser. Nothing is sent to any network.'));
   assert.ok(go.includes('WATCH 48') && go.includes('GO 62') && go.includes('style="width:71%"'));
   assert.ok(go.includes('2026-11-06'));
@@ -209,7 +207,6 @@ test('vercel.json: /develop is excluded from the global header block and has the
   assert.ok(v.rewrites.some((r) => r.source === '/develop/(.*)' && r.destination === '/api/index'));
 });
 
-// ------------------------------------------------------------------------------------------ generateContent (mocked Gemini)
 function withGemini(replies, fn) {
   const prev = { ...config.llm }; const orig = globalThis.fetch; const calls = [];
   config.llm.provider = 'gemini'; config.llm.geminiKey = 'test-key-not-real'; config.llm.geminiModel = 'gemini-test';
@@ -253,7 +250,6 @@ test('generateContent: no LLM configured is a clear error', async () => {
   try { await assert.rejects(generateContent(gIn()), /No LLM is configured/); } finally { Object.assign(config.llm, prev); }
 });
 
-// ------------------------------------------------------------------------------------------ store
 test('store: save, get, publish keeps exactly one published row per slug, unpublish clears it', async () => {
   const db = await memDb(); const c1 = good(); const c2 = { ...good(), cta: 'Other' }; const h1 = shortHash(c1); const h2 = shortHash(c2);
   await saveSite(db, { slug: 'treasury', oppId: 'opp_treasury', hash: h1, content: c1, meta: meta(), createdAt: 1000 });
@@ -269,7 +265,6 @@ test('store: save, get, publish keeps exactly one published row per slug, unpubl
   assert.equal(await unpublish(db, 'treasury'), true); assert.equal(await latestPublished(db, 'treasury'), null); assert.equal(await unpublish(db, 'treasury'), false);
 });
 
-// ------------------------------------------------------------------------------------------ endpoints
 const HOST = 'app.example'; const owner = privateKeyToAccount(generatePrivateKey()); const other = privateKeyToAccount(generatePrivateKey());
 let n = 0;
 async function seeded() {
@@ -421,14 +416,13 @@ test('schema: marketing filler is rejected with a plain reason', () => {
   assert.match(r.errors.join(' '), /marketing wording/);
 });
 
-// ------------------------------------------------------------------------------------------ concept wording, contract sketch, mark
-test('render: the word example is not in the visible text, the title or the chip; Concept is', () => {
+test('render: neither example nor concept appears in the visible text or the title', () => {
   const html = renderSite({ content: good(), meta: meta() });
   assert.ok(!/example/i.test(visibleText(html)), 'visible text');
   assert.ok(!/example/i.test(html.match(/<title>[^<]*<\/title>/)[0]), 'title');
   assert.ok(!/example/i.test(html.replace(/https?:\/\/example\.org[^"]*/g, '')), 'markup, apart from the evidence link in the fixture');
-  assert.match(html, /<title>DAO treasury · concept<\/title>/);
-  assert.ok(visibleText(html).includes('Concept'));
+  assert.ok(!/concept/i.test(visibleText(html)) && !/concept/i.test(html.match(/<title>[^<]*<\/title>/)[0]));
+  assert.match(html, /<title>DAO treasury<\/title>/);
 });
 
 test('render: the contract sketch is composed by our code from names and sentences, with syntax spans', () => {
@@ -488,7 +482,6 @@ test('render: escapes every new field (contract name, method names, arg names an
   assert.equal(renderSite({ content: hostileContent(), meta: meta() }), renderSite({ content: hostileContent(), meta: meta() }));
 });
 
-// ------------------------------------------------------------------------------------------ stale rows
 test('endpoints: a stored version without the contract field is stale: listed as stale, shown as out of date with the same CSP, and rebuilt by a plain build', () => withGemini([good()], async (calls) => {
   const app = await mkApp(); const db = app.db;
   const old = { badge: 'Example product', headline: 'Pay out a DAO treasury with clear rules', sub: 'A tool that would let a NEAR DAO set payout rules.', features: good().features, steps: good().steps, cta: 'Read the idea' };
@@ -518,7 +511,6 @@ test('endpoints: the served page carries the real path state of the product', ()
   assert.match(p2, /None exists yet/);
 }));
 
-// ------------------------------------------------------------------------------------------ path from stored state
 const stateOf = (path) => path.map((p) => p.state);
 async function pathDb(topic = 'treasury') {
   const db = await memDb(); const t = Date.now();
