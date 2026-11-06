@@ -12,10 +12,10 @@ const approxTokens = (s) => Math.ceil(s.length / 4);
 
 export function llmStatus() {
   const p = config.llm.provider;
-  const ready = p === 'anthropic' ? Boolean(config.llm.anthropicKey) : p === 'gateway' ? Boolean(config.llm.gatewayKey) : p === 'codex-cli' ? !config.onVercel : false;
+  const ready = p === 'anthropic' ? Boolean(config.llm.anthropicKey) : p === 'gemini' ? Boolean(config.llm.geminiKey) : p === 'gateway' ? Boolean(config.llm.gatewayKey) : p === 'codex-cli' ? !config.onVercel : false;
   return {
     provider: p, enabled: p !== 'none' && ready,
-    model: p === 'anthropic' ? config.llm.anthropicModel : p === 'gateway' ? config.llm.gatewayModel : p === 'codex-cli' ? 'codex (local CLI default)' : null,
+    model: p === 'anthropic' ? config.llm.anthropicModel : p === 'gemini' ? config.llm.geminiModel : p === 'gateway' ? config.llm.gatewayModel : p === 'codex-cli' ? 'codex (local CLI default)' : null,
     reason: p === 'none' ? 'LLM_PROVIDER=none: deterministic baseline in use' : ready ? 'ready' : `provider "${p}" selected but credential missing`,
   };
 }
@@ -41,6 +41,21 @@ export async function completeJson({ system, user, maxTokens = 1500, signal } = 
     const d = JSON.parse(res.text);
     text = d.content?.map((c) => c.text).join('') ?? '';
     inTok = d.usage?.input_tokens ?? inTok; outTok = d.usage?.output_tokens ?? approxTokens(text);
+  } else if (st.provider === 'gemini') {
+    const call = () => guardedFetch('llm', `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.llm.geminiModel)}:generateContent`, {
+      method: 'POST', timeoutMs: 60_000,
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': config.llm.geminiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: [{ text: user }] }],
+        generationConfig: { maxOutputTokens: maxTokens, responseMimeType: 'application/json', temperature: 0.2 },
+      }),
+    });
+    let res; // Gemini answers 503 "high demand" in short spikes: retry a couple of times before failing
+    for (let a = 0; ; a++) { try { res = await call(); break; } catch (e) { if (a >= 2 || ![429, 500, 503].includes(e.status)) throw e; await new Promise((r) => setTimeout(r, 1500 * (a + 1))); } }
+    const d = JSON.parse(res.text);
+    text = d.candidates?.[0]?.content?.parts?.map((x) => x.text ?? '').join('') ?? '';
+    inTok = d.usageMetadata?.promptTokenCount ?? inTok; outTok = d.usageMetadata?.candidatesTokenCount ?? approxTokens(text);
   } else if (st.provider === 'gateway') {
     const res = await guardedFetch('llm', config.llm.gatewayUrl, {
       method: 'POST', timeoutMs: 60_000,
