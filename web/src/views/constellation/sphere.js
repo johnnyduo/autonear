@@ -128,7 +128,7 @@ export class SphereScene extends DiscScene {
     const pushL = (x1, y1, a1, x2, y2, a2, r, g, b) => { if (nl >= this.maxL || (a1 <= 0.002 && a2 <= 0.002)) return; const o = nl * 2 * LSTRIDE; L[o] = x1; L[o + 1] = y1; L[o + 2] = r; L[o + 3] = g; L[o + 4] = b; L[o + 5] = a1; L[o + 6] = x2; L[o + 7] = y2; L[o + 8] = r; L[o + 9] = g; L[o + 10] = b; L[o + 11] = a2; nl++; };
     const W = this.W; const H = this.H; const zm = this.cam.zoom; const ks = this.fitInfo.ks; const sw = this.swap; const se = sw * sw * (3 - 2 * sw); const lerp = (a, b, t) => a + (b - a) * t; const nrw = W < 640; const sc0 = this.scale0;
     const smallK = sc0 * (nrw ? 0.2 : 0.25); const k = lerp(sc0 * zm, smallK, se); const smallY = nrw ? this.ccy + R0 * sc0 * 1.28 : this.ccy; const cx = lerp(this.ccx, W * (nrw ? 0.2 : 0.13), se); const cy = lerp(this.ccy, smallY, se); const R = R0 * k;
-    const coK = lerp(smallK * 0.8, sc0 * 1.02 * this.council.cam.zoom, se); const coX = lerp(W * (nrw ? 0.8 : 0.87), this.ccx, se); const coY = lerp(smallY, this.ccy, se); this.evMain = se < 0.5; this.evView = { cx, cy, R };
+    const coK = lerp(smallK * 0.8, sc0 * 1.02 * this.council.cam.zoom, se); const coX = lerp(W * (nrw ? 0.8 : 0.87), this.ccx, se); const coY = lerp(smallY, this.ccy + (nrw ? 0 : 18), se); this.evMain = se < 0.5; this.evView = { cx, cy, R };
     const ov = this.ov; ov.sats = []; ov.roles = []; ov.marks = []; ov.sparkles = []; ov.wells = []; ov.wellPts = []; ov.R = R; ov.cx = cx; ov.cy = cy; ov.k = k;
     const mS = mat(this.cam.yaw + this.spin, this.cam.pit); const mC = mat(this.cam.yaw, this.cam.pit); const O = this.O;
     const xf = (M, x, y, z) => { O[0] = M[0] * x + M[1] * y + M[2] * z; O[1] = M[3] * x + M[4] * y + M[5] * z; O[2] = M[6] * x + M[7] * y + M[8] * z; };
@@ -337,7 +337,8 @@ export class SphereScene extends DiscScene {
       for (let c = 1; c <= 28; c++) { const th = (c / 28) * TAU; const bx = rp.x + Math.cos(th) * rad; const by = rp.y + Math.sin(th) * rad; pushL(ax, ay, a, bx, by, a, 1, 0.92, 0.65); ax = bx; ay = by; }
     }
     // ---- the council star, and the summary streams that carry the evidence story to it
-    this.council.build({ pushP, pushL, cx: coX, cy: coY, k: coK, W, H, T: this.t, calm, main: se > 0.5, fade: 1 });
+    let topSafe = 0; let bottomSafe = H - 24; for (const r of this.resv ?? []) { if (r.y < H * 0.3) { if (r.x < W / 2 + 360 && r.x + r.w > W / 2 - 360) topSafe = Math.max(topSafe, r.y + r.h); } else if (r.y > H * 0.55) bottomSafe = Math.min(bottomSafe, r.y); } // only what overlaps the centred header counts at the top
+    this.council.build({ topSafe, bottomSafe, pushP, pushL, cx: coX, cy: coY, k: coK, W, H, T: this.t, calm, main: se > 0.5, fade: 1 });
     { const cry = this.council.cry; const T = this.t; ov.streamCap = null; const GOLDS = [1, 0.8, 0.46]; const CYN = [0.2, 0.92, 1]; const MG = [1, 0.25, 0.8];
       for (const c of cry) {
         const wi = WELLS.indexOf(c.o.topic); const w = ov.wells.find((q) => q.w === wi); if (!w) continue; const share = clamp((w.n / Math.max(1, N)) * 3, 0.15, 1); const boost = c.win ? 1.5 : 1;
@@ -384,7 +385,7 @@ export class SphereScene extends DiscScene {
     for (const p of this.ov.wellPts ?? []) if ((p.x - x) ** 2 + (p.y - y) ** 2 < (9 + slop) ** 2) return { t: 'well', i: p.w };
     return null;
   }
-  drawOverlay(ctx, o) { drawSphereOverlay(ctx, this, o); }
+  drawOverlay(ctx, o) { this.resv = o.reserved ?? []; drawSphereOverlay(ctx, this, o); }
   fxExtra() { return 2600; } // headroom for the council star's dots, rings and lane
 }
 

@@ -23,19 +23,19 @@ function Chamber({ entry, rules, replayKey }) {
   const arc = `M ${CX - GR} ${CY} A ${GR} ${GR} 0 0 1 ${CX + GR} ${CY}`;
   return (
     <div className="cn-chamber">
-      <svg viewBox="0 0 600 305" role="img" aria-label={`Council vote on ${entry.title}: ${vd[1]}. Weighted support ${entry.support.toFixed(2)}.`}>
+      <svg viewBox="0 0 600 305" role="img" aria-label={`Council vote on ${entry.title}: ${vd[1]}. Council score ${q(entry.support)} out of 100.`}>
         <path d={arc} className="cn-track" fill="none" strokeWidth="10" strokeLinecap="round" />
         <path d={arc} fill="none" strokeWidth="10" strokeLinecap="round" stroke={done ? vd[2] : '#c6f432'} strokeDasharray={L} strokeDashoffset={L * (1 - partial)} className="cn-fill" />
-        {[rules.watchAt, rules.goAt].map((f, k) => { const [x, y] = gaugeAt(f); const [x2, y2] = [CX + (x - CX) * 1.22, CY + (y - CY) * 1.22]; return <g key={k}><line x1={x} y1={y} x2={x2} y2={y2} stroke="#ece9df" strokeOpacity=".55" /><text x={CX + (x - CX) * 1.42} y={CY + (y - CY) * 1.42 + 3} className="cn-t" textAnchor={k ? 'start' : 'end'}>{k ? 'GO' : 'WATCH'} {f}</text></g>; })}
-        <text x={CX} y={CY - 18} className="cn-num" textAnchor="middle">{partial.toFixed(2)}</text>
-        <text x={CX} y={CY + 2} className="cn-t" textAnchor="middle">WEIGHTED SUPPORT</text>
+        {[rules.watchAt, rules.goAt].map((f, k) => { const [x, y] = gaugeAt(f); const [x2, y2] = [CX + (x - CX) * 1.22, CY + (y - CY) * 1.22]; return <g key={k}><line x1={x} y1={y} x2={x2} y2={y2} stroke="#ece9df" strokeOpacity=".55" /><text x={CX + (x - CX) * 1.42} y={CY + (y - CY) * 1.42 + 3} className="cn-t" textAnchor={k ? 'start' : 'end'}>{k ? 'BUILD' : 'WATCH'} {q(f)}</text></g>; })}
+        <text x={CX} y={CY - 18} className="cn-num" textAnchor="middle">{q(partial)}</text>
+        <text x={CX} y={CY + 2} className="cn-t" textAnchor="middle">COUNCIL SCORE / 100</text>
         {entry.votes.map((v, i) => {
           const [x, y] = seatPos(i); const on = cast > i; const c = on ? COL[v.stance] : '#3a423f';
           return (
             <g key={v.role} className={on ? 'cn-seat on' : 'cn-seat'}>
               <circle cx={x} cy={y} r="22" fill="#0f1317" stroke={c} strokeWidth={on ? 2.4 : 1.2} />
               {on && <circle cx={x} cy={y} r="22" fill="none" stroke={c} strokeOpacity=".5" className="cn-pulse" />}
-              <text x={x} y={y + 4} textAnchor="middle" className="cn-seatn" fill={on ? c : '#8c8b82'}>{on ? v.support.toFixed(2) : '·'}</text>
+              <text x={x} y={y + 4} textAnchor="middle" className="cn-seatn" fill={on ? c : '#8c8b82'}>{on ? q(v.support) : '·'}</text>
               <text x={x} y={y + 40} textAnchor="middle" className="cn-t">{SEAT_LABEL[v.role].toUpperCase()}</text>
               <text x={x} y={y + 52} textAnchor="middle" className="cn-t dim">weight {Math.round(v.weight * 100)}%</text>
               {on && cast === i + 1 && !reduce() && <circle key={`${replayKey}-${i}`} r="5" fill={c} className="cn-tok" style={{ '--x0': `${x}px`, '--y0': `${y}px`, '--x1': `${CX}px`, '--y1': `${CY - 8}px` }} />}
@@ -51,6 +51,8 @@ function Chamber({ entry, rules, replayKey }) {
 }
 
 const OUTC = { shipped: '#c6f432', live: '#66ffcc', failed: '#ff4080', held: '#f2b84b', waiting: '#80d9ff', in_progress: '#f2b84b', ready: '#c6f432', not_started: '#8c8b82' };
+const q = (x) => Math.round(x * 100);
+const STANCE_WORD = { back: 'backs it', abstain: 'unsure', object: 'objects' };
 const WHO = { research: ['System', 'The seven roles read the evidence and write the brief'], build: ['System', 'Builds the contract and checks it'], decision: ['System', 'Writes one request with exact limits'], approve: ['You or the agent', 'Approved by you, or by the agent inside your limits in Auto'], deploy: ['You or the agent', 'The contract is sent to the chain'], verify: ['Chain', 'The receipt is compared with the checked build'], monitor: ['System', 'Re-checked on every scheduled check'] };
 const STATE_WORD = { done: 'Done', active: 'Now', blocked: 'Stopped', todo: 'Waiting' };
 
@@ -136,12 +138,12 @@ export default function Council({ data }) {
   const here = !live ? 1 : oc && ['shipped', 'live', 'failed'].includes(oc.state) ? 3 : cur >= 0 || doneN > 0 || ['waiting', 'held', 'in_progress'].includes(oc?.state) ? 2 : 1;
   const stops = [
     { id: 'ch-seen', kicker: '1 · SEEN', big: <CountUp value={records ?? 0} />, sub: `records from ${srcOk || srcs.length || 0} sources`, fill: 1 },
-    { id: 'ch-voted', kicker: '2 · VOTED', big: entry.verdict.toUpperCase(), sub: `support ${entry.support.toFixed(2)} of ${rules.goAt} needed`, fill: entry.support },
+    { id: 'ch-voted', kicker: '2 · VOTED', big: entry.verdict.toUpperCase(), sub: `score ${q(entry.support)} of ${q(rules.goAt)} needed`, fill: entry.support },
     { id: 'ch-next', kicker: '3 · EXECUTING', big: live ? `${doneN} of ${stages.length}` : '—', sub: live ? 'steps done' : 'pick the top product', fill: live ? doneN / Math.max(1, stages.length) : 0 },
     { id: 'ch-out', kicker: '4 · OUTCOME', big: oc ? oc.headline : 'Not started', sub: oc ? oc.next : '', fill: oc ? oc.progress.done / Math.max(1, oc.progress.total) : 0 },
   ];
   const checks = [
-    [`Support ${entry.support.toFixed(2)} is at least ${rules.goAt}`, entry.support >= rules.goAt], [`Confidence ${(entry.confidence ?? 0).toFixed(2)} is at least ${rules.minConfidence}`, (entry.confidence ?? 0) >= rules.minConfidence],
+    [`The council score, ${q(entry.support)} out of 100, reaches the ${q(rules.goAt)} needed`, entry.support >= rules.goAt], [`The evidence is trusted enough: ${q(entry.confidence ?? 0)} out of 100, ${q(rules.minConfidence)} needed`, (entry.confidence ?? 0) >= rules.minConfidence],
     [entry.vetoes.length ? `${entry.vetoes.join(' and ')} vetoed it` : 'Neither the Skeptic nor Security vetoed it', entry.vetoes.length === 0], [entry.buildable ? 'A contract template exists, so it can be built and checked' : 'No contract template exists for this topic yet', entry.buildable],
   ];
   const vd = VERDICT[entry.verdict];
@@ -169,11 +171,12 @@ export default function Council({ data }) {
       <Chapter id="ch-voted" n="2" title="Who voted, and how?" lead="Seven seats, each with its own question. A vote is a number from stored data, with the reason beside it.">
         <div className="cn-row"><div><span className="eyebrow">Voting on</span><h3>{entry.title}</h3></div><button type="button" className="btn sm" onClick={() => setReplay(replay + 1)}>Replay the vote</button></div>
         <Chamber entry={entry} rules={rules} replayKey={replay} />
-        <ul className="cn-reasons">{entry.votes.map((v) => <li key={v.role}><i style={{ background: COL[v.stance] }} aria-hidden="true" /><b>{SEAT_LABEL[v.role]}</b><span className="num">{v.support.toFixed(2)}</span><span className="dim">{v.reason}</span></li>)}</ul>
-        <p className="faint cn-note">The animation replays the stored votes. It is not a live vote and no AI opinion is involved.</p>
+        <ul className="cn-reasons">{entry.votes.map((v) => <li key={v.role}><i style={{ background: COL[v.stance] }} aria-hidden="true" /><b>{SEAT_LABEL[v.role]}</b><span className="num">{q(v.support)}</span><span className="dim">{v.reason}</span></li>)}</ul>
+        <p className="faint cn-note">Each seat gives a number from 0 to 100 for its own question. The animation replays the stored votes; it is not a live vote and no AI opinion is involved.</p>
       </Chapter>
 
       <Chapter id="ch-decide" n="3" title="What did it decide?" lead="Four plain checks. All four must pass for a GO.">
+        <div className="cn-explain"><b>What does the council score mean?</b><p>Each seat answers one question about this product with a number from 0 to 100, such as &ldquo;is there real demand?&rdquo; or &ldquo;can it be built safely?&rdquo;. The council score is their average, with more weight on the questions that matter most. It is <em>not</em> a chance of success. It says how strongly the stored evidence supports building this now.</p><ul><li><b>{q(rules.goAt)} or more</b> and no veto: build it</li><li><b>{q(rules.watchAt)} to {q(rules.goAt) - 1}</b>: keep watching</li><li><b>Under {q(rules.watchAt)}</b>: not now</li></ul></div>
         <div className="cn-decide">
           <div className="cn-verdict" style={{ '--c': vd[2] }}><b>{vd[0]}</b><span>{vd[1]}</span></div>
           <ul className="cn-checks">{checks.map(([t, ok]) => <li key={t} className={ok ? 'ok' : 'no'}><i aria-hidden="true">{ok ? '✓' : '✗'}</i>{t}</li>)}</ul>
@@ -183,13 +186,13 @@ export default function Council({ data }) {
           {list.map((o) => { const v = VERDICT[o.verdict]; return (
             <li key={o.oppId} aria-current={o.oppId === entry.oppId} onClick={() => { setPick(o.oppId); setReplay((r) => r + 1); }}>
               <button type="button" className="cn-link" onClick={() => { setPick(o.oppId); setReplay((r) => r + 1); }}>{o.title}</button>
-              <span className="cn-meter" aria-label={`support ${o.support.toFixed(2)}`}><i style={{ width: `${o.support * 100}%`, background: v[2] }} /><u style={{ left: `${rules.watchAt * 100}%` }} /><u style={{ left: `${rules.goAt * 100}%` }} /></span>
-              <span className="cn-dots" aria-label="seat votes">{o.votes.map((x) => <i key={x.role} title={`${SEAT_LABEL[x.role]}: ${x.support.toFixed(2)}`} style={{ background: COL[x.stance] }} />)}</span>
+              <span className="cn-meter" aria-label={`council score ${q(o.support)} out of 100`}><i style={{ width: `${o.support * 100}%`, background: v[2] }} /><u style={{ left: `${rules.watchAt * 100}%` }} /><u style={{ left: `${rules.goAt * 100}%` }} /></span>
+              <span className="cn-dots" aria-label="seat votes">{o.votes.map((x) => <i key={x.role} title={`${SEAT_LABEL[x.role]}: ${q(x.support)} out of 100, ${STANCE_WORD[x.stance]}`} style={{ background: COL[x.stance] }} />)}</span>
               <span className="chip" style={{ borderColor: v[2], color: v[2] }}>{v[0]}</span>
               <small className="faint">{o.momentum > 0.55 ? '▲ rising' : o.momentum < 0.45 ? '▼ cooling' : '● steady'}{o.buildable ? '' : ' · cannot be built yet'}</small>
             </li>); })}
         </ul>
-        <p className="faint cn-note">Thin marks on each bar: WATCH at {rules.watchAt} and GO at {rules.goAt}. Counted {fmt.ago(council.at)}.</p>
+        <p className="faint cn-note">Bars show each product&rsquo;s council score out of 100. The thin marks are {q(rules.watchAt)} (keep watching) and {q(rules.goAt)} (build). Dots are the seven seats: green backs it, amber unsure, red objects. Counted {fmt.ago(council.at)}.</p>
       </Chapter>
 
       <Chapter id="ch-next" n="4" title="What happens next?" lead="From a GO to a contract on the chain. Each step shows who does it and where it stands.">
