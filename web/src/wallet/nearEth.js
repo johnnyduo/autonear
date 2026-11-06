@@ -65,7 +65,11 @@ async function rpc(url, method, params, fetchImpl = fetch) {
     const r = await fetchImpl(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
     if (r.status === 429 && i < 5) { await new Promise((ok) => setTimeout(ok, 1200 * 2 ** i)); continue; }
     if (!r.ok) throw new Error(`The NEAR network answered ${r.status}. Try again in a moment.`);
-    const j = await r.json(); if (j.error) throw new Error(j.error.message ?? 'The NEAR network refused the request.'); return j.result;
+    const j = await r.json(); if (j.error) throw new Error(j.error.message ?? 'The NEAR network refused the request.');
+    // Newer nodes (fastnear) answer a failed query with HTTP 200 and { result: { error: '...' } } instead of a JSON-RPC error. Treat it as the failure it is: otherwise a MISSING access key
+    // looks like a present one and the one-time relayer setup is skipped (the relayer then has no key on the account and every transaction fails).
+    if (j.result && typeof j.result === 'object' && !Array.isArray(j.result) && typeof j.result.error === 'string') throw new Error(j.result.error);
+    return j.result;
   }
 }
 export const relayer = (method, params, fetchImpl) => rpc(NEAR_EVM.rpc, method, params, fetchImpl);

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeAbiParameters, parseAbiParameters, keccak256, toBytes, hexToString } from 'viem';
-import { accountToAddress, b58encode, buildTx, encodeAction, encodeOnboarding, SELECTORS, NEAR_EVM } from '../wallet/nearEth.js';
+import { accountToAddress, b58encode, buildTx, encodeAction, encodeOnboarding, onboardingStatus, nearRpc, SELECTORS, NEAR_EVM } from '../wallet/nearEth.js';
 
 test('selectors match the wallet contract (near/near-wallet-contract types.rs)', () => {
   assert.equal(SELECTORS.functionCall, '0x6179b707'); assert.equal(SELECTORS.transfer, '0x3ed64124'); assert.equal(SELECTORS.addKey, '0x753ce5ab');
@@ -58,4 +58,32 @@ test('onboarding adds only the relayer key, limited to rlp_execute on the accoun
 test('base58 matches NEAR key encoding', () => {
   assert.equal(b58encode(new Uint8Array([0, 0, 1])), '112');
   assert.equal(b58encode(Uint8Array.from(Buffer.from('d1f730e4a45f61c90789bfd953ec6f247c1e15c571320a93f62a7f41621fae34', 'hex'))), 'F8cptyekqCo7x7LwKtMHGpijTQcGwtFXHzeM9oDTmwPZ');
+});
+
+// The one-time relayer setup must not be skipped when the node says the key is missing. fastnear answers that with HTTP 200 and { result: { error } }, not a JSON-RPC error.
+const RELAYER_KEY = '21dea25fbd244dca1f835a95f02a2e368f5a0dc9a935abd22462c4e9f8e5ecb0';
+const fakeNet = (nearAnswer) => async (url, init) => {
+  const body = JSON.parse(init.body); const reply = (o) => ({ ok: true, status: 200, json: async () => ({ jsonrpc: '2.0', id: 1, ...o }) });
+  if (String(url) === NEAR_EVM.rpc && body.method === 'near_getPublicKey') return reply({ result: { public_key: RELAYER_KEY } });
+  return reply(nearAnswer);
+};
+const ACCT = '0x5ebaddf71482d40044391923be1fc42938129988';
+test('onboardingStatus: a missing key reported the fastnear way ({ result: { error } }) means NOT onboarded', async () => {
+  const fx = fakeNet({ result: { block_hash: 'x', block_height: 1, error: 'access key ed25519:3HDMUBDSSup8jPL7FMLiduSPwir6HhX4zedvZmzy25So does not exist while viewing', logs: [] } });
+  const s = await onboardingStatus(ACCT, fx); assert.equal(s.onboarded, false); assert.equal(s.relayerKeyHex, RELAYER_KEY);
+});
+test('onboardingStatus: a missing key reported as a classic JSON-RPC error is also NOT onboarded', async () => {
+  assert.equal((await onboardingStatus(ACCT, fakeNet({ error: { message: 'access key ed25519:xxx does not exist while viewing' } }))).onboarded, false);
+});
+test('onboardingStatus: a real access key answer means onboarded', async () => {
+  assert.equal((await onboardingStatus(ACCT, fakeNet({ result: { nonce: 0, permission: { FunctionCall: { receiver_id: ACCT, method_names: ['rlp_execute'] } }, block_hash: 'x', block_height: 1 } }))).onboarded, true);
+});
+test('onboardingStatus: any other node failure is raised, never read as "onboarded" or "not onboarded"', async () => {
+  await assert.rejects(onboardingStatus(ACCT, fakeNet({ result: { error: 'the node is syncing' } })), /syncing/);
+  await assert.rejects(onboardingStatus(ACCT, fakeNet({ error: { message: 'Internal error' } })), /Internal error/);
+});
+test('nearRpc raises a { result: { error } } answer, and still returns ordinary results (including ones that merely contain other fields)', async () => {
+  await assert.rejects(nearRpc('query', {}, fakeNet({ result: { error: 'boom', logs: [] } })), /boom/);
+  assert.deepEqual(await nearRpc('query', {}, fakeNet({ result: { amount: '1' } })), { amount: '1' });
+  assert.deepEqual(await nearRpc('x', {}, fakeNet({ result: [1, 2] })), [1, 2]);
 });
