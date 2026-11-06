@@ -1,4 +1,4 @@
-// Illustration for the landing hero. EXAMPLE DATA, generated in the browser on every visit: none of it was read from the network
+// Illustration for the landing hero. MADE-UP DATA, generated in the browser on every visit: none of it was read from the network
 // and none of it is stored anywhere. The app's own screens (Home, #/constellation) show the real stored records.
 // The topic wells keep the engine's internal ids; only the labels shown on screen are changed (see `labels`).
 // Same ids, same order as TOPIC_ORDER in views/_evidence-parts.jsx (not imported: that file is JSX and this one is tested in plain Node).
@@ -51,7 +51,7 @@ export function makeLandingDemo(seed = (Math.random() * 2 ** 32) >>> 0, count = 
     links.set(id, topic === 'untagged' ? [] : [{ opp: `opp_${topic}`, relation }, ...(r() < 0.18 ? [{ opp: `opp_${topics[Math.floor(r() * topics.length)]}`, relation: 'supports' }] : [])]);
   }
   const opps = topics.map((t) => ({ id: `opp_${t}`, topic: t, title: LABELS[t], score: Math.round((0.52 + r() * 0.42) * 100) / 100, confidence: Math.round((0.6 + r() * 0.35) * 100) / 100, warnings: [] }));
-  // example freshness so the labels read "ingested 7m ago" or "quiet"; a few are recent enough to pulse
+  // made-up freshness so the labels read "ingested 7m ago" or "quiet"; a few are recent enough to pulse
   return { evidence, links, labels: LABELS, opps,
     sources: SOURCES.map(([id, name]) => ({ id, name, status: 'ok', lastSuccess: now - Math.floor((r() < 0.45 ? 1 + r() * 16 : 25 + r() * 200) * 60000) })) };
 }

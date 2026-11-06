@@ -340,7 +340,7 @@ function SignPanel({ d, proto, token, reload }) {
 
 function Receipt({ rc }) {
   if (rc.busy) return <p className="faint" role="status">Asking the API to verify the transaction against the chain RPC…</p>;
-  if (rc.error) return <div className="banner risk" role="alert"><Icon name="alert" /><div><b>Not recorded</b><div className="mono-v rt-verbatim">{rc.error.message}{rc.error.status ? ` (HTTP ${rc.error.status})` : ''}</div>{rc.error.status >= 500 && <div className="help">The API could not complete verification (for example the chain RPC was unreachable or did not know this transaction). Nothing was recorded; check the hash and network, then try again.</div>}</div></div>;
+  if (rc.error) return <div className="banner risk" role="alert"><Icon name="alert" /><div><b>Not recorded</b><div className="mono-v rt-verbatim">{rc.error.message}{rc.error.status ? ` (HTTP ${rc.error.status})` : ''}</div>{rc.error.status >= 500 && <div className="help">The API could not complete verification (such as the chain RPC was unreachable or did not know this transaction). Nothing was recorded; check the hash and network, then try again.</div>}</div></div>;
   const r = rc.result; if (!r) return null;
   return (
     <div className="stack-s" role="status">

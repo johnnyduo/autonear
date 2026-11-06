@@ -39,7 +39,7 @@ export default function Watch({ data, owner, canWrite, demo, toast }) {
       {!canWrite && <p className="why"><Icon name="lock" size={14} />{why}</p>}
       <div className="wt-grid">
         <section className="card"><h2>What to look for</h2>
-          <Chips label="Words and topics" help="For example: intents, treasury, a protocol name." items={w.keywords} disabled={lock} placeholder="add a word…" onChange={(keywords) => save({ keywords })} />
+          <Chips label="Words and topics" help="Such as: intents, treasury, a protocol name." items={w.keywords} disabled={lock} placeholder="add a word…" onChange={(keywords) => save({ keywords })} />
           <Chips label="Hackathons and events" help="Names of events to keep an eye on." items={w.hackathons} disabled={lock} placeholder="add an event…" onChange={(hackathons) => save({ hackathons })} />
           <Chips label="Ignore anything about" help="Posts that mention these are skipped." items={w.excludes} disabled={lock} placeholder="add a phrase to ignore…" onChange={(excludes) => save({ excludes })} />
         </section>

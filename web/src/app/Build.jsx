@@ -1,4 +1,4 @@
-// Build: the last mile. The council backs a product, the owner approves, the agents write an example page, the owner publishes it.
+// Build: the last mile. The council backs a product, the owner approves, the agents write a landing page, the owner publishes it.
 // What is real: council scores, the owner approval (a signed session, saved in the audit log), the page text (written once by Gemini from stored evidence).
 // What is a show: the swarm of cursors that draws the page. It replays a stored build and is labelled that way.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

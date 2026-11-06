@@ -1,4 +1,4 @@
-// Landing card: an EXAMPLE of the council's score card. It cycles through made-up product ideas with a channel-change burst of TV static,
+// Landing card: a made-up version of the council's score card. It cycles through made-up product ideas with a channel-change burst of TV static,
 // then streams the text in. Nothing here is stored data; the real votes are on the Council page.
 import { useEffect, useRef, useState } from 'react';
 import { useCalm } from '../ui.jsx';
@@ -33,7 +33,7 @@ export default function LandingCard({ onStory }) {
   const amp = useRef(calm ? 0 : 0.06); const story = useRef(null);
   if (!story.current || story.current.n !== n) story.current = { n, ...scoreStory(STORIES[order.current[n % order.current.length]]) };
 
-  useEffect(() => { onStory?.(councilFrom(story.current)); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps -- the council star on the landing shows the same example
+  useEffect(() => { onStory?.(councilFrom(story.current)); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps -- the council star on the landing shows the same card
 
   useEffect(() => {
     if (calm) { const id = setInterval(() => setN((k) => k + 1), 9000); return () => clearInterval(id); }
@@ -58,10 +58,10 @@ export default function LandingCard({ onStory }) {
   const verdictOn = e >= seatAt(6) + 260;
   const glitch = !calm && ms < BURST;
   return (
-    <aside className={`lc${glitch ? ' glitch' : ''}`} aria-label="Example council score card (made-up)">
+    <aside className={`lc${glitch ? ' glitch' : ''}`} aria-label="Council score card (made-up)">
       <Snow amp={amp} />
       <div className="lc-in">
-        <p className="lc-eye"><span>COUNCIL SCORE</span><em>EXAMPLE</em></p>
+        <p className="lc-eye"><span>COUNCIL SCORE</span></p>
         <p className="lc-title" aria-live="off">{s.title.slice(0, chars)}<i className={titleDone ? 'idle' : ''} aria-hidden="true" /></p>
         <div className="lc-top">
           <div className="lc-num"><b>{shown}</b><span>/ 100</span></div>

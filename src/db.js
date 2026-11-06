@@ -101,7 +101,7 @@ CREATE INDEX IF NOT EXISTS mandate_runs_by_vault ON mandate_runs(vault_id, creat
 CREATE UNIQUE INDEX IF NOT EXISTS mandate_runs_one_inflight ON mandate_runs(vault_id) WHERE status IN ('claimed','submitted');
 `;
 
-/** Schema v4: example landing pages written from the council result (NEW table only; migrations/0004_sites.sql is generated from this).
+/** Schema v4: landing pages written from the council result (NEW table only; migrations/0004_sites.sql is generated from this).
  *  One row per (slug, content hash). The partial unique index makes "at most one published version per slug" a database fact. */
 export const SCHEMA_V4 = `
 CREATE TABLE IF NOT EXISTS sites(

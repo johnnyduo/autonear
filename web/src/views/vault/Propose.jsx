@@ -43,7 +43,7 @@ export function validate(f, agent, artifacts) {
   const U = (s) => parseUnits(s, meta.decimals);
   const vaultOk = proto === 'evm' ? EVM_ADDR.test(f.vault) : NEAR_ACC.test(f.vault) && f.vault.length <= 64;
   const ownerOk = proto === 'evm' ? EVM_ADDR.test(f.owner) : NEAR_ACC.test(f.owner) && f.owner.length <= 64;
-  if (!vaultOk) e.vault = proto === 'evm' ? 'Enter the vault contract address (0x + 40 hex).' : 'Enter the vault account id (for example vault.you.testnet).';
+  if (!vaultOk) e.vault = proto === 'evm' ? 'Enter the vault contract address (0x + 40 hex).' : 'Enter the vault account id (such as vault.you.testnet).';
   if (!ownerOk) e.owner = proto === 'evm' ? 'Enter the owner address (0x + 40 hex): the human who will sign the mandate.' : 'Enter the owner account id.';
   const agentId = agent?.address ?? agent?.account;
   if (!agentId) e.agent = `The agent has no ${proto === 'evm' ? 'EVM' : 'NEAR'} key on this API yet (run the agent init script on the Node host).`;

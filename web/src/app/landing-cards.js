@@ -25,21 +25,21 @@ export function scoreStory(story, rnd = Math.random) {
   return { title: story.title, seats, support, verdict };
 }
 
-// The same card as the council API's shape, so the council star on the landing can draw it. Example data only.
+// The same card as the council API's shape, so the council star on the landing can draw it. Made-up data only.
 const ROLES = [['signal_collector', 'Collector'], ['evidence_analyst', 'Analyst'], ['skeptic', 'Skeptic'], ['product_architect', 'Architect'], ['builder', 'Builder'], ['security_reviewer', 'Security'], ['launch_planner', 'Planner']];
 const OUTCOME = {
-  go: { state: 'waiting', headline: 'Waiting to be executed', detail: 'Example: the request is ready.', next: 'Next: the agent builds it, inside your limits.', done: 3 },
-  watch: { state: 'not_started', headline: 'On watch', detail: 'Example: not strong enough to build yet.', next: 'Next: keep watching. Nothing is built.', done: 1 },
-  drop: { state: 'not_started', headline: 'Set aside', detail: 'Example: the council passed on it.', next: 'Next: set aside.', done: 0 },
+  go: { state: 'waiting', headline: 'Waiting to be executed', detail: 'The request is ready.', next: 'Next: the agent builds it, inside your limits.', done: 3 },
+  watch: { state: 'not_started', headline: 'On watch', detail: 'Not strong enough to build yet.', next: 'Next: keep watching. Nothing is built.', done: 1 },
+  drop: { state: 'not_started', headline: 'Set aside', detail: 'The council passed on it.', next: 'Next: set aside.', done: 0 },
 };
 export function councilFrom(r, now = Date.now()) {
-  const votes = r.seats.map((s, i) => ({ role: ROLES[i][0], label: ROLES[i][1], weight: s.w, support: s.score / 100, stance: s.score >= RULES.goAt ? 'back' : s.score >= RULES.watchAt ? 'abstain' : 'object', reason: `Example score ${s.score} out of 100 for ${s.name.toLowerCase()}.` }));
+  const votes = r.seats.map((s, i) => ({ role: ROLES[i][0], label: ROLES[i][1], weight: s.w, support: s.score / 100, stance: s.score >= RULES.goAt ? 'back' : s.score >= RULES.watchAt ? 'abstain' : 'object', reason: `Score ${s.score} out of 100 for ${s.name.toLowerCase()}.` }));
   const oc = OUTCOME[r.verdict]; const step = (k) => (k < oc.done ? 'done' : k === oc.done ? 'active' : 'todo');
-  const entry = { oppId: 'opp_demo', topic: 'treasury', title: r.title, score: r.support / 100, confidence: 0.8, support: r.support / 100, momentum: r.seats[6].score / 100, recent: 10, prior: 6, buildable: true, verdict: r.verdict, vetoes: [], reason: `Example: the score of ${r.support} out of 100.`, votes };
+  const entry = { oppId: 'opp_demo', topic: 'treasury', title: r.title, score: r.support / 100, confidence: 0.8, support: r.support / 100, momentum: r.seats[6].score / 100, recent: 10, prior: 6, buildable: true, verdict: r.verdict, vetoes: [], reason: `The score is ${r.support} out of 100.`, votes };
   return {
     council: { at: now, rules: { weights: Object.fromEntries(ROLES.map(([k], i) => [k, SEATS[i][1]])), goAt: RULES.goAt / 100, watchAt: RULES.watchAt / 100, minConfidence: 0.45, vetoSkeptic: 0.25, vetoSecurity: 0.3, trendWindowDays: 14, freshMs: 21600000 }, buildableTopics: ['treasury'], opportunities: [entry], winner: 'opp_demo', trigger: 'cron' },
     journey: { oppId: 'opp_demo', run: { id: 'run_demo', state: 'awaiting_approval', startedAt: now, endedAt: now, roles: Object.fromEntries(ROLES.map(([k]) => [k, 'completed'])) }, decision: null, deployment: null,
-      stages: ['Research', 'Build and check', 'Decision', 'Owner approves and signs', 'Deploy', 'Check on chain', 'Monitor'].map((label, k) => ({ id: ['research', 'build', 'decision', 'approve', 'deploy', 'verify', 'monitor'][k], label, state: step(k), detail: 'example' })),
+      stages: ['Research', 'Build and check', 'Decision', 'Owner approves and signs', 'Deploy', 'Check on chain', 'Monitor'].map((label, k) => ({ id: ['research', 'build', 'decision', 'approve', 'deploy', 'verify', 'monitor'][k], label, state: step(k), detail: 'made-up' })),
       outcome: { state: oc.state, headline: oc.headline, detail: oc.detail, next: oc.next, progress: { done: oc.done, total: 7 } } },
     mode: 'auto',
   };

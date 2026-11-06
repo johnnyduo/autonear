@@ -21,8 +21,8 @@ export const T = {
   contractWallet: 'Smart-contract wallets and multisigs cannot sign in here yet. Ask the operator for access.',
   testnet: 'Testnet only',
   demoBadge: 'Demo data',
-  demoNote: 'Example data so you can see how it works. Nothing here is real or can be changed.',
-  demoNoVault: 'No vault is connected yet, so the vault numbers and history below are examples. Your real requests and settings are shown as they are.',
+  demoNote: 'Illustrated data so you can see how it works. Nothing here is real or can be changed.',
+  demoNoVault: 'No vault is connected yet, so the vault numbers and history below are illustrations. Your real requests and settings are shown as they are.',
   signOut: 'Disconnect',
   activity: 'Activity',
   modeManualTitle: 'Manual: I approve each action',
@@ -47,9 +47,9 @@ export const T = {
   stop: 'Stop the agent',
   stopHelp: 'Stops the agent on the server, then asks your wallet to pause the vault on chain. You can start it again whenever you like.',
   resume: 'Start the agent again',
-  // The Build page: the agents write an example page for a product the council backs.
+  // The Build page: the agents write a landing page for a product the council backs.
   build: {
-    intro: 'The agents write an example page for a product the council backs. You approve it, then you publish it.',
+    intro: 'The agents write a landing page for a product the council backs. You approve it, then you publish it.',
     queue: 'Waiting for a vote',
     queueHelp: 'Ranked by council score. The votes are recounted at every scheduled check; nobody votes on them by hand.',
     queueEmpty: 'No product has been scored yet. The council convenes after the first collection.',
@@ -64,7 +64,7 @@ export const T = {
     busy: 'A build is running.',
     buildIdle: 'Nothing has been built for this product yet.',
     buildDone: 'The page is built.',
-    publishHelp: 'Publishing puts this exact version on the web at the public link. The page says it is an example, not a live service.',
+    publishHelp: 'Publishing puts this exact version on the web at the public link. The page says it is not a live service.',
     needBuild: 'Build the page first, then you can publish it.',
     publish: 'Publish', unpublish: 'Unpublish', publishing: 'Publishing…',
     linkPublic: 'Public link (always the latest published version)', linkExact: 'Link to this exact version',
@@ -160,7 +160,7 @@ export const P = {
   formTitle: 'Pay someone',
   formHelp: 'This only asks. The money moves after you approve it on the Approvals page, and the agent sends it from the vault.',
   fToken: 'Token', fPayee: 'Pay to', fAmount: 'Amount', fNote: 'Note (optional)', fMore: 'More', fRef: 'Your own reference (optional)',
-  fAmountHint: 'In whole tokens, for example 25 or 12.5. Up to {n} decimal places.',
+  fAmountHint: 'In whole tokens, such as 25 or 12.5. Up to {n} decimal places.',
   fNoteHint: 'Shown with the payment. Up to 128 bytes.',
   fSubmit: 'Ask for this payment', fSending: 'Sending…',
   fPickPayee: 'Choose a person',
@@ -294,7 +294,7 @@ export function homeLine({ demo, paused, mode, pending, vaultLive, sourcesOk, so
   if (paused) return ['The agent is stopped.', 'Nothing will happen until you start it again.'];
   if (pending > 0) return [`${pending} ${pending === 1 ? 'thing needs' : 'things need'} your OK.`, 'Open Approvals to look and decide.'];
   const watching = `Watching ${sourcesOk} of ${sourcesTotal} sources.`;
-  if (demo) return [watching, 'The vault below is example data until you connect one.'];
+  if (demo) return [watching, 'The vault below is illustrated data until you connect one.'];
   if (!vaultLive) return [watching, 'No vault is connected yet, so the agent can only watch.'];
   if (!signing) return [watching, 'The vault is ready, but the agent is not running on this server, so it can only watch.'];
   return mode === 'auto' ? [watching, 'Auto mode: it will act on its own inside your limits.'] : [watching, 'Manual mode: it will ask you before it acts. Nothing needs you now.'];

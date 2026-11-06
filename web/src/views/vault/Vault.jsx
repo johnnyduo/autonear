@@ -100,7 +100,7 @@ function Deck({ source, status, canOperate, fixture }) {
       {data?.enabled && (
         <div className="stack">
           {data.signingSupported === false && (
-            <div className="banner warn" role="note"><Icon name="info" /><div><b>This API cannot run the autonomy loop.</b> It runs on a runtime without agent signing support (for example a Cloudflare Worker), so no key is held here and nothing is signed. The loop runs on a Node host (<span className="mono-v">npm run agent:loop</span> or the scheduler tick). You are looking at <b>read-only</b> data.</div></div>
+            <div className="banner warn" role="note"><Icon name="info" /><div><b>This API cannot run the autonomy loop.</b> It runs on a runtime without agent signing support (such as a Cloudflare Worker), so no key is held here and nothing is signed. The loop runs on a Node host (<span className="mono-v">npm run agent:loop</span> or the scheduler tick). You are looking at <b>read-only</b> data.</div></div>
           )}
           <LoopDeck data={data} now={now} ctl={ctl} stale={vq.stale} at={vq.at} mode={fixture ? 'fixture' : 'live'} />
 

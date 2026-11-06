@@ -21,7 +21,7 @@ const STANDARDS = [
   ['NEP-518', 'MetaMask signs NEAR', 'An Ethereum wallet signs NEAR transactions; a relayer submits them. The owner never installs a second wallet.'],
   ['EIP-191', 'owner sign-in', 'Signing a plain-text challenge proves control of the owner address. No transaction, no cost.'],
   ['EIP-1193 · 6963', 'wallet connect', 'Injected wallets are discovered and used through the standard provider API. No WalletConnect.'],
-  ['NEP-141 · 145', 'agent payments', 'The agent pays stablecoins with ft_transfer, only to payees the owner allowed and inside the owner caps. Storage registration is checked first.'],
+  ['NEP-141 · 145', 'agent pays stablecoins', 'The agent pays with ft_transfer through the vault: only to payees the owner allowed, inside the owner caps, after a storage registration check. No card, no API key.'],
   ['NEP-297', 'contract events', 'Every state change in the contracts emits one standard event, so the audit trail can be read from the chain.'],
   ['EIP-1559 · 155 · 55', 'agent EVM signer', 'The agent signs its own EVM transactions (type 2 and legacy) and checks address checksums, with its own key code. No wallet library.'],
   ['Mandate Vault', 'ERC-7710 style limits, native on NEAR', 'Our own contract: the agent gets a budget, a per-draw cap and an expiry that the chain enforces. The same idea as ERC-7710 delegations and ERC-4337 session keys, built for NEAR. It does not implement either standard.'],
@@ -35,7 +35,7 @@ export default function Landing({ data, connected = false }) {
   const sources = s?.sources ?? [];
   const [ready, setReady] = useState(false);
   const [star, setStar] = useState('evidence'); const [cc, setCc] = useState(null); // the score card belongs to the council star: it shows only while that star is selected
-  const [demo] = useState(() => makeLandingDemo()); // example data for the picture only, see landing-demo.js
+  const [demo] = useState(() => makeLandingDemo()); // made-up data for the picture only, see landing-demo.js
   const ok = sources.filter((x) => x.status === 'ok').length;
   const c = s?.counts;
   const feedList = sources.filter((x) => x.watched && x.subSources?.length).map((x) => `${x.name}: ${x.subSources.join('; ')}`).join('. ');

@@ -36,7 +36,7 @@ export async function tokensSince(db, sinceMs) {
   return (await db.all('SELECT meta FROM sites WHERE created_at>=?', [sinceMs])).reduce((a, r) => a + (Number(parse(r.meta, {}).tokens) || 0), 0);
 }
 
-/** Keys ("slug/hash") of the stored versions whose content no longer passes the current schema (for example pages written before the contract field existed). */
+/** Keys ("slug/hash") of the stored versions whose content no longer passes the current schema (such as pages written before the contract field existed). */
 export async function staleKeys(db) {
   const out = new Set();
   for (const r of await db.all('SELECT slug,hash,content FROM sites')) if (!validateContent(parse(r.content, null)).ok) out.add(`${r.slug}/${r.hash}`);

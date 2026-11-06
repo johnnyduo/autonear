@@ -1,5 +1,5 @@
 // One data hook for the whole owner app. Live API by default; the demo (hash `?fixture=1`, or no vault attached at all) swaps ONLY the vault,
-// history and requests for the labelled example data. Ingestion numbers (sources, findings) are always real.
+// history and requests for the labelled made-up data. Ingestion numbers (sources, findings) are always real.
 import { useEffect, useMemo, useState } from 'react';
 import { isFixtureMode, useApi } from '../api.js';
 
@@ -38,7 +38,7 @@ export function useAppData() {
   }, [demo, fx]);
   const liveDecisions = decLive.data?.items ?? [];
   const liveLedger = ledgerLive.data?.items ?? [];
-  // Example requests/history appear only when there is nothing real to show; real ones always win, and example ones can never be approved.
+  // Made-up requests/history appear only when there is nothing real to show; real ones always win, and made-up ones can never be approved.
   const demoDecisions = forced || (demo && !liveDecisions.length);
   const demoLedger = forced || (demo && !liveLedger.length);
   return useMemo(() => ({

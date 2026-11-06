@@ -84,7 +84,7 @@
 .danger-zone { border-color: color-mix(in srgb, var(--risk) 40%, var(--line)); } .danger-zone .hold { border-color: var(--risk); background: color-mix(in srgb, var(--risk) 10%, var(--ink-1)); } .danger-zone .hold-fill { background: var(--risk); }
 .own { margin-top: 16px; gap: 10px; } .own .input { max-width: 200px; }
 /* responsive */
-/* Landing card: an example of the council score card, old-TV look (scanlines, snow, channel-change jitter). */
+/* Landing card: a made-up version of the council score card, old-TV look (scanlines, snow, channel-change jitter). */
 .lc { --lc-y: -50%; position: absolute; right: clamp(16px, 3vw, 48px); top: 50%; transform: translateY(var(--lc-y)); width: clamp(300px, 23vw, 360px); z-index: 3; background: rgba(8, 11, 14, .94); border: 1px solid var(--line-hi); border-radius: 14px; overflow: hidden; box-shadow: 0 24px 70px rgba(0, 0, 0, .55), inset 0 0 44px rgba(95, 163, 194, .07); font-variant-numeric: tabular-nums; }
 .lc::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .04) 0 1px, transparent 1px 3px); }
 .lc::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit; background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0, 0, 0, .45)); animation: lc-flick 3.1s steps(1) infinite; }

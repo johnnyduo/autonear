@@ -157,7 +157,7 @@ export function createApp(deps) {
     const p = url.pathname; const m = req.method === 'HEAD' ? 'GET' : req.method;
     let g;
 
-    if ((g = p.match(/^\/develop\/(.*)$/))) { // public example pages (strict CSP, see src/sites/service.js)
+    if ((g = p.match(/^\/develop\/(.*)$/))) { // public product pages (strict CSP, see src/sites/service.js)
       if (m !== 'GET') return new Response('method not allowed', { status: 405, headers: { allow: 'GET, HEAD', 'content-type': 'text/plain; charset=utf-8' } });
       return pageResponse(db, g[1]);
     }

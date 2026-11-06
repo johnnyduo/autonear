@@ -18,7 +18,7 @@ export default function Engines() {
         <div className="stack">
           <Panel title="LLM provider" aside={<Status state={eng.data.llm.enabled ? 'ok' : 'not_installed'} />}>
             <dl className="kv"><dt>Provider</dt><dd className="mono-v">{eng.data.llm.provider}</dd><dt>Model</dt><dd className="mono-v">{eng.data.llm.model ?? '–'}</dd><dt>Status</dt><dd>{eng.data.llm.reason}</dd></dl>
-            {!eng.data.llm.enabled && <p className="help" style={{ marginTop: 12 }}>No LLM credential is configured, so Analyst and Skeptic run their deterministic baselines. Add a key (see .env.example) and the same roles will call the model; invalid or uncited model output is rejected and the baseline is used.</p>}
+            {!eng.data.llm.enabled && <p className="help" style={{ marginTop: 12 }}>No LLM credential is configured, so Analyst and Skeptic run their deterministic baselines. Add a key (see the env template in the repo) and the same roles will call the model; invalid or uncited model output is rejected and the baseline is used.</p>}
           </Panel>
           <div className="grid">
             {eng.data.engines.map((e) => (

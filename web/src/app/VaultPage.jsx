@@ -13,7 +13,7 @@ import Payments from './Payments.jsx';
 const tn = (f) => (f > 0.9 ? 'risk' : f > 0.7 ? 'warn' : '');
 
 export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, toast }) {
-  const canWrite = canOwn && !demo; // an example vault cannot be changed
+  const canWrite = canOwn && !demo; // a made-up vault cannot be changed
   const v = mainVault(data.vault); const s = data.status.data; const stopped = Boolean(s?.paused);
   const [busy, setBusy] = useState(''); const [amt, setAmt] = useState('');
   const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : demo ? T.demoNote : '';

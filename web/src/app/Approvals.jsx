@@ -48,7 +48,7 @@ function Finish({ d, reload, opts, toast, owner, data }) {
 }
 
 export default function Approvals({ data, owner, canWrite: canOwn, opts, toast }) {
-  const canWrite = canOwn && !data.demoDecisions; // example requests cannot be approved
+  const canWrite = canOwn && !data.demoDecisions; // made-up requests cannot be approved
   const [busy, setBusy] = useState('');
   const pending = pendingOf(data.decisions);
   // A payment the agent is sending right now stays visible until it is recorded (its approver then reads "mandate:...+owner"), so it never vanishes in between.
