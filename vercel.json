@@ -21,7 +21,7 @@
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/((?!develop/).*)",
       "headers": [
         {
           "key": "X-Content-Type-Options",
@@ -42,6 +42,15 @@
       ]
     },
     {
+      "source": "/develop/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Content-Security-Policy", "value": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'" }
+      ]
+    },
+    {
       "source": "/assets/(.*)",
       "headers": [
         {
@@ -58,6 +67,10 @@
     },
     {
       "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/develop/(.*)",
       "destination": "/api/index"
     }
   ]

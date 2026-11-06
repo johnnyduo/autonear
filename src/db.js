@@ -101,6 +101,16 @@ CREATE INDEX IF NOT EXISTS mandate_runs_by_vault ON mandate_runs(vault_id, creat
 CREATE UNIQUE INDEX IF NOT EXISTS mandate_runs_one_inflight ON mandate_runs(vault_id) WHERE status IN ('claimed','submitted');
 `;
 
+/** Schema v4: example landing pages written from the council result (NEW table only; migrations/0004_sites.sql is generated from this).
+ *  One row per (slug, content hash). The partial unique index makes "at most one published version per slug" a database fact. */
+export const SCHEMA_V4 = `
+CREATE TABLE IF NOT EXISTS sites(
+  slug TEXT NOT NULL, hash TEXT NOT NULL, opp_id TEXT NOT NULL, content TEXT NOT NULL, meta TEXT NOT NULL,
+  created_at INTEGER NOT NULL, published_at INTEGER, PRIMARY KEY(slug, hash));
+CREATE UNIQUE INDEX IF NOT EXISTS sites_one_published ON sites(slug) WHERE published_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS sites_by_created ON sites(created_at DESC);
+`;
+
 class Lock {
   #p = Promise.resolve();
   run(fn) { const r = this.#p.then(fn, fn); this.#p = r.catch(() => {}); return r; }
@@ -171,6 +181,7 @@ export async function openDb({ url = '', authToken = '', path = ':memory:', d1 =
   await db.exec(SCHEMA);
   await db.exec(SCHEMA_V2);
   await db.exec(SCHEMA_V3);
+  await db.exec(SCHEMA_V4);
   return db;
 }
 

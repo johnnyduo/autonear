@@ -32,7 +32,7 @@ export async function startServer({ dbPath = config.dbPath, port = config.port, 
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
-      if (url.pathname.startsWith('/api/') || url.pathname === WELL_KNOWN_PATH) {
+      if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/develop/') || url.pathname === WELL_KNOWN_PATH) {
         const chunks = []; let size = 0;
         for await (const c of req) { size += c.length; if (size > 70_000) { res.writeHead(413).end(); return; } chunks.push(c); }
         const headers = { ...req.headers, 'x-peer-ip': req.socket.remoteAddress ?? 'local' }; // overwrites anything the client sent under this name

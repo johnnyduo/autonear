@@ -9,7 +9,7 @@
   // Worker always opens D1, so bundle a stub instead of failing the build.
   "alias": { "@libsql/client": "./scripts/worker-stubs/unavailable.js", "node:sqlite": "./scripts/worker-stubs/unavailable.js" },
   // "/__scheduled" is listed only so `wrangler dev --test-scheduled` can be triggered with curl; in production it falls through to the SPA.
-  "assets": { "directory": "./web/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/.well-known/*", "/__scheduled"] },
+  "assets": { "directory": "./web/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/develop/*", "/.well-known/*", "/__scheduled"] },
   // One cron, every 15 minutes (1 of the 5 Cron Triggers allowed per account on Free). Ingestion + scoring + recovery + auto-proposal run here with every tab closed.
   // Workers Free allows only 10 ms CPU and 50 D1 queries per invocation: a full tick needs Workers Paid, or set INGEST_SOURCES_PER_TICK / INGEST_MAX_ITEMS (see docs/DEPLOY-CLOUDFLARE.md).
   "triggers": { "crons": ["*/15 * * * *"] },
