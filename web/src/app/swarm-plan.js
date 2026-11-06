@@ -2,7 +2,7 @@
 // so it carries a copy of the block between the BEGIN/END markers. swarm-plan.test.js checks the two copies are identical.
 // Input: elements in document order, parents before children: [{ id, kind, agent?, parent?, len? }].
 // Output: [{ id, agent, owner, start, duration, kind, deps, stolen, len }] with times in ms from the start of the build phase.
-// BEGIN planTasks (keep in sync with web/src/app/swarm-plan.js)
+// BEGIN planTasks
 function planTasks(elements, opts) {
   const agents = opts && opts.agents && opts.agents.length ? opts.agents.slice() : ['Copy', 'Layout', 'Style', 'Media', 'Check'];
   const totalMs = opts && opts.totalMs > 0 ? opts.totalMs : 16800;

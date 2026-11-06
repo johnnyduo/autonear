@@ -108,6 +108,7 @@ test('render: council line, override line, footer note, evidence as text or esca
   assert.match(go, /The council scored this 71 out of 100: GO/);
   assert.ok(!go.includes('on the owner'));
   assert.ok(go.includes('Example page written by AutoNEAR agents from stored evidence. Not a live service.'));
+  assert.ok(!go.includes('>Example page<'), 'the top bar carries no label; the footer note says it is an example');
   assert.ok(go.includes('2026-11-06'));
   assert.ok(go.includes('<li><a href="https://example.org/a?x=1&amp;y=2" rel="noopener noreferrer" target="_blank">Multisig payout fails</a></li>'));
   assert.ok(go.includes('<li>No link here</li>'));

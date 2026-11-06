@@ -28,7 +28,6 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans)}
 header.top{border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:60px}
 .brand{font:700 18px/1.2 var(--display);letter-spacing:.01em}
-.tag{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .hero{padding:56px 0 40px}
 .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
 .badge{display:inline-block;padding:4px 12px;border:1px solid var(--accent);color:var(--accent);border-radius:999px;font-size:13px;letter-spacing:.04em}
@@ -99,7 +98,7 @@ export function renderSite({ content, meta }) {
 ${NOSCRIPT}
 </head>
 <body data-template="${esc(TEMPLATE_VERSION)}">
-<header class="top" ${sw('box')}><div class="wrap"><div class="brand" ${sw('text')}>${esc(m.title)}</div><div class="tag" ${sw('text')}>Example page</div></div></header>
+<header class="top" ${sw('box')}><div class="wrap"><div class="brand" ${sw('text')}>${esc(m.title)}</div></div></header>
 <main>
 <section class="hero" ${sw('box')}><div class="wrap">
 <div>

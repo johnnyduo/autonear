@@ -24,15 +24,14 @@
     { name: 'Check', label: 'Security', color: '#ff6b8b' },
   ];
   const NAMES = AGENTS.map((a) => a.name);
-  const INTRO = 0; // no orbiting intro: the cursors start working at once
-  const TASK_MS = 8200; // all tasks finish inside this window (plus the idle end = about 10 s)
+  const TASK_MS = 8200; // the build tasks finish inside this window; with the short end it is about 10 s
   const IDLE = 900; // cursors follow the pointer after the build
   const FADE = 400;
   const WATCHDOG = 40000; // the page is never left blank longer than this
   const NOTES = [523.25, 587.33, 659.25, 783.99, 880];
 
   // The scheduling is pure and tested; the copy below is checked against it by web/src/app/swarm-plan.test.js.
-  // BEGIN planTasks (keep in sync with web/src/app/swarm-plan.js)
+  // BEGIN planTasks (a copy of the block in web/src/app/swarm-plan.js; a test keeps them identical)
   function planTasks(elements, opts) {
     const agents = opts && opts.agents && opts.agents.length ? opts.agents.slice() : ['Copy', 'Layout', 'Style', 'Media', 'Check'];
     const totalMs = opts && opts.totalMs > 0 ? opts.totalMs : 16800;
@@ -137,7 +136,7 @@
   let watchdog = 0;
   let styleEl = null;
   let allEls = [];
-  const audio = { on: false, ctx: null, noise: null, last: 0 };
+  const audio = { on: false, ctx: null, noise: null, last: 0, wake: null };
 
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
   const seg = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
@@ -181,31 +180,26 @@
       '.sw-g{position:absolute;box-sizing:border-box;pointer-events:none}',
       '.sw-caret{position:absolute;width:2px;pointer-events:none}',
       '.sw-tag{position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:99px;background:rgba(10,12,15,.82);color:#ece9df;font:500 11px/16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,255,255,.18)}',
-      '.sw-ctl{position:fixed;right:16px;bottom:16px;z-index:2147483001;display:flex;gap:8px}',
-      '.sw-ctl button{font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-radius:99px;border:1px solid rgba(198,244,50,.45);background:rgba(8,11,14,.9);color:#c6f432;cursor:pointer}',
-      '.sw-ctl button:focus-visible{outline:2px solid #c6f432;outline-offset:2px}',
-      '.sw-ctl button[aria-pressed=true]{background:#c6f432;color:#10160a;border-color:#c6f432}',
     ].join('\n');
     (doc.head || root).appendChild(styleEl);
   }
 
-  // ---------- sound (off by default, created on the first click) ----------
-  function audioReady() { return audio.on && audio.ctx; }
-  function toggleSound(btn) {
-    audio.on = !audio.on;
-    btn.setAttribute('aria-pressed', audio.on ? 'true' : 'false');
-    btn.textContent = audio.on ? 'Sound on' : 'Sound off';
-    if (audio.on && !audio.ctx) {
-      try {
-        const Ctx = win.AudioContext || win.webkitAudioContext;
-        audio.ctx = new Ctx();
-        const n = Math.floor(audio.ctx.sampleRate * 0.03);
-        audio.noise = audio.ctx.createBuffer(1, n, audio.ctx.sampleRate);
-        const d = audio.noise.getChannelData(0);
-        for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-      } catch (e) { audio.on = false; audio.ctx = null; btn.setAttribute('aria-pressed', 'false'); btn.textContent = 'Sound off'; }
-    }
-    if (audio.ctx && audio.ctx.state === 'suspended') audio.ctx.resume();
+  // ---------- sound (on; a browser keeps it silent until the visitor's first click, tap or key press) ----------
+  function audioReady() { return audio.on && audio.ctx && audio.ctx.state === 'running'; }
+  function startAudio() {
+    if (audio.ctx) return;
+    try {
+      const Ctx = win.AudioContext || win.webkitAudioContext;
+      audio.ctx = new Ctx(); audio.on = true;
+      const n = Math.floor(audio.ctx.sampleRate * 0.03);
+      audio.noise = audio.ctx.createBuffer(1, n, audio.ctx.sampleRate);
+      const d = audio.noise.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const wake = () => { if (audio.ctx && audio.ctx.state === 'suspended') audio.ctx.resume(); };
+      wake();
+      ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => win.addEventListener(ev, wake, { passive: true }));
+      audio.wake = wake;
+    } catch (e) { audio.on = false; audio.ctx = null; }
   }
   function tick() {
     if (!audioReady()) return;
@@ -431,15 +425,6 @@
   }
 
   // ---------- the loop ----------
-  function intro(t, dt) {
-    const sx = win.pageXOffset; const sy = win.pageYOffset;
-    const cx = sx + win.innerWidth / 2; const cy = sy + win.innerHeight * 0.45;
-    run.cursors.forEach((c, i) => {
-      const a = (t * 0.0042) + i * (Math.PI * 2 / 5);
-      const rad = 70 + 26 * Math.sin(t * 0.004 + i);
-      spring(c, cx + Math.cos(a) * rad, cy + Math.sin(a) * rad * 0.7, 7, dt);
-    });
-  }
   function drift(c, t, dt) {
     const sx = win.pageXOffset; const sy = win.pageYOffset;
     const a = t * 0.0007 + c.i * (Math.PI * 2 / 5);
@@ -480,10 +465,8 @@
         win.scrollTo(win.pageXOffset, Math.abs(r.goal - ny) < 1 ? r.goal : ny);
         if (Math.abs(r.goal - ny) < 1) r.goal = null;
       }
-      if (t < INTRO) {
-        intro(t, dt);
-      } else if (r.stage === 'build') {
-        const bt = t - INTRO;
+      if (r.stage === 'build') {
+        const bt = t;
         for (let k = r.active.length - 1; k >= 0; k--) { // finish what is due first, so a cursor can start its next task in the same frame
           const T = r.active[k];
           const p = clamp((bt - T.start) / T.duration, 0, 1);
@@ -525,7 +508,7 @@
     win.removeEventListener('wheel', r.onUser);
     win.removeEventListener('touchstart', r.onUser);
     if (r.ov && r.ov.parentNode) r.ov.parentNode.removeChild(r.ov);
-    if (r.ctl && r.ctl.parentNode) r.ctl.parentNode.removeChild(r.ctl);
+    if (audio.wake) { ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => win.removeEventListener(ev, audio.wake)); audio.wake = null; }
     if (audio.ctx) { try { audio.ctx.close(); } catch (e) { /* already closed */ } audio.ctx = null; audio.on = false; }
   }
   function revealAll() {
@@ -581,7 +564,7 @@
     if (!items.length) { revealAll(); setPhase('still'); return; }
     const plan = planTasks(items, { agents: NAMES, totalMs: TASK_MS });
     const cursors = AGENTS.map(makeCursor);
-    // no intro: start spread along the top of the view, then each cursor goes straight to its first task
+    // the cursors start spread along the top of the view and go straight to their first task
     cursors.forEach((c, i) => { c.x = win.pageXOffset + win.innerWidth * (0.28 + 0.11 * i); c.y = win.pageYOffset + 24; });
     const tasks = plan.map((p, i) => Object.assign({ cur: cursors[NAMES.indexOf(p.agent)], shown: false, ghost: null }, meta[i], { start: p.start, duration: p.duration }));
     tasks.sort((a, b) => a.start - b.start);
@@ -600,25 +583,12 @@
     tag.textContent = 'Replay of a stored build';
     ov.appendChild(world);
     ov.appendChild(tag);
-    const ctl = doc.createElement('div');
-    ctl.className = 'sw-ctl';
-    const skipBtn = doc.createElement('button');
-    skipBtn.type = 'button';
-    skipBtn.textContent = 'Skip replay';
-    skipBtn.addEventListener('click', skip);
-    const soundBtn = doc.createElement('button');
-    soundBtn.type = 'button';
-    soundBtn.textContent = 'Sound off';
-    soundBtn.setAttribute('aria-pressed', 'false');
-    soundBtn.addEventListener('click', () => toggleSound(soundBtn));
-    ctl.appendChild(skipBtn); ctl.appendChild(soundBtn);
     (doc.body || root).appendChild(ov);
-    (doc.body || root).appendChild(ctl);
 
     const startW = win.innerWidth;
     const now0 = win.performance.now();
     const r = {
-      ov, ctl, world, curLayer, tag, cursors, tasks, active: [], next: 0, stage: 'build', t0: now0, last: now0, raf: 0, goal: null, userScrolled: false,
+      ov, world, curLayer, tag, cursors, tasks, active: [], next: 0, stage: 'build', t0: now0, last: now0, raf: 0, goal: null, userScrolled: false,
       span: tasks.reduce((m, T) => Math.max(m, T.start + T.duration), 0), px: null, py: 0, pt: 0, ptrOn: false, idleAt: 0, fadeAt: 0,
       onKey: (e) => { if (e.key === 'Escape') skip(); else if (e.key === ' ' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') r.userScrolled = true; },
       onPointer: (e) => { r.px = e.clientX; r.py = e.clientY; r.pt = win.performance.now() - r.t0; },
@@ -628,6 +598,7 @@
     const cx = sx + win.innerWidth / 2; const cy = sy + win.innerHeight * 0.45;
     cursors.forEach((c, i) => { c.x = cx + Math.cos(i * 1.256) * 220; c.y = cy + Math.sin(i * 1.256) * 160; drawCursor(c); });
     run = r;
+    startAudio();
     doc.addEventListener('keydown', r.onKey, true);
     win.addEventListener('resize', r.onResize);
     win.addEventListener('wheel', r.onUser, { passive: true });
