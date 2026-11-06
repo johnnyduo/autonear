@@ -8,6 +8,7 @@ import { ROLES } from './shared.js';
 import { PSTRIDE, LSTRIDE } from './scene.js';
 import { DiscScene, G, R0, fingerprint, glyphPixels } from './disc.js';
 import { drawSphereOverlay } from './overlay-sphere.js';
+import { CouncilStar } from './council-star.js';
 
 const DD = R0 * 7; // camera distance: mild perspective
 const TAU = Math.PI * 2;
@@ -28,6 +29,7 @@ export class SphereScene extends DiscScene {
     super(opts);
     this.kind = 'sphere';
     this.cam = { zoom: 1, tzoom: 1, px: 0, py: 0, tpx: 0, tpy: 0, par: [0, 0], tpar: [0, 0], yaw: 0.6, tyaw: 0.6, pit: 0.34, tpit: 0.34, vyaw: 0, vpit: 0 };
+    this.council = new CouncilStar(); this.swap = 0; this.swapT = 0; this.onSwap = null; this.evMain = true; this.evView = null; this.sHit = [];
     this.spin = 0; this.spinV = 1; this.O = new Float64Array(3); this.nodeOk = new Uint8Array(0);
     const r = rnd(4242); const M = 900; this.lat3 = new Float32Array(M * 4); // fibonacci lattice: x, y, z, lat
     for (let i = 0; i < M; i++) { const y = 1 - ((i + 0.5) / M) * 2; const rr = Math.sqrt(1 - y * y); const ph = i * 2.399963229728653; this.lat3.set([R0 * 0.996 * rr * Math.cos(ph), R0 * 0.996 * y, R0 * 0.996 * rr * Math.sin(ph), Math.asin(y)], i * 4); }
@@ -94,12 +96,15 @@ export class SphereScene extends DiscScene {
     this.fit = { scale0: R / R0, ks, ccx: W / 2, ccy: top + availH / 2, ew, eh }; return this.fit;
   }
   orbitR(s) { return 1.34 + 0.07 * s; }
-  drag(dx, dy) { const c = this.cam; c.tyaw += dx * 0.0072; c.tpit = clamp(c.tpit + dy * 0.0072, -1.3, 1.3); c.vyaw = c.vyaw * 0.5 + dx * 0.0072 * 60 * 0.5; c.vpit = c.vpit * 0.5 + dy * 0.0072 * 60 * 0.5; }
-  zoom(f) { const c = this.cam; c.tzoom = clamp(c.tzoom / f, 1, 4.2); }
-  rotateBy(a, b) { const c = this.cam; c.tyaw += a; c.tpit = clamp(c.tpit + b, -1.3, 1.3); c.vyaw = c.vpit = 0; }
-  resetView() { const c = this.cam; c.tzoom = 1; c.tpit = 0.34; c.vyaw = c.vpit = 0; c.tyaw = c.yaw + wrap(0.6 - c.yaw); }
+  setCouncil(d) { this.council.setData(d); }
+  swapTo(i, instant = false) { const to = i ? 1 : 0; if (this.swapT === to && !instant) return; this.swapT = to; if (instant || this.calm) this.swap = to; this.onSwap?.(to); }
+  get councilMain() { return this.swapT > 0.5; }
+  drag(dx, dy) { if (this.councilMain) return this.council.drag(dx, dy); const c = this.cam; c.tyaw += dx * 0.0072; c.tpit = clamp(c.tpit + dy * 0.0072, -1.3, 1.3); c.vyaw = c.vyaw * 0.5 + dx * 0.0072 * 60 * 0.5; c.vpit = c.vpit * 0.5 + dy * 0.0072 * 60 * 0.5; }
+  zoom(f) { if (this.councilMain) { const c2 = this.council.cam; c2.tzoom = clamp(c2.tzoom / f, 0.75, 1.8); return; } const c = this.cam; c.tzoom = clamp(c.tzoom / f, 1, 4.2); }
+  rotateBy(a, b) { if (this.councilMain) { const c2 = this.council.cam; c2.tyaw += a; c2.tpit = clamp(c2.tpit + b, -1.2, 1.2); return; } const c = this.cam; c.tyaw += a; c.tpit = clamp(c.tpit + b, -1.3, 1.3); c.vyaw = c.vpit = 0; }
+  resetView() { if (this.councilMain) { const c2 = this.council.cam; c2.tzoom = 1; c2.tpit = 0.38; return; } const c = this.cam; c.tzoom = 1; c.tpit = 0.34; c.vyaw = c.vpit = 0; c.tyaw = c.yaw + wrap(0.6 - c.yaw); }
   focusOn(key) { // turn the globe so the chosen glyph (or topic wedge) faces the viewer
-    const c = this.cam; let lon; let lat;
+    if (this.councilMain) return; const c = this.cam; let lon; let lat;
     if (key.t === 'ev') { const n = this.model.nodes[key.i]; if (!n.slot) return; lon = n.slot.th; lat = n.slot.lat; c.tzoom = Math.max(c.tzoom, 2.4); }
     else if (key.t === 'well') { const s = this.sectors[key.i]; if (!s) return; lon = s.mid; lat = 0.2; c.tzoom = Math.max(c.tzoom, 1.5); } else return;
     c.tyaw = c.yaw + wrap(lon - Math.PI / 2 - this.spin - c.yaw); c.tpit = clamp(lat, -1.15, 1.15); c.vyaw = c.vpit = 0;
@@ -111,6 +116,8 @@ export class SphereScene extends DiscScene {
     const k = calm ? 1 : 1 - Math.exp(-dt * 10); c.yaw += (c.tyaw - c.yaw) * k; c.pit += (c.tpit - c.pit) * k;
     const tgt = this.pinned ? 0 : this.hover ? 0.12 : 1; this.spinV = this.pinned ? 0 : this.spinV + (tgt - this.spinV) * (1 - Math.exp(-dt * 3));
     if (!calm && this.auto && !this.dragging) this.spin += dt * 0.075 * this.spinV;
+    this.swap += (this.swapT - this.swap) * (calm ? 1 : 1 - Math.exp(-dt * 3.4)); if (Math.abs(this.swapT - this.swap) < 0.002) this.swap = this.swapT;
+    this.council.step(dt, calm, this.dragging && this.councilMain, this.hover?.t === 'seat' || this.hover?.t === 'prod');
     super.frame(now, dt);
   }
 
@@ -119,7 +126,9 @@ export class SphereScene extends DiscScene {
     const m = this.model; const nodes = m.nodes; const N = nodes.length; const P = this.P; const L = this.L; let np = 0; let nl = 0; const calm = this.calm; const flat = this.q.flat;
     const pushP = (x, y, size, r, g, b, a, bl) => { if (np >= this.maxP || a <= 0.002) return; const o = np * PSTRIDE; P[o] = x; P[o + 1] = y; P[o + 2] = size; P[o + 3] = r; P[o + 4] = g; P[o + 5] = b; P[o + 6] = a; P[o + 7] = bl; np++; };
     const pushL = (x1, y1, a1, x2, y2, a2, r, g, b) => { if (nl >= this.maxL || (a1 <= 0.002 && a2 <= 0.002)) return; const o = nl * 2 * LSTRIDE; L[o] = x1; L[o + 1] = y1; L[o + 2] = r; L[o + 3] = g; L[o + 4] = b; L[o + 5] = a1; L[o + 6] = x2; L[o + 7] = y2; L[o + 8] = r; L[o + 9] = g; L[o + 10] = b; L[o + 11] = a2; nl++; };
-    const W = this.W; const H = this.H; const zm = this.cam.zoom; const k = this.scale0 * zm; const cx = this.ccx; const cy = this.ccy; const R = R0 * k; const ks = this.fitInfo.ks;
+    const W = this.W; const H = this.H; const zm = this.cam.zoom; const ks = this.fitInfo.ks; const sw = this.swap; const se = sw * sw * (3 - 2 * sw); const lerp = (a, b, t) => a + (b - a) * t; const nrw = W < 640; const sc0 = this.scale0;
+    const smallK = sc0 * (nrw ? 0.2 : 0.25); const k = lerp(sc0 * zm, smallK, se); const smallY = nrw ? this.ccy + R0 * sc0 * 1.28 : this.ccy; const cx = lerp(this.ccx, W * (nrw ? 0.2 : 0.13), se); const cy = lerp(this.ccy, smallY, se); const R = R0 * k;
+    const coK = lerp(smallK * 0.8, sc0 * 1.02 * this.council.cam.zoom, se); const coX = lerp(W * (nrw ? 0.8 : 0.87), this.ccx, se); const coY = lerp(smallY, this.ccy, se); this.evMain = se < 0.5; this.evView = { cx, cy, R };
     const ov = this.ov; ov.sats = []; ov.roles = []; ov.marks = []; ov.sparkles = []; ov.wells = []; ov.wellPts = []; ov.R = R; ov.cx = cx; ov.cy = cy; ov.k = k;
     const mS = mat(this.cam.yaw + this.spin, this.cam.pit); const mC = mat(this.cam.yaw, this.cam.pit); const O = this.O;
     const xf = (M, x, y, z) => { O[0] = M[0] * x + M[1] * y + M[2] * z; O[1] = M[3] * x + M[4] * y + M[5] * z; O[2] = M[6] * x + M[7] * y + M[8] * z; };
@@ -327,6 +336,25 @@ export class SphereScene extends DiscScene {
       const rp = this.ripples[q]; const u = (this.t - rp.t0) / 0.9; if (u >= 1) { this.ripples.splice(q, 1); continue; } const rad = 8 + 90 * ease(u); const a = 0.7 * (1 - u); let ax = rp.x + rad; let ay = rp.y;
       for (let c = 1; c <= 28; c++) { const th = (c / 28) * TAU; const bx = rp.x + Math.cos(th) * rad; const by = rp.y + Math.sin(th) * rad; pushL(ax, ay, a, bx, by, a, 1, 0.92, 0.65); ax = bx; ay = by; }
     }
+    // ---- the council star, and the summary streams that carry the evidence story to it
+    this.council.build({ pushP, pushL, cx: coX, cy: coY, k: coK, W, H, T: this.t, calm, main: se > 0.5, fade: 1 });
+    { const cry = this.council.cry; const T = this.t; ov.streamCap = null; const GOLDS = [1, 0.8, 0.46]; const CYN = [0.2, 0.92, 1]; const MG = [1, 0.25, 0.8];
+      for (const c of cry) {
+        const wi = WELLS.indexOf(c.o.topic); const w = ov.wells.find((q) => q.w === wi); if (!w) continue; const share = clamp((w.n / Math.max(1, N)) * 3, 0.15, 1); const boost = c.win ? 1.5 : 1;
+        const x0 = w.x; const y0 = w.y; const x1 = c.x; const y1 = c.y; const dx = x1 - x0; const dy = y1 - y0; const dl = Math.hypot(dx, dy) || 1; let nx = -dy / dl; let ny = dx / dl; if (ny > 0) { nx = -nx; ny = -ny; } const lift = Math.min(170, dl * 0.3) * (0.7 + 0.5 * share);
+        const qx = (x0 + x1) / 2 + nx * lift; const qy = (y0 + y1) / 2 + ny * lift; const bez = (u) => { const a = (1 - u) * (1 - u); const b = 2 * u * (1 - u); const d = u * u; return [a * x0 + b * qx + d * x1, a * y0 + b * qy + d * y1]; };
+        const front = w.z > -0.1 * R0 ? 1 : 0.35; let [px, py] = bez(0);
+        for (let q = 1; q <= 26; q++) { const u = q / 26; const [x, y] = bez(u); const col = mix(GOLDS, u < 0.55 ? CYN : MG, u); const al = (0.16 + 0.5 * share) * boost * front * (0.45 + 0.55 * u); pushL(px, py, al, x, y, al, col[0], col[1], col[2]); if (share > 0.45) pushL(px, py + 1.4, al * 0.6, x, y + 1.4, al * 0.6, col[0], col[1], col[2]); px = x; py = y; }
+        pushP(x0, y0, 14, GOLDS[0], GOLDS[1], GOLDS[2], 0.45 * front, 0.2);
+        if (!calm) { const npk = 2 + Math.round(4 * share); for (let p = 0; p < npk; p++) {
+          const u = ((T * (0.13 + 0.14 * share) + p / npk + wi * 0.17) % 1 + 1) % 1; const col = mix(GOLDS, u < 0.55 ? CYN : MG, u);
+          for (let j = 0; j < 4; j++) { const [ax, ay] = bez(Math.max(0, u - 0.025 * j)); const [bx, by] = bez(Math.max(0, u - 0.025 * (j + 1))); const al = (1 - j / 4) * 0.8 * front * boost; pushL(ax, ay, al, bx, by, al * 0.6, col[0], col[1], col[2]); }
+          const [hx, hy] = bez(u); pushP(hx, hy, 8 + 8 * share, col[0], col[1], col[2], Math.sin(Math.PI * u) * 1.1 * front * boost, 0.1);
+          if (u > 0.965 && T - (this.sHit[c.i] ?? -9) > 0.6) { this.sHit[c.i] = T; this.council.hit(c.i, T); }
+        } }
+        if (c.win) { const [mx, my] = bez(0.5); ov.streamCap = { x: mx, y: my }; }
+      } }
+    if (sw > 0.01 && sw < 0.99 && !calm) { const u = Math.sin(Math.PI * sw); pushP((cx + coX) / 2, (cy + coY) / 2, 320 * u + 12, 0.75, 0.45, 1, 0.3 * u, 0.5); pushP(coX, coY, 220 * u + 8, 1, 0.3, 0.85, 0.22 * u, 0.5); }
     // ---- marks
     for (const [kind, key] of [['hover', this.hover], ['pinned', this.pinned], ['focus', this.focus]]) { if (!key) continue; const p = this.screenOf(key); if (p && (key.t !== 'ev' || this.nf[key.i] > -0.05)) ov.marks.push({ kind, x: p.x, y: p.y, r: p.r, key }); }
     this.np = np; this.nl = nl;
@@ -334,6 +362,8 @@ export class SphereScene extends DiscScene {
 
   /* ------------------------------------------------------------ keys / picking */
   screenOf(key) {
+    if (key.t === 'seat' || key.t === 'prod') return this.council.screenOf(key);
+    if (key.t === 'body') { const v = key.i === 1 ? this.council.view : this.evView; return v ? { x: v.cx, y: v.cy, r: v.R * 1.6 } : null; }
     if (key.t === 'ev') { if (!this.nodeOk[key.i]) return null; return { x: this.nsx[key.i], y: this.nsy[key.i], r: this.nrad[key.i] }; }
     if (key.t === 'well') { const w = this.ov.wells?.find((q) => q.w === key.i); return w ? { x: w.x, y: w.y, r: 10 } : null; }
     if (key.t === 'src') { const s = this.ov.sats?.[key.i]; return s ? { x: s.x, y: s.y, r: 12 } : null; }
@@ -341,6 +371,8 @@ export class SphereScene extends DiscScene {
   }
   pick(x, y, touch) {
     if (!this.model) return null; const slop = touch ? 12 : 4;
+    { const cv = this.council.view; const ev = this.evView; const near = (v, m) => v && (v.cx - x) ** 2 + (v.cy - y) ** 2 < (Math.max(m, v.R * 2.1) + slop) ** 2;
+      if (this.swap < 0.5) { if (near(cv, 34)) return { t: 'body', i: 1 }; } else { const k2 = this.council.pick(x, y, touch); if (k2) return k2; if (near(ev, 38)) return { t: 'body', i: 0 }; return null; } }
     for (const s of this.ov.sats ?? []) if (!s.occ && (s.x - x) ** 2 + (s.y - y) ** 2 < (14 + slop) ** 2) return { t: 'src', i: s.i };
     for (const r of this.ov.roles ?? []) if (!r.occ && (r.x - x) ** 2 + (r.y - y) ** 2 < (12 + slop) ** 2) return { t: 'role', i: r.i };
     let best = -1; let bd = 1e12; const extra = touch ? 5 : 0;

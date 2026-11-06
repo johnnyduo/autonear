@@ -11,6 +11,7 @@ import { DiscScene } from './disc.js';
 import { SphereScene } from './sphere.js';
 import { Scene } from './scene.js';
 import { ListView } from './ListView.jsx';
+import { focusEntry } from './council-star.js';
 import { ROLES, isRecent, lastIngest, roleStates, CountUp } from './shared.js';
 import './hero.css';
 
@@ -21,7 +22,7 @@ const keyStr = (k) => (k ? `${k.t}:${k.i}` : '');
 const sameKey = (a, b) => keyStr(a) === keyStr(b);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
-function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow }) {
+function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow, councilData }) {
   const n = k.t === 'ev' ? model.nodes[k.i] : null;
   if (k.t === 'ev') {
     const e = n.e; const t = when(e);
@@ -79,6 +80,41 @@ function Card({ k, model, srcInfo, roleState, runId, pinned, onClose, kb, narrow
       </div>
     );
   }
+  if (k.t === 'body') {
+    const ev = k.i === 0;
+    return (
+      <div className="co-card-in">
+        <div className="co-card-h"><span className={`co-sw ${ev ? '' : 'ring'}`} style={ev ? { background: '#ffcc77' } : { borderColor: '#7ee9ff' }} aria-hidden="true" /><b>{ev ? 'Evidence star' : 'Council star'}</b></div>
+        <p className="co-card-t">{ev ? 'Every stored record, grouped by topic. It feeds the summary streams that go to the council.' : 'Seven seats vote on each product from the stored evidence. A product it backs is waiting here to be built, checked and deployed.'}</p>
+        <p className="co-card-hint faint">Click to bring it to the centre.</p>
+      </div>
+    );
+  }
+  if (k.t === 'seat' || k.t === 'prod') {
+    const c = councilData?.council; const e = focusEntry(councilData);
+    if (k.t === 'seat') {
+      const v = e?.votes?.[k.i];
+      return (
+        <div className="co-card-in">
+          <div className="co-card-h"><span className="co-sw ring" style={{ borderColor: '#7ee9ff' }} aria-hidden="true" /><b>{v ? `${['Collector', 'Analyst', 'Skeptic', 'Architect', 'Builder', 'Security', 'Planner'][k.i]} seat` : 'Seat'}</b>{v && <span className={v.stance === 'object' ? 'bad' : v.stance === 'back' ? 'ok' : 'faint'}>{v.stance}</span>}</div>
+          <p className="co-card-t">{v ? v.reason : 'No vote yet.'}</p>
+          {v && <div className="co-card-kv"><span className="eyebrow">support</span><b className="num">{v.support.toFixed(2)}</b><span className="eyebrow">weight</span><b className="num">{Math.round(v.weight * 100)}%</b></div>}
+          <p className="co-card-hint faint">Computed from stored data by published rules. The bolts replay the stored votes.</p>
+          {pinned && <div className="co-card-a"><a className="btn sm primary" href="#/council">Open Council</a><button type="button" className="btn sm ghost" onClick={onClose}>Release<kbd>Esc</kbd></button></div>}
+        </div>
+      );
+    }
+    const o = c?.opportunities?.[k.i];
+    return (
+      <div className="co-card-in">
+        <div className="co-card-h"><span className="co-sw" style={{ background: o?.verdict === 'go' ? '#c6f432' : o?.verdict === 'watch' ? '#f2b84b' : '#8c8b82' }} aria-hidden="true" /><b>{o ? o.verdict.toUpperCase() : 'Product'}</b>{o && <span className="faint">support {o.support.toFixed(2)}</span>}</div>
+        <p className="co-card-t">{o ? o.title : ''}</p>
+        {o && <p className="co-card-t dim">{o.reason}</p>}
+        {o && <div className="co-card-kv"><span className="eyebrow">trend</span><b className="num">{o.momentum > 0.55 ? 'rising' : o.momentum < 0.45 ? 'cooling' : 'steady'}</b><span className="eyebrow">can be built</span><b className="num">{o.buildable ? 'yes' : 'not yet'}</b></div>}
+        {pinned && <div className="co-card-a"><a className="btn sm primary" href="#/council">Open Council</a><button type="button" className="btn sm ghost" onClick={onClose}>Release<kbd>Esc</kbd></button></div>}
+      </div>
+    );
+  }
   const [rid, label] = ROLES[k.i]; const st = runId ? roleState[rid] ?? 'idle' : 'idle';
   return (
     <div className="co-card-in">
@@ -96,6 +132,8 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   const [data, setData] = useState(null); const [err, setErr] = useState(null);
   const [model, setModel] = useState(null);
   const [view, setView] = useState('sphere');
+  const [star, setStar] = useState('evidence');
+  const councilApi = useApi('/api/council', { poll: 30000 });
   const [hoverK, setHoverK] = useState(null); const [pinnedK, setPinnedK] = useState(null); const [focusK, setFocusK] = useState(null);
   const [filter, setFilter] = useState({ srcOff: new Set(), topicOff: new Set() });
   const [replay, setReplay] = useState({ active: false, playing: false, pos: 0, mode: 'ingest', cur: null });
@@ -129,7 +167,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
   useEffect(() => { if (data && typeof total === 'number' && total !== data.evidence.length && total !== known.current) { known.current = total; load(true); } }, [total, data, load]);
 
   const sourceKey = (sources ?? []).map((s) => s.id).join(',');
-  const syncScene = useCallback((sc) => { const L = latest.current; if (!sc || !L.model) return; sc.setSources(L.srcInfo ?? []); sc.setRoles(L.roles ?? {}, L.oppId, L.active); sc.setFilter(L.filter ?? { srcOff: new Set(), topicOff: new Set() }); sc.auto = L.auto && !calm; }, [calm]);
+  const syncScene = useCallback((sc) => { const L = latest.current; if (!sc || !L.model) return; sc.setSources(L.srcInfo ?? []); sc.setCouncil?.(L.council); sc.setRoles(L.roles ?? {}, L.oppId, L.active); sc.setFilter(L.filter ?? { srcOff: new Set(), topicOff: new Set() }); sc.auto = L.auto && !calm; }, [calm]);
   useEffect(() => {
     if (!data) return;
     const m = buildModel({ evidence: data.evidence, opps, links: data.links, sources: (sources ?? []).map((s) => ({ id: s.id, name: s.name })) });
@@ -154,7 +192,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     if (!model) return; model.wells.forEach((w) => { w.opp = (opps ?? []).find((o) => o.id === `opp_${w.id}`) ?? w.opp; });
     sceneRef.current?.computeStats?.();
   }, [opps, model]);
-  useEffect(() => { Object.assign(latest.current, { srcInfo, roles, oppId: activeRun?.opportunity_id, active: Boolean(activeRun), filter, auto }); syncScene(sceneRef.current); }, [srcInfo, roles, activeRun, filter, auto, model, syncScene]);
+  useEffect(() => { Object.assign(latest.current, { council: councilApi.data, srcInfo, roles, oppId: activeRun?.opportunity_id, active: Boolean(activeRun), filter, auto }); syncScene(sceneRef.current); }, [srcInfo, roles, activeRun, filter, auto, model, syncScene, councilApi.data]);
   useEffect(() => { const s = sceneRef.current; if (s) { s.pinned = pinnedK; s.focus = focusK; } }, [pinnedK, focusK]);
   useEffect(() => { if (view === 'list') { setHoverK(null); rt.current.hover = null; } }, [view]);
 
@@ -167,7 +205,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     const R = rt.current; const st = stage.current;
     let sc = scenes.current[view];
     if (!sc) { sc = view === 'sphere' ? new SphereScene({ calm }) : view === 'disc' ? new DiscScene({ calm }) : new Scene({ calm }); sc.setModel(latest.current.model); scenes.current[view] = sc; }
-    sceneRef.current = sc; R.pinned = null; R.hover = null; R.focus = null; R.sized = false; setPinnedK(null); setFocusK(null); setHoverK(null); syncScene(sc);
+    sceneRef.current = sc; sc.onSwap = (to) => setStar(to ? 'council' : 'evidence'); setStar(sc.swapT ? 'council' : 'evidence'); R.pinned = null; R.hover = null; R.focus = null; R.sized = false; setPinnedK(null); setFocusK(null); setHoverK(null); syncScene(sc);
     let renderer;
     try { renderer = rk === 'gl' ? new GLRenderer(glCv.current, { onLost: () => setRk('2d') }) : new Canvas2DRenderer(glCv.current); } catch { if (rk === 'gl') { setRk('2d'); return undefined; } setErr(new Error('Canvas is unavailable in this browser.')); return undefined; }
     const ovx = ovCv.current.getContext('2d');
@@ -234,7 +272,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
     const R = rt.current; const S = () => sceneRef.current; const ptrs = new Map(); let pinch = 0; let moved = 0; let down = null;
     const local = (e) => { const b = st.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top, w: b.width, h: b.height }; };
     const ui = (e) => e.target.closest?.('[data-ui]');
-    const pin = (k) => { const sc = S(); R.pinned = k; setPinnedK(k); setFocusK(null); R.focus = null; if (k && sc.focusOn && sc.cam.zoom < 4) { sc.focusOn(k); R.autoZoom = true; } };
+    const pin = (k) => { const sc = S(); if (k?.t === 'body') { sc.swapTo(k.i); R.hover = null; setHoverK(null); return; } R.pinned = k; setPinnedK(k); setFocusK(null); R.focus = null; if (k && sc.focusOn && sc.cam.zoom < 4) { sc.focusOn(k); R.autoZoom = true; } };
     const unpin = () => { const sc = S(); R.pinned = null; setPinnedK(null); if (R.autoZoom) { sc.resetView?.(); R.autoZoom = false; } };
     R.pin = pin; R.unpin = unpin;
     const onDown = (e) => {
@@ -314,6 +352,12 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
           <button type="button" aria-pressed={view === 'graph'} onClick={() => setView('graph')}>3D graph</button>
           <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>View as list</button>
         </div>
+        {view === 'sphere' && (
+          <div className="co-seg" role="group" aria-label="Star in the centre">
+            <button type="button" aria-pressed={star === 'evidence'} onClick={() => sceneRef.current?.swapTo(0)}>Evidence star</button>
+            <button type="button" aria-pressed={star === 'council'} onClick={() => sceneRef.current?.swapTo(1)}>Council star</button>
+          </div>
+        )}
         <a className="co-ib sq co-fs" href={full ? '#/' : '#/constellation'} aria-label={full ? 'Exit full screen' : 'Open full screen'} title={full ? 'Exit full screen (Esc)' : 'Full screen'}>
           <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{full ? <path d="M6 2v4H2M10 2v4h4M6 14v-4H2M10 14v-4h4" /> : <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />}</svg>
         </a>
@@ -348,7 +392,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
           </ul>
           {shown && (
             <aside ref={tip} className={`co-card ${pinnedK ? 'pinned' : ''} ${kbFocus ? 'kb' : ''}`} data-ui aria-label={pinnedK ? 'Pinned node details' : 'Node details'}>
-              <Card k={shown} model={model} srcInfo={srcInfo} roleState={roles} runId={activeRun?.id} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}
+              <Card k={shown} councilData={councilApi.data} model={model} srcInfo={srcInfo} roleState={roles} runId={activeRun?.id} pinned={Boolean(pinnedK) && sameKey(shown, pinnedK)} kb={kbFocus} narrow={narrow}
                 onClose={() => rt.current.unpin?.()} />
             </aside>
           )}
@@ -388,6 +432,7 @@ export default function ConstellationHero({ status, sources, activeRun, opps, ca
             <ul>
               <li><b>Glyph:</b> one stored record, drawn as a small cluster of glowing dots (a 9&times;9 pattern from its content hash) on the globe surface. Colour is the source, brightness is NEAR relevance, a red ring marks a bot, duplicate or injection flag.</li>
               <li><b>Longitude:</b> primary topic, one wedge per topic. <b>Latitude:</b> age, oldest at the south, newest toward the north. The lime arc on the equator fills to that opportunity&rsquo;s score.</li>
+              <li><b>Council star</b> (the other star; click it or use the buttons to swap which one is in the centre): seven seats on the ring vote on each product, the ring of ticks fills to the weighted support, and one crystal per opportunity orbits outside. A backed product is marked as waiting to be built; the lane under it shows the real stage of research, build, decision, approval, deploy and on-chain check. <b>Summary streams</b> run from each topic on the evidence star to its crystal: thicker means more stored records. The flowing packets, the bolts from the seats and the pulses along the lane replay stored votes and stored stages as an illustration; they are not live events.</li>
               <li><b>Orbits:</b> sources. A satellite&rsquo;s angle is the UTC time of day of that source&rsquo;s last ingest; the small white dot on each orbit is the UTC time now. It pulses if that ingest was under 20 minutes ago.</li>
               <li><b>Drag</b> to spin (it keeps its momentum), <b>Ctrl + wheel</b> or pinch to zoom, <b>hover or click a glyph</b> to see its source and stored opportunity links; clicking turns the globe to face it. Hover a source or topic chip to light its records.</li>
               <li><b>Readouts:</b> stored record count, top opportunity score (bar) and confidence (dashed), share of records with relevance 0.95 or higher, flagged share.</li>
