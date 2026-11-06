@@ -22,6 +22,7 @@ export const T = {
   testnet: 'Testnet only',
   demoBadge: 'Demo data',
   demoNote: 'Example data so you can see how it works. Nothing here is real or can be changed.',
+  demoNoVault: 'No vault is connected yet, so the vault numbers and history below are examples. Your real requests and settings are shown as they are.',
   signOut: 'Disconnect',
   activity: 'Activity',
   modeManualTitle: 'I approve each action',
@@ -52,9 +53,10 @@ export function describeDecision(d) {
 export const STATUS_WORD = { pending: 'Waiting for you', approved: 'Approved', executing: 'In progress', executed: 'Done', rejected: 'Rejected', expired: 'Expired', failed: 'Failed' };
 
 /** A history line in plain words (vault ledger entry or audit). */
-export function historyLine(e) {
+/** `money` = optional (base-units string) => '0.003 ETH'. Without it the amount is left out rather than shown as raw base units. */
+export function historyLine(e, money) {
   const d = String(e.detail ?? '');
-  const amt = e.amount ? ` (${e.amount})` : '';
+  const amt = e.amount && money ? ` (${money(e.amount)})` : '';
   if (e.kind === 'draw') return /^top-up/.test(d) ? 'The agent refilled its fuel tank' + amt : 'The agent took fuel to pay for an action' + amt;
   if (e.kind === 'deploy') return e.status === 'confirmed' ? 'The agent published a contract' : 'A contract publish did not go through';
   if (e.kind === 'activate') return 'Your limits were checked on chain and switched on';

@@ -75,7 +75,7 @@ export default function Shell() {
             : <WalletButton hint={false} />}
         </div>
       </header>
-      {demo && <div className="ap-demo" role="note"><b>{T.demoBadge}</b><span>{T.demoNote}</span>{route.demo && <a href={href(base)} onClick={() => { /* leaving the preview */ }}>Leave the demo</a>}</div>}
+      {demo && <div className="ap-demo" role="note"><b>{T.demoBadge}</b><span>{route.demo ? T.demoNote : T.demoNoVault}</span>{route.demo && <a href={href(base)} onClick={() => { /* leaving the preview */ }}>Leave the demo</a>}</div>}
       <main id="main" tabIndex={-1} className="ap-main">
         <Suspense fallback={<div className="ap-wrap"><SkeletonRows n={5} /></div>}>
           {status.error && !status.data && !route.demo ? <div className="ap-wrap"><ErrorPanel error={status.error} onRetry={status.reload} what="the agent’s status" /></div>

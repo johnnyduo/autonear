@@ -107,6 +107,22 @@ Design, rules and shared conformance suite: [docs/agent-vault-spec.md](docs/agen
 | AI-assisted review of the vault | tested | Codex review 3: 4 findings (1 High, 2 Medium, 1 Low), all fixed with regression tests: docs/audit/README.md | Re-run after any change |
 | Independent audit | **none** | AI-assisted review only: see docs/audit/ | Human audit before any non-test use |
 
+## Gate H: owner app redesign (2026-11-06; spec and plan in `docs/superpowers/`)
+
+One landing page, then four pages (Home, Approvals, Watch, Vault) and an Activity drawer; the old 9-screen console is kept only as deep links reachable from Activity. Screenshots: `docs/screenshots/redesign-*.png` (1440 / 768 / 360 px).
+
+| Requirement | Status | Proof | Caveat |
+| --- | --- | --- | --- |
+| Wallet-signed owner session (EOA), scoped routes, owner re-resolved per request, atomic single-use nonce | tested | `node --test tests/owner-session.test.js` (13 tests incl. concurrent redemption, tamper, expiry, owner transfer, host binding) | EOA only: smart-contract wallets / multisigs cannot sign in (they use the operator token). Not exercised with a real MetaMask: the browser E2E used a scripted EIP-1193 provider with real secp256k1 signatures |
+| Manual / Auto mode (default Manual) | tested | `tests/autonomy.test.js` (manual never acts; mode re-checked after the claim and before signing) | Server state, not a transaction. Local anvil only |
+| Gas top-up, rule (j), Auto only | tested | 9 named tests in `tests/autonomy.test.js` (low-water, per-draw/period/total caps, paused/killed/blocked, durable claim, crash, parity mismatch, mode flip) | Local anvil only; **never run on a public testnet or on NEAR**; the loop and agent key must run on a machine you control (Workers/Vercel cannot sign) |
+| Watch (keywords, excludes, hackathons, per-source switches) | tested | `tests/watch.test.js` | Keywords rank and tag only; they never make a record "NEAR" or clear an injection flag. Global to the deployment, owner-only |
+| Hold-to-approve, plain-language copy, scene model | tested | `npm run test:web` (copy-deck jargon test, hold state machine, scene model) | |
+| Sign-in -> mode flip -> Watch save -> approve by holding, stranger view-only | working | scripted browser run against a local server (sessions shown in `docs/screenshots/redesign-approved-owner-1440.png`, `redesign-view-only-1440.png`) | Scripted wallet, not a human with MetaMask |
+| Owner on-chain pause / withdraw from the Vault page | working, untested end to end | `web/src/app/ownerTx.js` (wagmi `writeContract`, 4 fixed functions) | No browser run against a funded vault; no NEAR path (CLI steps are shown instead) |
+| Demo data is always labelled | working | Demo badge + banner; example requests can never be approved; real requests always win over examples | |
+| NEAR wallet sign-in (NEP-413) | **planned, not built** | | EVM wallet first by decision |
+
 ## Engines (honest)
 
 Pythia, MiroFish, Kronos: adapters report `not_installed` with a reason. None is invoked. No simulation output is used anywhere. Craft Anything was not used.

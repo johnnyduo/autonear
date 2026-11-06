@@ -32,13 +32,13 @@ function Finish({ d, reload, opts, toast }) {
   );
 }
 
-export default function Approvals({ data, owner, canWrite: canOwn, demo, opts, toast }) {
-  const canWrite = canOwn && !demo; // example requests cannot be approved
+export default function Approvals({ data, owner, canWrite: canOwn, opts, toast }) {
+  const canWrite = canOwn && !data.demoDecisions; // example requests cannot be approved
   const [busy, setBusy] = useState('');
   const pending = pendingOf(data.decisions);
   const approved = data.decisions.filter((d) => d.effectiveStatus === 'approved' && !String(d.approver ?? '').startsWith('mandate:'));
   const past = data.decisions.filter((d) => ['executed', 'rejected', 'expired', 'failed'].includes(d.effectiveStatus)).slice(0, 8);
-  const why = !owner.address ? 'Connect your wallet to decide.' : !owner.isOwner ? T.readOnly : demo ? T.demoNote : '';
+  const why = !owner.address ? 'Connect your wallet to decide.' : !owner.isOwner ? T.readOnly : T.demoNote;
   const act = async (d, kind) => {
     setBusy(d.id);
     try {

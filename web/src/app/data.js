@@ -21,18 +21,23 @@ export function useAppData() {
     import('../mock/vaultFixture.js').then((m) => on && setFx(m.buildFixture('default', Date.now()))).catch(() => {});
     return () => { on = false; };
   }, [demo, fx]);
+  const liveDecisions = decLive.data?.items ?? [];
+  const liveLedger = ledgerLive.data?.items ?? [];
+  // Example requests/history appear only when there is nothing real to show; real ones always win, and example ones can never be approved.
+  const demoDecisions = forced || (demo && !liveDecisions.length);
+  const demoLedger = forced || (demo && !liveLedger.length);
   return useMemo(() => ({
-    demo,
+    demo, demoDecisions,
     demoReason: forced ? 'preview' : 'no-vault',
     status,
     vault: demo ? (fx?.vault ?? null) : (vaultLive.data ?? null),
     vaultError: demo ? null : vaultLive.error,
-    decisions: demo ? (fx?.decisions ?? []) : (decLive.data?.items ?? []),
-    ledger: demo ? (fx?.ledger?.items ?? []) : (ledgerLive.data?.items ?? []),
+    decisions: demoDecisions ? (fx?.decisions ?? []) : liveDecisions,
+    ledger: demoLedger ? (fx?.ledger?.items ?? []) : liveLedger,
     watch: watch.data, autonomy: autonomy.data, opps: opps.data?.items ?? [],
     reload: () => { status.reload(); vaultLive.reload(); decLive.reload(); ledgerLive.reload(); watch.reload(); autonomy.reload(); },
     reloadWatch: watch.reload, reloadAutonomy: autonomy.reload,
-  }), [demo, forced, fx, status, vaultLive, decLive, ledgerLive, watch, autonomy, opps]);
+  }), [demo, demoDecisions, demoLedger, liveDecisions, liveLedger, forced, fx, status, vaultLive, decLive, ledgerLive, watch, autonomy, opps]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /** The vault the app talks about: the first one that has a mandate, else the first. */
