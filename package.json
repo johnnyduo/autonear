@@ -48,7 +48,8 @@
     "test:web": "node --test web/src/app/",
     "scan:secrets": "node scripts/secret-scan.mjs",
     "scan:secrets:history": "node scripts/secret-scan.mjs --history",
-    "hooks:install": "git config core.hooksPath .githooks"
+    "hooks:install": "git config core.hooksPath .githooks",
+    "e2e:near-loop": "ENABLE_EVM=1 node scripts/e2e-near-loop.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

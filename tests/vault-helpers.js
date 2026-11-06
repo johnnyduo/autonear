@@ -77,7 +77,7 @@ export function tempKeystore() {
 }
 
 export const offline = async () => { throw new TypeError('offline'); };
-const NAMES = ['unauthorized_propose', 'replay_rejected', 'expired_approve', 'pause_blocks', 'bad_nonce', 'cancel_by_outsider', 'double_execute', 'exceeded_spend', 'wrong_method', 'wrong_target', 'owner_two_step'];
+export const NAMES = ['unauthorized_propose', 'replay_rejected', 'expired_approve', 'pause_blocks', 'bad_nonce', 'cancel_by_outsider', 'double_execute', 'exceeded_spend', 'wrong_method', 'wrong_target', 'owner_two_step'];
 
 /** In-memory DB with seeded evidence and an attestation of the REAL compiled ProposalRegistry. TEST DOUBLE: the test-name list and commit sha are fixtures. */
 export async function seededDb() {
