@@ -5,7 +5,7 @@ import { CommandPalette, Dialog, ErrorPanel, Icon, SkeletonRows, useToast } from
 import { useAppData } from './data.js';
 import { APP_ROUTES, SUB_ROUTES, goto, href, parseRoute } from './nav.js';
 import { ROUTES, T } from './copy.js';
-import { shortAddr, signOut, useOwner, verifySession } from './session.js';
+import { shortAddr, signOut, switchToNear, useOwner, verifySession } from './session.js';
 import WalletButton from './WalletButton.jsx';
 import Landing from './Landing.jsx';
 import './app.css';
@@ -102,14 +102,19 @@ export default function Shell() {
 
 function WalletChip({ owner }) {
   const [open, setOpen] = useState(false);
+  const wrong = owner.net === 'other';
   return (
     <div className="ap-chip">
+      {wrong && <button type="button" className="btn sm primary ap-net" disabled={owner.switching} onClick={switchToNear}>{owner.switching ? 'Check your wallet…' : 'Switch to NEAR testnet'}</button>}
       <button type="button" className="btn sm" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span className={`ap-dot ${owner.isOwner ? 'ok' : 'off'}`} aria-hidden="true" />{shortAddr(owner.address)}<small>{owner.isOwner ? 'Owner' : 'View only'}</small>
+        <span className={`ap-dot ${wrong ? 'warn' : owner.isOwner ? 'ok' : 'off'}`} aria-hidden="true" />{shortAddr(owner.address)}<small>{owner.isOwner ? 'Owner' : 'View only'}</small>
       </button>
       {open && (
         <div className="ap-pop" role="dialog" aria-label="Wallet">
           <p>{owner.isOwner ? 'You are signed in as the vault owner.' : 'This wallet is not the vault owner, so you can look but not change anything.'}</p>
+          {owner.net === 'near' && <p className="faint">Network: NEAR testnet.</p>}
+          {wrong && <p className="faint">Your wallet is on another network. Switching adds NEAR testnet if the wallet does not have it.</p>}
+          {owner.error && <p role="alert" className="faint">{owner.error}</p>}
           <button type="button" className="btn sm" onClick={() => { setOpen(false); signOut(); }}>{T.signOut}</button>
         </div>
       )}
