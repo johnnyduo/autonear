@@ -89,3 +89,38 @@ export function mintCall({ token, to, base, decimals, registered }) {
   return { receiver: token, method: 'mint', args: { account_id: to, amount: String(base) }, deposit: registered ? 0n : 25n * 10n ** 20n };
 }
 const exactUnits = (b, d) => exactDecimal(b, d);
+
+// ---- "Let the agent pay people": the lean grant form. The agent's own NEAR allowance (for fuel) is fixed and small; the owner decides only token, amounts and people. ----
+export const PAY_DEFAULTS = Object.freeze({ each: '10', day: '50', total: '200' });
+export const PAY_FUEL = Object.freeze({ perDrawCap: String(10n ** 23n) /* 0.1 NEAR */, periodSecs: 86400, periodCap: String(2n * 10n ** 23n), totalCap: String(5n * 10n ** 23n), maxDeploys: 0, days: 7 });
+const NEAR_ACCOUNT = /^(?=.{2,64}$)([a-z0-9]+([._-][a-z0-9]+)*)$/;
+/** One account per line (or comma / semicolon), lower-cased and de-duplicated. NOT split on spaces: "Bad Name" must stay one invalid entry, never two valid-looking accounts that could be someone else's. */
+export const parsePeople = (text) => [...new Set(String(text ?? '').split(/[\n,;]+/).map((x) => x.trim().toLowerCase()).filter(Boolean))];
+
+/**
+ * Check the form. f = { token, each, day, total, people }; decimals = the token's own (read from its metadata), vault = the vault account.
+ * Returns { errors: { field: message }, body: the request for POST /api/vault/mandates/propose | null }.
+ */
+export function payBudgetCheck(f, { decimals, vault, chainId, owner, artifactHash, agent }) {
+  const e = {}; const token = String(f.token ?? '').trim().toLowerCase();
+  if (!NEAR_ACCOUNT.test(token)) e.token = 'Enter the token’s account, such as usdc.you.testnet.';
+  else if (token === String(vault).toLowerCase()) e.token = 'The vault cannot be its own token.';
+  if (!Number.isInteger(decimals)) e.token = e.token ?? 'Could not read this token. Check the account.';
+  const each = Number.isInteger(decimals) ? parseUnits(f.each, decimals) : null; const day = Number.isInteger(decimals) ? parseUnits(f.day, decimals) : null; const total = Number.isInteger(decimals) ? parseUnits(f.total, decimals) : null;
+  if (Number.isInteger(decimals)) {
+    if (!each || each <= 0n) e.each = 'A number above zero.'; if (!day || day <= 0n) e.day = 'A number above zero.'; if (!total || total <= 0n) e.total = 'A number above zero.';
+    if (each && day && each > day) e.each = 'One payment cannot be more than the daily limit.';
+    if (day && total && day > total) e.day = 'The daily limit cannot be more than the total.';
+  }
+  const people = parsePeople(f.people);
+  if (!people.length) e.people = 'Add at least one person it may pay.'; else if (people.length > 64) e.people = 'At most 64 people.';
+  else { const bad = people.find((x) => !NEAR_ACCOUNT.test(x)); if (bad) e.people = `“${bad.slice(0, 40)}” is not a NEAR account.`; else if (people.includes(token)) e.people = 'The token itself cannot be a person to pay.'; else if (people.includes(String(vault).toLowerCase())) e.people = 'The vault cannot pay itself.'; }
+  if (!artifactHash) e.setup = 'No attested contract build is available yet, so a grant cannot be proposed.';
+  if (Object.keys(e).length) return { errors: e, body: null };
+  return { errors: e, body: {
+    chainId, vault: { address: vault, owner }, ...(agent ? { agent: { account: String(agent) } } : {}), // the agent this vault already knows; otherwise the server uses its own agent key
+    mandate: { perDrawCap: PAY_FUEL.perDrawCap, periodSecs: PAY_FUEL.periodSecs, periodCap: PAY_FUEL.periodCap, totalCap: PAY_FUEL.totalCap, maxDeploys: PAY_FUEL.maxDeploys, expiresInSecs: PAY_FUEL.days * 86400 },
+    templates: [{ artifactHash }], fund: { amount: '0' }, loop: { maxPerDay: 5 },
+    payouts: { tokens: [{ token, perPayCap: String(each), periodCap: String(day), totalCap: String(total) }], payees: people },
+  } };
+}

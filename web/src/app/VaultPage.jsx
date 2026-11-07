@@ -11,6 +11,7 @@ import { readNearVault, sendNearTx, sendSetupSigned, sendVaultTx } from './owner
 import OnboardHelp from './OnboardHelp.jsx';
 import HoldButton from './HoldButton.jsx';
 import Payments from './Payments.jsx';
+import PayBudget from './PayBudget.jsx';
 
 const tn = (f) => (f > 0.9 ? 'risk' : f > 0.7 ? 'warn' : '');
 
@@ -139,6 +140,7 @@ export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, t
         </> : <div className="vp-empty"><Icon name="vault" size={28} /><p>No limits are set. The agent cannot take anything from this vault until you set them.</p></div>}
       </section>
 
+      {v.payouts && (!live || (v.payouts.tokens ?? []).some((t) => !t.symbol)) && <PayBudget v={v} owner={owner} canWrite={canWrite} demo={demo} opts={opts} toast={toast} />}
       {v.payouts && <Payments v={v} data={data} owner={owner} canWrite={canWrite} demo={demo} opts={opts} toast={toast} stopped={stopped} />}
 
       <div className="vp-two">

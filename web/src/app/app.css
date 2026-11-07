@@ -371,3 +371,11 @@
 .vp-mint .vp-field { flex-wrap: wrap; } .vp-mint .vp-field .input { flex: 1 1 140px; } .vp-mint .btn { min-height: 44px; } .vp-mint .btn.sm { min-height: 44px; min-width: 56px; }
 
 .vp-mint .vp-held { margin: 8px 0 0; color: var(--chalk); } .vp-mint .vp-held b { font-variant-numeric: tabular-nums; }
+
+/* "Let the agent pay people": three short parts, one button */
+.vp-pb form { max-width: 720px; } .vp-step { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; } .vp-step:first-child { margin-top: 4px; } .vp-step .vp-label { margin: 0; }
+.vp-n { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--ink-3); color: var(--chalk); font: 600 12px/1 var(--f-mono); }
+.vp-row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } .vp-sublabel { display: block; margin: 0 0 6px; color: var(--chalk-2); font-size: 13px; }
+.vp-ta { min-height: 92px; padding: 10px 12px; resize: vertical; font: 500 13.5px/1.5 var(--f-mono); } .vp-pb .input { font-variant-numeric: tabular-nums; } .vp-pb .faint, .vp-pb .vp-err { margin: 6px 0 0; font-size: 13.5px; }
+.vp-fuelnote { display: flex; align-items: center; gap: 8px; margin: 18px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--ink-0); color: var(--chalk-2); font-size: 13.5px; } .vp-fuelnote svg { flex: none; color: var(--signal); } .vp-offnote { margin-top: 10px; }
+@media (max-width: 560px) { .vp-row3 { grid-template-columns: 1fr; } .vp-pb .btn.primary { width: 100%; } }
