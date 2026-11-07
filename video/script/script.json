@@ -1,65 +1,71 @@
 {
-  "title": "AutoNEAR · the agent with a company card (v2)",
+  "title": "AutoNEAR · what does NEAR need? (v3, constellation)",
   "track": "AI Security & Defense",
   "voice": {
     "name": "Puck",
-    "style": "Confident, warm product-launch narration at a brisk pace of about three words per second, with crisp sentences and short natural pauses. Start intimate, gain energy through the owner flow, and become quiet and exact at each refusal."
+    "style": "Confident, warm product-launch narration at a brisk pace of about three words per second, with crisp sentences and short natural pauses. Curious and close at the start, gaining energy through the constellation and the swarm, then calm and exact at the limits and the close."
   },
   "tokens_note": "Numbers only as {{tokens}} resolved from src/data/captured.json (and contracts.json). No typed digits in narration.",
   "scenes": [
     {
-      "id": "night",
+      "id": "ask",
       "tag": null,
-      "narration": "Your phone lights up at midnight. Your new hire wants to spend. Would you hand them the company card?",
-      "style": "Intimate and unhurried, slower than the rest at about two words per second; let the question hang."
+      "narration": "We all want NEAR to grow. But which way? What does the network need right now, and how would we know?",
+      "style": "Quiet, curious and close to the microphone; let the second question hang."
     },
     {
-      "id": "poison",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
-      "narration": "A public post looks useful. Hidden inside: an order to send the budget away. That is the trap.",
-      "style": "Gather speed, then stop cold on the final sentence."
+      "id": "crowd",
+      "tag": null,
+      "narration": "The crowd already knows. It says so in public, every day. But studying it by hand takes months, even a year.",
+      "style": "Warm and plain; a tired, dry tone on the last sentence."
     },
     {
-      "id": "owner",
-      "tag": "APP SCREENSHOTS · DEMO DATA",
-      "narration": "Here is AutoNEAR. You choose what it watches. You set the card's limit, and you can stop it.",
-      "style": "Warm and assured, with a clear pause after the product name."
+      "id": "reveal",
+      "tag": null,
+      "narration": "Meet AutoNEAR. It reads those signals nonstop, ranks what NEAR needs, and builds toward it. The owner keeps a hand on the brake.",
+      "style": "Lift into the product name, proud but not shouted; slow down on the brake line."
     },
     {
-      "id": "evidence",
-      "tag": "LIVE SNAPSHOT",
-      "narration": "It reads public signals and shows its work. This snapshot has {{live.total|w}} records. One promising idea still gets a low-confidence warning.",
-      "style": "Bright discovery, then measured caution on the warning."
+      "id": "signals",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "narration": "{{prod.sourcesOk|W}} sources, all live. {{prod.feeds|w}} feeds. {{prod.evidence|w}} posts and commits read, each linked to where it came from.",
+      "style": "Steady and bright, like pointing at something real."
     },
     {
       "id": "council",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
-      "narration": "The council weighs the evidence. {{run.roleCount|W}} roles prepare a brief, check the build, and leave a request for the owner.",
-      "style": "A little quicker, like a team working in sequence."
+      "tag": "LIVE · PRODUCTION COUNCIL",
+      "narration": "Seven seats vote on every idea, and one of them is a skeptic. Today {{prod.winner.word}} clears the bar and gets a go. The vote repeats as new evidence arrives.",
+      "style": "Tighter and quicker, like seven people voting; drop low on say no."
     },
     {
-      "id": "approval",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
-      "narration": "The owner reviews the exact request and holds to approve. Approval is a decision. The next action still has to pass its checks.",
-      "style": "Slow down; make the full stop after decision unmistakable."
+      "id": "swarm",
+      "tag": "BUILD REPLAY",
+      "narration": "Then a swarm takes over. Five cursors race through its product page. Copy. Layout. Style. Media. Check.",
+      "style": "Fast and playful; each of the five words lands like a tap."
     },
     {
-      "id": "refusal",
-      "tag": "RECORDED RUN · MOCKED RPC",
-      "narration": "Now a result comes back with the wrong code. AutoNEAR refuses to record that deployment. The matching result passes.",
-      "style": "Low and precise for the refusal; release the tension on passes."
+      "id": "contract",
+      "tag": "VERIFIED · MEASURED TEST RUN",
+      "narration": "The builder picks up a contract build that is compiled, tested and fingerprinted. {{suites.nearContract.passed|w}} tests pass. The agent can deploy only code the owner approved by that fingerprint.",
+      "style": "Precise and calm; slow slightly on only code the owner approved."
     },
     {
-      "id": "testnet",
+      "id": "vault",
       "tag": "PUBLIC TESTNET · DEMO OWNER KEY · AUTOMATED",
-      "narration": "This also ran on NEAR testnet. A demo owner capped a vault, the agent deployed through it, and the chain refused it {{testnet.refusalCount|w}} times when it pushed past its limits.",
-      "style": "Steady and factual at about two and a half words per second; leave a clear pause after testnet."
+      "narration": "Within limits the owner sets, the agent works on its own. It draws its own gas and deploys approved code. The chain holds the line: {{testnet.refusalCount|w}} times on NEAR testnet, it said no.",
+      "style": "Confident with an edge; low and exact on the chain says no."
+    },
+    {
+      "id": "brake",
+      "tag": "RECORDED RUN · FIXTURE INPUTS · MOCKED RPC",
+      "narration": "The owner decides, and can stop it at any time. A wrong fingerprint is refused. That is the brake.",
+      "style": "Measured and human; the last sentence flat and final."
     },
     {
       "id": "close",
       "tag": null,
-      "narration": "The agent has a company card. You set the limit. Judges: clone it and run the tests.",
-      "style": "Land the first two sentences slowly, then invite action."
+      "narration": "Next, the community tests every build and confirms it before it goes live. AutoNEAR: public demand in, a product on the table, a human on the brake. Judges: clone it, run the tests.",
+      "style": "Slow down for the finish; warm on the last line; light, direct call to action."
     }
   ]
 }

@@ -78,7 +78,7 @@ async function synth(model, text, outBase, sceneStyle) {
   if (isInteractions(model)) {
     const j = await post(`${API}/interactions`, {
       model,
-      input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: sty.slice(0, 400) }] }] }],
+      input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: `${style.split('.')[0]}.${sceneStyle ? ' ' + sceneStyle : ''}`.slice(0, 400) }] }] }],
       response_format: { type: 'audio' },
       generation_config: { speech_config: [{ voice }] },
     });
@@ -109,7 +109,7 @@ async function synthWithFallback(text, outBase, sceneStyle) {
   let lastErr;
   for (const m of list) {
     try { const r = await synth(m, text, outBase, sceneStyle); chosenModel = m; return { ...r, model: m }; }
-    catch (e) { lastErr = e; if (![400, 403, 404].includes(e.status) && !e.daily) throw e; console.warn(`  model ${m} unavailable (${e.message.slice(0, 120)}); trying next`); }
+    catch (e) { lastErr = e; if (![400, 403, 404].includes(e.status) && !e.daily) throw e; console.warn(`  model ${m} unavailable (${e.message.slice(0, 700)}); trying next`); }
   }
   throw lastErr;
 }
@@ -139,7 +139,7 @@ console.log(`mode=${scratch ? 'SCRATCH' : 'GEMINI'} model=${model} voice=${scrat
 
 const scenes = [];
 for (const s of script.scenes) {
-  const text = spoken(s.narration, data);
+  const text = spoken(s.narration, data).replace(/AutoNEAR/g, 'Auto Near'); // speech-only respelling so the voice says two words
   const shown = display(s.narration, data);
   const mp3 = resolve(audioDir, `${s.id}.mp3`);
   const hash = createHash('sha256').update(JSON.stringify([hashModel, scratch ? 'Daniel' : voice, scratch ? '' : styleOf(s.style), text])).digest('hex').slice(0, 16);

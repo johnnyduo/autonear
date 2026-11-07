@@ -44,14 +44,14 @@ export function scanLine(line) {
 /** Real values held locally in ignored files. Label only is ever printed. */
 export function localSecrets(root = '.') {
   const vals = new Map();
-  const add = (label, v) => { v = String(v ?? '').trim(); if (v.length >= 16 && v.length <= 400 && !/^(true|false|https?:\/\/)/.test(v) && !v.includes('\n')) vals.set(v, label); };
+  const add = (label, v) => { v = String(v ?? '').trim(); if (v.length >= 16 && v.length <= 400 && !/^(true|false|https?:\/\/)/.test(v) && !v.includes('\n') && !/\s/.test(v)) vals.set(v, label); }; // a secret has no spaces: sentences such as a "note" field are descriptions
   const envFile = (f) => { if (!existsSync(f)) return; for (const l of readFileSync(f, 'utf8').split('\n')) { const m = /^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*)$/.exec(l); if (m && /TOKEN|SECRET|PASSWORD|KEY|URL/.test(m[1])) add(`${f}:${m[1]}`, m[2].replace(/\s+#.*$/, '').replace(/^['"]|['"]$/g, '')); } };
   const walk = (o, f, p = '') => { if (typeof o === 'string') add(`${f}${p}`, o); else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) walk(v, f, `${p}.${k}`); };
   envFile(`${root}/.env`); envFile(`${root}/video/.env`);
   if (existsSync(`${root}/data`)) for (const n of readdirSync(`${root}/data`)) {
     const f = `${root}/data/${n}`; if (!statSync(f).isFile()) continue;
     if (/\.(token|secret)$/.test(n)) { for (const l of readFileSync(f, 'utf8').split('\n')) { const m = /^[A-Z0-9_]+=(.*)$/.exec(l.trim()); add(f, m ? m[1].replace(/^"|"$/g, '') : l); } }
-    else if (/keys.*\.json$/.test(n)) { try { walk(JSON.parse(readFileSync(f, 'utf8')), f); } catch { /* not json */ } }
+    else if (/(keys|wallet).*\.json$/.test(n)) { try { walk(JSON.parse(readFileSync(f, 'utf8')), f); } catch { /* not json */ } }
   }
   // Values that are configuration, not secrets, would only create noise.
   for (const v of [...vals.keys()]) if (/^(gemini|gpt|claude|libsql:)/i.test(v) && !/TOKEN|KEY|SECRET/.test(vals.get(v))) vals.delete(v);

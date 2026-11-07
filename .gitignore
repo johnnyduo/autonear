@@ -187,3 +187,7 @@ data/*.secret
 
 # animation proof frames (large); keep only the headline screenshots in git
 docs/screenshots/constellation-frame-*.png
+
+# Everything else under data/ is local runtime state or key material (e2e scratch wallet, tokens, db). Nothing in data/ is ever tracked.
+data/*
+!data/.gitkeep

@@ -117,6 +117,27 @@ try {
   ldb.close();
 } catch (e) { live = { error: String(e.message) }; }
 
+// PRODUCTION snapshot: the deployed app's own public read API (GET /api/status, /api/council). These are the numbers the landing page shows.
+const PROD = process.env.AUTONEAR_URL ?? 'https://autonear-eight.vercel.app';
+let prod;
+try {
+  const get = async (p) => { const r = await fetch(PROD + p, { signal: AbortSignal.timeout(30000) }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
+  const [st, co] = await Promise.all([get('/api/status'), get('/api/council')]);
+  const c = co.council;
+  const short = { opp_treasury: 'treasury', opp_signing: 'signing', opp_intents: 'intents', opp_dev_tooling: 'tooling', opp_data_indexing: 'data', opp_wallet_ux: 'wallets', opp_ai_agents: 'agents' };
+  const win = c.opportunities.find((o) => o.oppId === c.winner) ?? c.opportunities[0];
+  prod = {
+    url: PROD, at: new Date().toISOString(),
+    sourcesTotal: st.sources.length, sourcesOk: st.sources.filter((x) => x.status === 'ok').length,
+    sourceNames: st.sources.map((x) => ({ id: x.id, name: x.name, status: x.status })),
+    feeds: st.counts.feeds, evidence: st.counts.evidence, scores: st.counts.scores, seatVotes: st.counts.seatVotes, opportunities: st.counts.opportunities, seats: st.counts.seats,
+    seatNames: c.seats.map((x) => ({ role: x.role, label: x.label, weight: x.weight })),
+    council: c.opportunities.map((o) => ({ id: o.oppId, short: short[o.oppId] ?? o.topic, title: o.title, support: o.support, verdict: o.verdict, score: o.score, confidence: o.confidence, votes: o.votes.map((v) => ({ role: v.role, label: v.label, support: v.support, weight: v.weight, stance: v.stance })) })),
+    winner: { id: win.oppId, word: short[win.oppId] ?? win.topic, title: win.title, support: win.support, verdict: win.verdict },
+    goAt: c.rules.goAt,
+  };
+} catch (e) { console.error('CAPTURE FAILED: production status/council unavailable: ' + e.message); process.exit(1); }
+
 const policySrc = readFileSync(resolve(root, 'src/policy.js'), 'utf8');
 const policyLines = policySrc.split('\n').filter((l) => /^\s*(skeptic|builder|signal_collector|security_reviewer):/.test(l)).map((l) => l.trim());
 
@@ -145,10 +166,12 @@ const testnet = {
   owner: tn.accounts.owner, vault: tn.accounts.vault, registry: tn.accounts.registry, finishedAt: tn.finishedAt,
   steps: { vaultDeployed: okTx('deploy vault wasm'), vaultLocked: okTx('DeleteKey'), templateAllowed: okTx('owner allow_template'), mandateSet: okTx('owner set_mandate'), agentDraw: okTx('agent draw 0.5'), agentDeploy: okTx('agent deploy reg1'), revoked: okTx('owner revoke') },
   refusals, refusalCount: refusals.length,
+  templateSha: /sha256 ([0-9a-f]{16})/.exec(JSON.stringify(tn.checks))?.[1] ?? null,
   note: 'Two entries in the source file are marked FAIL by the script itself, not the chain (expected-error regex; over-large withdraw); see its followUp. Kept unchanged there.',
 };
 
 const out = {
+  prod,
   live,
   testnet,
   policyLines,

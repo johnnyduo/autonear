@@ -1,274 +1,399 @@
 {
   "mode": "gemini",
-  "model": "gemini-2.5-pro-preview-tts",
+  "model": "gemini-3.8-flash-tts",
   "voice": "Puck",
-  "generatedAt": "2026-11-06T15:49:07.979Z",
+  "generatedAt": "2026-11-07T06:58:49.884Z",
   "scenes": [
     {
-      "id": "night",
-      "hash": "c7026f0e1433fe24",
-      "file": "audio/night.mp3",
-      "durationSec": 5.450975,
-      "spoken": "Your phone lights up at midnight. Your new hire wants to spend. Would you hand them the company card?",
-      "display": "Your phone lights up at midnight. Your new hire wants to spend. Would you hand them the company card?",
+      "id": "ask",
+      "hash": "23fe0da1b0dac5ff",
+      "file": "audio/ask.mp3",
+      "durationSec": 8.4,
+      "spoken": "We all want NEAR to grow. But which way? What does the network need right now, and how would we know?",
+      "display": "We all want NEAR to grow. But which way? What does the network need right now, and how would we know?",
       "tag": null,
       "cal": {
         "speech": {
-          "start": 0.203084,
-          "end": 5.450975
+          "start": 0.22415,
+          "end": 8.038571
         },
         "pauses": [
           {
-            "start": 1.45,
-            "end": 1.703
+            "start": 2.084,
+            "end": 2.845
           },
           {
-            "start": 3.124,
-            "end": 3.58
+            "start": 3.699,
+            "end": 4.353
+          },
+          {
+            "start": 6.368,
+            "end": 6.646
+          },
+          {
+            "start": 6.792,
+            "end": 7.16
           }
         ]
       }
     },
     {
-      "id": "poison",
-      "hash": "2cfe5d9f2e7eff5e",
-      "file": "audio/poison.mp3",
-      "durationSec": 7.890975,
-      "spoken": "A public post looks useful. Hidden inside: an order to send the budget away. That is the trap.",
-      "display": "A public post looks useful. Hidden inside: an order to send the budget away. That is the trap.",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
+      "id": "crowd",
+      "hash": "1535e3fe75bdbc2a",
+      "file": "audio/crowd.mp3",
+      "durationSec": 9.76,
+      "spoken": "The crowd already knows. It says so in public, every day. But studying it by hand takes months, even a year.",
+      "display": "The crowd already knows. It says so in public, every day. But studying it by hand takes months, even a year.",
+      "tag": null,
       "cal": {
         "speech": {
-          "start": 0.227959,
-          "end": 7.890975
+          "start": 0.270998,
+          "end": 9.432472
         },
         "pauses": [
           {
-            "start": 2.055,
-            "end": 2.239
+            "start": 1.952,
+            "end": 2.303
           },
           {
-            "start": 5.99,
-            "end": 6.322
+            "start": 3.143,
+            "end": 3.295
           },
           {
-            "start": 6.901,
-            "end": 7.096
+            "start": 4.167,
+            "end": 4.31
+          },
+          {
+            "start": 5.014,
+            "end": 5.562
+          },
+          {
+            "start": 5.68,
+            "end": 5.887
+          },
+          {
+            "start": 8.452,
+            "end": 8.655
           }
         ]
       }
     },
     {
-      "id": "owner",
-      "hash": "bc3cd6539c5380ed",
-      "file": "audio/owner.mp3",
-      "durationSec": 6.531678,
-      "spoken": "Here is AutoNEAR. You choose what it watches. You set the card's limit, and you can stop it.",
-      "display": "Here is AutoNEAR. You choose what it watches. You set the card's limit, and you can stop it.",
-      "tag": "APP SCREENSHOTS · DEMO DATA",
+      "id": "reveal",
+      "hash": "13d27fd028510b1f",
+      "file": "audio/reveal.mp3",
+      "durationSec": 10.04,
+      "spoken": "Meet Auto Near. It reads those signals nonstop, ranks what NEAR needs, and builds toward it. The owner keeps a hand on the brake.",
+      "display": "Meet AutoNEAR. It reads those signals nonstop, ranks what NEAR needs, and builds toward it. The owner keeps a hand on the brake.",
+      "tag": null,
       "cal": {
         "speech": {
-          "start": 0,
-          "end": 6.264717
+          "start": 0.240567,
+          "end": 9.742063
         },
         "pauses": [
           {
-            "start": 0.088,
-            "end": 0.266
+            "start": 0.707,
+            "end": 0.914
           },
           {
-            "start": 1.618,
-            "end": 2.035
+            "start": 1.542,
+            "end": 1.998
           },
           {
-            "start": 3.399,
-            "end": 3.757
+            "start": 4.037,
+            "end": 4.375
           },
           {
-            "start": 5.062,
-            "end": 5.379
+            "start": 5.996,
+            "end": 6.297
+          },
+          {
+            "start": 7.266,
+            "end": 8.142
           }
         ]
       }
     },
     {
-      "id": "evidence",
-      "hash": "2996aac9e59263c3",
-      "file": "audio/evidence.mp3",
-      "durationSec": 8.810975,
-      "spoken": "It reads public signals and shows its work. This snapshot has three hundred and six records. One promising idea still gets a low-confidence warning.",
-      "display": "It reads public signals and shows its work. This snapshot has 306 records. One promising idea still gets a low-confidence warning.",
-      "tag": "LIVE SNAPSHOT",
+      "id": "signals",
+      "hash": "4fff5cfc33d9555c",
+      "file": "audio/signals.mp3",
+      "durationSec": 10.28,
+      "spoken": "Thirteen sources, all live. forty-nine feeds. four hundred and twenty-four posts and commits read, each linked to where it came from.",
+      "display": "13 sources, all live. 49 feeds. 424 posts and commits read, each linked to where it came from.",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
       "cal": {
         "speech": {
-          "start": 0.235102,
-          "end": 8.641111
+          "start": 0.280295,
+          "end": 9.95619
         },
         "pauses": [
           {
-            "start": 2.566,
-            "end": 2.9
+            "start": 1.603,
+            "end": 2.018
           },
           {
-            "start": 5.42,
-            "end": 5.581
+            "start": 2.774,
+            "end": 3.146
+          },
+          {
+            "start": 4.445,
+            "end": 4.794
+          },
+          {
+            "start": 7.967,
+            "end": 8.425
           }
         ]
       }
     },
     {
       "id": "council",
-      "hash": "76a1e845a8f7b45d",
+      "hash": "7e2c9e3b00bb2bb9",
       "file": "audio/council.mp3",
-      "durationSec": 7.090975,
-      "spoken": "The council weighs the evidence. Seven roles prepare a brief, check the build, and leave a request for the owner.",
-      "display": "The council weighs the evidence. 7 roles prepare a brief, check the build, and leave a request for the owner.",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
+      "durationSec": 11.4,
+      "spoken": "Seven seats vote on every idea, and one of them is a skeptic. Today treasury clears the bar and gets a go. The vote repeats as new evidence arrives.",
+      "display": "Seven seats vote on every idea, and one of them is a skeptic. Today treasury clears the bar and gets a go. The vote repeats as new evidence arrives.",
+      "tag": "LIVE · PRODUCTION COUNCIL",
       "cal": {
         "speech": {
-          "start": 0.228753,
-          "end": 7.090975
+          "start": 0.236803,
+          "end": 11.123061
         },
         "pauses": [
           {
-            "start": 2.026,
-            "end": 2.314
+            "start": 2.568,
+            "end": 3.072
           },
           {
-            "start": 3.967,
-            "end": 4.333
+            "start": 4.73,
+            "end": 5.244
           },
           {
-            "start": 5.146,
-            "end": 5.337
+            "start": 5.731,
+            "end": 5.967
+          },
+          {
+            "start": 8.235,
+            "end": 8.913
           }
         ]
       }
     },
     {
-      "id": "approval",
-      "hash": "a976014c0186f187",
-      "file": "audio/approval.mp3",
-      "durationSec": 8.490975,
-      "spoken": "The owner reviews the exact request and holds to approve. Approval is a decision. The next action still has to pass its checks.",
-      "display": "The owner reviews the exact request and holds to approve. Approval is a decision. The next action still has to pass its checks.",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
+      "id": "swarm",
+      "hash": "04ef421f70797a43",
+      "file": "audio/swarm.mp3",
+      "durationSec": 10.4,
+      "spoken": "Then a swarm takes over. Five cursors race through its product page. Copy. Layout. Style. Media. Check.",
+      "display": "Then a swarm takes over. Five cursors race through its product page. Copy. Layout. Style. Media. Check.",
+      "tag": "BUILD REPLAY",
       "cal": {
         "speech": {
-          "start": 0.263107,
-          "end": 8.384558
+          "start": 0.384671,
+          "end": 10.103084
         },
         "pauses": [
           {
-            "start": 1.899,
-            "end": 2.005
+            "start": 0.804,
+            "end": 0.946
           },
           {
-            "start": 3.78,
-            "end": 4.152
+            "start": 2.584,
+            "end": 3.137
           },
           {
-            "start": 4.661,
-            "end": 4.763
+            "start": 5.863,
+            "end": 6.339
           },
           {
-            "start": 5.518,
-            "end": 5.647
+            "start": 6.701,
+            "end": 7.157
           },
           {
-            "start": 5.749,
-            "end": 5.878
+            "start": 7.638,
+            "end": 7.987
+          },
+          {
+            "start": 8.48,
+            "end": 8.884
+          },
+          {
+            "start": 9.348,
+            "end": 9.741
           }
         ]
       }
     },
     {
-      "id": "refusal",
-      "hash": "1ea3d1590c281043",
-      "file": "audio/refusal.mp3",
-      "durationSec": 8.050975,
-      "spoken": "Now a result comes back with the wrong code. AutoNEAR refuses to record that deployment. The matching result passes.",
-      "display": "Now a result comes back with the wrong code. AutoNEAR refuses to record that deployment. The matching result passes.",
-      "tag": "RECORDED RUN · MOCKED RPC",
+      "id": "contract",
+      "hash": "8daba23d982ae93c",
+      "file": "audio/contract.mp3",
+      "durationSec": 12.16,
+      "spoken": "The builder picks up a contract build that is compiled, tested and fingerprinted. eighty-four tests pass. The agent can deploy only code the owner approved by that fingerprint.",
+      "display": "The builder picks up a contract build that is compiled, tested and fingerprinted. 84 tests pass. The agent can deploy only code the owner approved by that fingerprint.",
+      "tag": "VERIFIED · MEASURED TEST RUN",
       "cal": {
         "speech": {
-          "start": 0.263243,
-          "end": 8.050975
+          "start": 0.280136,
+          "end": 11.988481
         },
         "pauses": [
           {
-            "start": 3.083,
-            "end": 3.479
+            "start": 3.213,
+            "end": 3.446
           },
           {
-            "start": 5.777,
-            "end": 6.458
+            "start": 4.004,
+            "end": 4.157
           },
           {
-            "start": 7.264,
-            "end": 7.476
+            "start": 5.045,
+            "end": 5.662
+          },
+          {
+            "start": 5.678,
+            "end": 5.848
+          },
+          {
+            "start": 7.39,
+            "end": 8.184
           }
         ]
       }
     },
     {
-      "id": "testnet",
-      "hash": "74f9d6aa9e8a33f1",
-      "file": "audio/testnet.mp3",
-      "durationSec": 9.650975,
-      "spoken": "This also ran on NEAR testnet. A demo owner capped a vault, the agent deployed through it, and the chain refused it four times when it pushed past its limits.",
-      "display": "This also ran on NEAR testnet. A demo owner capped a vault, the agent deployed through it, and the chain refused it 4 times when it pushed past its limits.",
+      "id": "vault",
+      "hash": "7a7a8c6bf23f22a6",
+      "file": "audio/vault.mp3",
+      "durationSec": 12.72,
+      "spoken": "Within limits the owner sets, the agent works on its own. It draws its own gas and deploys approved code. The chain holds the line: four times on NEAR testnet, it said no.",
+      "display": "Within limits the owner sets, the agent works on its own. It draws its own gas and deploys approved code. The chain holds the line: 4 times on NEAR testnet, it said no.",
       "tag": "PUBLIC TESTNET · DEMO OWNER KEY · AUTOMATED",
       "cal": {
         "speech": {
-          "start": 0.225556,
-          "end": 9.650975
+          "start": 0.29288,
+          "end": 12.362426
         },
         "pauses": [
           {
-            "start": 2.193,
-            "end": 2.556
+            "start": 2.076,
+            "end": 2.372
           },
           {
-            "start": 4.192,
-            "end": 4.432
+            "start": 4.069,
+            "end": 4.513
           },
           {
-            "start": 5.759,
-            "end": 5.985
+            "start": 7.245,
+            "end": 7.992
+          },
+          {
+            "start": 9.04,
+            "end": 9.546
+          },
+          {
+            "start": 11.228,
+            "end": 11.57
+          }
+        ]
+      }
+    },
+    {
+      "id": "brake",
+      "hash": "838f35d2a93c515d",
+      "file": "audio/brake.mp3",
+      "durationSec": 8.32,
+      "spoken": "The owner decides, and can stop it at any time. A wrong fingerprint is refused. That is the brake.",
+      "display": "The owner decides, and can stop it at any time. A wrong fingerprint is refused. That is the brake.",
+      "tag": "RECORDED RUN · FIXTURE INPUTS · MOCKED RPC",
+      "cal": {
+        "speech": {
+          "start": 0.276395,
+          "end": 7.894376
+        },
+        "pauses": [
+          {
+            "start": 1.593,
+            "end": 1.781
+          },
+          {
+            "start": 2.77,
+            "end": 2.991
+          },
+          {
+            "start": 3.587,
+            "end": 4.232
+          },
+          {
+            "start": 5.227,
+            "end": 5.42
+          },
+          {
+            "start": 6.29,
+            "end": 6.686
+          },
+          {
+            "start": 7.022,
+            "end": 7.194
           }
         ]
       }
     },
     {
       "id": "close",
-      "hash": "4843fc7070538c83",
+      "hash": "94465e8f0d422b89",
       "file": "audio/close.mp3",
-      "durationSec": 6.770975,
-      "spoken": "The agent has a company card. You set the limit. Judges: clone it and run the tests.",
-      "display": "The agent has a company card. You set the limit. Judges: clone it and run the tests.",
+      "durationSec": 15.24,
+      "spoken": "Next, the community tests every build and confirms it before it goes live. Auto Near: public demand in, a product on the table, a human on the brake. Judges: clone it, run the tests.",
+      "display": "Next, the community tests every build and confirms it before it goes live. AutoNEAR: public demand in, a product on the table, a human on the brake. Judges: clone it, run the tests.",
       "tag": null,
       "cal": {
         "speech": {
-          "start": 0.270181,
-          "end": 6.347188
+          "start": 0.166168,
+          "end": 14.913832
         },
         "pauses": [
           {
-            "start": 2.171,
-            "end": 2.437
+            "start": 0.682,
+            "end": 0.834
           },
           {
-            "start": 3.324,
-            "end": 3.76
+            "start": 3.811,
+            "end": 4.135
           },
           {
-            "start": 4.46,
-            "end": 4.649
+            "start": 5.606,
+            "end": 6.201
           },
           {
-            "start": 5.035,
-            "end": 5.338
+            "start": 6.73,
+            "end": 7.299
+          },
+          {
+            "start": 8.394,
+            "end": 8.557
+          },
+          {
+            "start": 10.059,
+            "end": 10.437
+          },
+          {
+            "start": 11.035,
+            "end": 11.289
+          },
+          {
+            "start": 11.84,
+            "end": 12.384
+          },
+          {
+            "start": 12.834,
+            "end": 13.209
+          },
+          {
+            "start": 13.637,
+            "end": 14.185
           }
         ]
       }
