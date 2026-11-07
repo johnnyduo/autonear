@@ -84,7 +84,7 @@ function Deck({ source, status, canOperate, fixture }) {
 
   return (
     <>
-      <PageHead eyebrow="Mandate vault · testnet only" title="An agent with its own gas." em="On a leash."
+      <PageHead eyebrow="Mandate vault · testnet" title="An agent with its own gas." em="On a leash."
         aside={<div className="vt-head-a"><span className="vt-live mono-v" role="status">{fixture ? <><span className="led warn" aria-hidden="true" />fixture · not polling</> : vq.error && !data ? <><span className="led bad" aria-hidden="true" />offline</> : vq.stale ? <><span className="led warn" aria-hidden="true" />stale · {ago(vq.at, now)}</> : data ? <><span className="led ok live" aria-hidden="true" />live · updated {ago(vq.at, now)}</> : <><span className="led" aria-hidden="true" />loading…</>}</span>
           {data?.enabled && data.signingSupported !== false && vaults.length > 0 && canPropose && <button className="btn" onClick={() => setPropose(true)}><Icon name="vault" size={16} />Propose a mandate</button>}</div>}>
         The agent holds its own testnet key and may do exactly two things: draw gas inside a budget, and deploy contract templates you pre-approved. Everything runs under a mandate you grant, and you can revoke it at any time.
