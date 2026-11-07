@@ -1,4 +1,550 @@
 {
+  "prod": {
+    "url": "https://autonear-eight.vercel.app",
+    "at": "2026-11-07T05:10:08.202Z",
+    "sourcesTotal": 13,
+    "sourcesOk": 13,
+    "sourceNames": [
+      {
+        "id": "bluesky",
+        "name": "Bluesky · post search (opt-in, credentials required)",
+        "status": "ok"
+      },
+      {
+        "id": "defillama-near",
+        "name": "DefiLlama · NEAR Intents TVL and NEAR DEX volume",
+        "status": "ok"
+      },
+      {
+        "id": "devto",
+        "name": "Dev.to · developer articles",
+        "status": "ok"
+      },
+      {
+        "id": "farcaster",
+        "name": "Farcaster · public hub (channels + FID watchlist)",
+        "status": "ok"
+      },
+      {
+        "id": "github-near",
+        "name": "GitHub issues · near org",
+        "status": "ok"
+      },
+      {
+        "id": "gov-near",
+        "name": "NEAR Governance Forum",
+        "status": "ok"
+      },
+      {
+        "id": "hn-algolia",
+        "name": "Hacker News · Algolia",
+        "status": "ok"
+      },
+      {
+        "id": "mastodon",
+        "name": "Mastodon · public hashtag timelines",
+        "status": "ok"
+      },
+      {
+        "id": "near-official",
+        "name": "NEAR official blog (near.org)",
+        "status": "ok"
+      },
+      {
+        "id": "near-rpc-mainnet",
+        "name": "NEAR mainnet RPC · Intents usage",
+        "status": "ok"
+      },
+      {
+        "id": "near-social",
+        "name": "NEAR Social · social.near (on-chain)",
+        "status": "ok"
+      },
+      {
+        "id": "nearblocks",
+        "name": "NearBlocks · NEAR mainnet activity",
+        "status": "ok"
+      },
+      {
+        "id": "sputnik-dao",
+        "name": "Sputnik DAO treasuries · NEAR mainnet",
+        "status": "ok"
+      }
+    ],
+    "feeds": 49,
+    "evidence": 424,
+    "scores": 480,
+    "seatVotes": 49,
+    "opportunities": 7,
+    "seats": 7,
+    "seatNames": [
+      {
+        "role": "signal_collector",
+        "label": "Collector",
+        "weight": 0.16
+      },
+      {
+        "role": "evidence_analyst",
+        "label": "Analyst",
+        "weight": 0.22
+      },
+      {
+        "role": "skeptic",
+        "label": "Skeptic",
+        "weight": 0.18
+      },
+      {
+        "role": "product_architect",
+        "label": "Architect",
+        "weight": 0.1
+      },
+      {
+        "role": "builder",
+        "label": "Builder",
+        "weight": 0.12
+      },
+      {
+        "role": "security_reviewer",
+        "label": "Security",
+        "weight": 0.1
+      },
+      {
+        "role": "launch_planner",
+        "label": "Planner",
+        "weight": 0.12
+      }
+    ],
+    "council": [
+      {
+        "id": "opp_treasury",
+        "short": "treasury",
+        "title": "Policy-bound treasury rebalancing on NEAR",
+        "support": 0.776,
+        "verdict": "go",
+        "score": 0.699,
+        "confidence": 0.88,
+        "votes": [
+          {
+            "role": "signal_collector",
+            "label": "Collector",
+            "support": 1,
+            "weight": 0.16,
+            "stance": "back"
+          },
+          {
+            "role": "evidence_analyst",
+            "label": "Analyst",
+            "support": 0.657,
+            "weight": 0.22,
+            "stance": "back"
+          },
+          {
+            "role": "skeptic",
+            "label": "Skeptic",
+            "support": 0.542,
+            "weight": 0.18,
+            "stance": "abstain"
+          },
+          {
+            "role": "product_architect",
+            "label": "Architect",
+            "support": 0.85,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "builder",
+            "label": "Builder",
+            "support": 0.8,
+            "weight": 0.12,
+            "stance": "back"
+          },
+          {
+            "role": "security_reviewer",
+            "label": "Security",
+            "support": 0.962,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "launch_planner",
+            "label": "Planner",
+            "support": 0.807,
+            "weight": 0.12,
+            "stance": "back"
+          }
+        ]
+      },
+      {
+        "id": "opp_signing",
+        "short": "signing",
+        "title": "Chain signatures & key custody",
+        "support": 0.687,
+        "verdict": "watch",
+        "score": 0.704,
+        "confidence": 0.842,
+        "votes": [
+          {
+            "role": "signal_collector",
+            "label": "Collector",
+            "support": 1,
+            "weight": 0.16,
+            "stance": "back"
+          },
+          {
+            "role": "evidence_analyst",
+            "label": "Analyst",
+            "support": 0.648,
+            "weight": 0.22,
+            "stance": "back"
+          },
+          {
+            "role": "skeptic",
+            "label": "Skeptic",
+            "support": 0.346,
+            "weight": 0.18,
+            "stance": "object"
+          },
+          {
+            "role": "product_architect",
+            "label": "Architect",
+            "support": 0.9,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "builder",
+            "label": "Builder",
+            "support": 0.15,
+            "weight": 0.12,
+            "stance": "object"
+          },
+          {
+            "role": "security_reviewer",
+            "label": "Security",
+            "support": 0.978,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "launch_planner",
+            "label": "Planner",
+            "support": 0.971,
+            "weight": 0.12,
+            "stance": "back"
+          }
+        ]
+      },
+      {
+        "id": "opp_intents",
+        "short": "intents",
+        "title": "Intents, swaps & solver routing",
+        "support": 0.675,
+        "verdict": "watch",
+        "score": 0.703,
+        "confidence": 0.85,
+        "votes": [
+          {
+            "role": "signal_collector",
+            "label": "Collector",
+            "support": 1,
+            "weight": 0.16,
+            "stance": "back"
+          },
+          {
+            "role": "evidence_analyst",
+            "label": "Analyst",
+            "support": 0.65,
+            "weight": 0.22,
+            "stance": "back"
+          },
+          {
+            "role": "skeptic",
+            "label": "Skeptic",
+            "support": 0.352,
+            "weight": 0.18,
+            "stance": "object"
+          },
+          {
+            "role": "product_architect",
+            "label": "Architect",
+            "support": 0.9,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "builder",
+            "label": "Builder",
+            "support": 0.18,
+            "weight": 0.12,
+            "stance": "object"
+          },
+          {
+            "role": "security_reviewer",
+            "label": "Security",
+            "support": 0.836,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "launch_planner",
+            "label": "Planner",
+            "support": 0.949,
+            "weight": 0.12,
+            "stance": "back"
+          }
+        ]
+      },
+      {
+        "id": "opp_dev_tooling",
+        "short": "tooling",
+        "title": "Developer tooling & SDKs",
+        "support": 0.655,
+        "verdict": "watch",
+        "score": 0.639,
+        "confidence": 0.812,
+        "votes": [
+          {
+            "role": "signal_collector",
+            "label": "Collector",
+            "support": 1,
+            "weight": 0.16,
+            "stance": "back"
+          },
+          {
+            "role": "evidence_analyst",
+            "label": "Analyst",
+            "support": 0.579,
+            "weight": 0.22,
+            "stance": "abstain"
+          },
+          {
+            "role": "skeptic",
+            "label": "Skeptic",
+            "support": 0.425,
+            "weight": 0.18,
+            "stance": "abstain"
+          },
+          {
+            "role": "product_architect",
+            "label": "Architect",
+            "support": 0.7,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "builder",
+            "label": "Builder",
+            "support": 0.21,
+            "weight": 0.12,
+            "stance": "object"
+          },
+          {
+            "role": "security_reviewer",
+            "label": "Security",
+            "support": 0.764,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "launch_planner",
+            "label": "Planner",
+            "support": 1,
+            "weight": 0.12,
+            "stance": "back"
+          }
+        ]
+      },
+      {
+        "id": "opp_data_indexing",
+        "short": "data",
+        "title": "Data, RPC & indexing",
+        "support": 0.644,
+        "verdict": "watch",
+        "score": 0.642,
+        "confidence": 0.689,
+        "votes": [
+          {
+            "role": "signal_collector",
+            "label": "Collector",
+            "support": 1,
+            "weight": 0.16,
+            "stance": "back"
+          },
+          {
+            "role": "evidence_analyst",
+            "label": "Analyst",
+            "support": 0.542,
+            "weight": 0.22,
+            "stance": "abstain"
+          },
+          {
+            "role": "skeptic",
+            "label": "Skeptic",
+            "support": 0.578,
+            "weight": 0.18,
+            "stance": "abstain"
+          },
+          {
+            "role": "product_architect",
+            "label": "Architect",
+            "support": 0.6,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "builder",
+            "label": "Builder",
+            "support": 0.15,
+            "weight": 0.12,
+            "stance": "object"
+          },
+          {
+            "role": "security_reviewer",
+            "label": "Security",
+            "support": 0.644,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "launch_planner",
+            "label": "Planner",
+            "support": 0.988,
+            "weight": 0.12,
+            "stance": "back"
+          }
+        ]
+      },
+      {
+        "id": "opp_wallet_ux",
+        "short": "wallets",
+        "title": "Wallet & account UX",
+        "support": 0.642,
+        "verdict": "watch",
+        "score": 0.561,
+        "confidence": 0.724,
+        "votes": [
+          {
+            "role": "signal_collector",
+            "label": "Collector",
+            "support": 1,
+            "weight": 0.16,
+            "stance": "back"
+          },
+          {
+            "role": "evidence_analyst",
+            "label": "Analyst",
+            "support": 0.484,
+            "weight": 0.22,
+            "stance": "abstain"
+          },
+          {
+            "role": "skeptic",
+            "label": "Skeptic",
+            "support": 0.509,
+            "weight": 0.18,
+            "stance": "abstain"
+          },
+          {
+            "role": "product_architect",
+            "label": "Architect",
+            "support": 0.6,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "builder",
+            "label": "Builder",
+            "support": 0.18,
+            "weight": 0.12,
+            "stance": "object"
+          },
+          {
+            "role": "security_reviewer",
+            "label": "Security",
+            "support": 0.831,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "launch_planner",
+            "label": "Planner",
+            "support": 0.991,
+            "weight": 0.12,
+            "stance": "back"
+          }
+        ]
+      },
+      {
+        "id": "opp_ai_agents",
+        "short": "agents",
+        "title": "AI agents on NEAR",
+        "support": 0.632,
+        "verdict": "watch",
+        "score": 0.612,
+        "confidence": 0.676,
+        "votes": [
+          {
+            "role": "signal_collector",
+            "label": "Collector",
+            "support": 1,
+            "weight": 0.16,
+            "stance": "back"
+          },
+          {
+            "role": "evidence_analyst",
+            "label": "Analyst",
+            "support": 0.513,
+            "weight": 0.22,
+            "stance": "abstain"
+          },
+          {
+            "role": "skeptic",
+            "label": "Skeptic",
+            "support": 0.575,
+            "weight": 0.18,
+            "stance": "abstain"
+          },
+          {
+            "role": "product_architect",
+            "label": "Architect",
+            "support": 0.8,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "builder",
+            "label": "Builder",
+            "support": 0.12,
+            "weight": 0.12,
+            "stance": "object"
+          },
+          {
+            "role": "security_reviewer",
+            "label": "Security",
+            "support": 0.733,
+            "weight": 0.1,
+            "stance": "back"
+          },
+          {
+            "role": "launch_planner",
+            "label": "Planner",
+            "support": 0.731,
+            "weight": 0.12,
+            "stance": "back"
+          }
+        ]
+      }
+    ],
+    "winner": {
+      "id": "opp_treasury",
+      "word": "treasury",
+      "title": "Policy-bound treasury rebalancing on NEAR",
+      "support": 0.776,
+      "verdict": "go"
+    },
+    "goAt": 0.62
+  },
   "live": {
     "total": 306,
     "bySource": [
@@ -137,6 +683,56 @@
     ],
     "note": "LIVE: evidence the app itself ingested from public sources (GitHub, gov.near.org, Hacker News, NEAR mainnet RPC)."
   },
+  "testnet": {
+    "network": "near-testnet",
+    "ownerMode": "DEMO owner key held on the agent machine; automated, not a human wallet",
+    "owner": "autonear-owner-1106.testnet",
+    "vault": "vault-v1.autonear-owner-1106.testnet",
+    "registry": "reg1.vault-v1.autonear-owner-1106.testnet",
+    "finishedAt": "2026-11-06T03:08:19.479Z",
+    "steps": {
+      "vaultDeployed": true,
+      "vaultLocked": true,
+      "templateAllowed": true,
+      "mandateSet": true,
+      "agentDraw": true,
+      "agentDeploy": true,
+      "revoked": true
+    },
+    "refusals": [
+      {
+        "what": "over the per-draw cap",
+        "code": "E_PerDrawCap",
+        "hash": "22uZ1m2zWs558XNHAaS1VjpwniWoDnUKnCiaAo1NbjGn",
+        "explorer": "https://testnet.nearblocks.io/txns/22uZ1m2zWs558XNHAaS1VjpwniWoDnUKnCiaAo1NbjGn",
+        "rejectedByChain": true
+      },
+      {
+        "what": "second deploy beyond the mandate",
+        "code": "E_DeployLimit",
+        "hash": "GEguMwExvWqi8RgeEJgjsNMMJ6KLhZMXf1mLjn7hEj88",
+        "explorer": "https://testnet.nearblocks.io/txns/GEguMwExvWqi8RgeEJgjsNMMJ6KLhZMXf1mLjn7hEj88",
+        "rejectedByChain": true
+      },
+      {
+        "what": "code that is not on the allowlist",
+        "code": "E_TemplateNotAllowed",
+        "hash": "4Hhw7ZfwM3NjTRGMKfPgqHG9AZLCswESVXq3mpjopnfn",
+        "explorer": "https://testnet.nearblocks.io/txns/4Hhw7ZfwM3NjTRGMKfPgqHG9AZLCswESVXq3mpjopnfn",
+        "rejectedByChain": true
+      },
+      {
+        "what": "draw after the owner revoked",
+        "code": "E_MandateInactive",
+        "hash": "JpjuQ7y4Pmt9M8vSgcTdb68jzyxfacLFrFtTYNojCck",
+        "explorer": "https://testnet.nearblocks.io/txns/JpjuQ7y4Pmt9M8vSgcTdb68jzyxfacLFrFtTYNojCck",
+        "rejectedByChain": true
+      }
+    ],
+    "refusalCount": 4,
+    "templateSha": "a052d400c3bc1a13",
+    "note": "Two entries in the source file are marked FAIL by the script itself, not the chain (expected-error regex; over-large withdraw); see its followUp. Kept unchanged there."
+  },
   "policyLines": [
     "signal_collector: { tools: ['db.read', 'http.collector'], llm: false, dataClass: 'public' },",
     "skeptic: { tools: ['db.read', 'llm.complete', 'registry.competitors'], llm: true, dataClass: 'public' },",
@@ -148,8 +744,8 @@
     "source": "fixture",
     "flagged": true
   },
-  "capturedAt": "2026-11-05T12:51:16.762Z",
-  "elapsedMs": 614,
+  "capturedAt": "2026-11-07T05:10:08.204Z",
+  "elapsedMs": 15162,
   "provenance": "RECORDED RUN: real AutoNEAR modules on fixture inputs (canned evidence, test-double build attestation, mocked NEAR RPC). No network, no funds.",
   "ingest": [
     {
@@ -228,7 +824,7 @@
     "evidence_quality": 0.1
   },
   "run": {
-    "id": "run_8429dd8fcecc",
+    "id": "run_c5c898c316bd",
     "state": "awaiting_approval",
     "roleCount": 7,
     "events": [
@@ -250,7 +846,7 @@
       {
         "role": "evidence_analyst",
         "status": "completed",
-        "detail": "LLM_PROVIDER=none: deterministic baseline in use; 1 injection-flagged record(s) withheld from prompts"
+        "detail": "LLM_PROVIDER=none: deterministic baseline in use; 1 injection-flagged record(s) and 0 social record(s) text withheld from prompts"
       },
       {
         "role": "skeptic",
@@ -300,22 +896,22 @@
       {
         "role": "launch_planner",
         "status": "completed",
-        "detail": "decision dec_44dda93de5f2eb created: awaiting human approval"
+        "detail": "decision dec_bd397bb7207996 created: awaiting human approval"
       }
     ],
     "auditChainOk": true
   },
   "decision": {
-    "id": "dec_44dda93de5f2eb",
+    "id": "dec_bd397bb7207996",
     "chain": "near-testnet",
     "target": "reg.op.testnet",
     "maxSpend": "0",
     "status": "pending",
-    "payloadHashPrefix": "cdfe511b7c055bb8",
-    "expiry": 1793969476162,
+    "payloadHashPrefix": "cd7c502402e3b3a9",
+    "expiry": 1794114593058,
     "expiryHours": 24,
     "approvedStatus": "approved",
-    "receiptPrefix": "d0ca164f58894b9c",
+    "receiptPrefix": "80b756e1fb77a1dc",
     "finalStatus": "executed"
   },
   "attempts": [
@@ -347,7 +943,7 @@
       "label": "Wrong confirmation phrase",
       "rejected": true,
       "code": "confirm",
-      "message": "type the exact confirmation phrase: approve dec_44dda93de5f2eb"
+      "message": "type the exact confirmation phrase: approve dec_bd397bb7207996"
     },
     {
       "label": "Record a deployment before approval",
@@ -531,7 +1127,7 @@
   },
   "suites": {
     "node": {
-      "pass": 33,
+      "pass": 694,
       "fail": 0,
       "command": "npm test"
     },
@@ -539,8 +1135,8 @@
       "passed": 84,
       "failed": 0,
       "command": "cargo test --locked",
-      "verifiedOn": "2026-11-05",
-      "ranAt": "2026-11-05T12:51:15.745Z",
+      "verifiedOn": "2026-11-07",
+      "ranAt": "2026-11-07T05:07:20.626Z",
       "note": "includes a randomized state-machine property test",
       "sampleTests": [
         "replay_of_identical_proposal_rejected",
@@ -552,12 +1148,12 @@
       ]
     },
     "evmContract": {
-      "passed": 144,
+      "passed": 241,
       "failed": 0,
       "command": "forge test",
-      "verifiedOn": "2026-11-05",
-      "ranAt": "2026-11-05T12:51:15.745Z",
-      "note": "includes 7 invariant tests (512 runs x 32,768 calls each)"
+      "verifiedOn": "2026-11-07",
+      "ranAt": "2026-11-07T05:07:20.626Z",
+      "note": "includes 15 invariant tests (512 runs x 32,768 calls each)"
     }
   }
 }

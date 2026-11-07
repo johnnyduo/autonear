@@ -1,56 +1,71 @@
 {
-  "title": "AutoNEAR - hackathon demo",
+  "title": "AutoNEAR · what does NEAR need? (v3, constellation)",
   "track": "AI Security & Defense",
   "voice": {
     "name": "Puck",
-    "style": "Speak like a confident founder delivering a hackathon pitch at a brisk, energetic pace of about three words per second: crisp, warm, rising energy, short punchy sentences, only a short beat after each full stop. Never robotic, never shouting."
+    "style": "Confident, warm product-launch narration at a brisk pace of about three words per second, with crisp sentences and short natural pauses. Curious and close at the start, gaining energy through the constellation and the swarm, then calm and exact at the limits and the close."
   },
-  "tokens_note": "{{path}} is resolved from src/data/captured.json. {{path|w}} = spoken words (TTS), digits are used in captions. Numbers cannot drift from what the code produced.",
+  "tokens_note": "Numbers only as {{tokens}} resolved from src/data/captured.json (and contracts.json). No typed digits in narration.",
   "scenes": [
     {
-      "id": "hook",
+      "id": "ask",
       "tag": null,
-      "narration": "Would you let an AI agent touch your treasury? Neither would we."
+      "narration": "We all want NEAR to grow. But which way? What does the network need right now, and how would we know?",
+      "style": "Quiet, curious and close to the microphone; let the second question hang."
     },
     {
-      "id": "problem",
+      "id": "crowd",
       "tag": null,
-      "narration": "Public posts show what builders need. They can also hide poisoned instructions. So our rule is simple: agents propose. Humans approve."
+      "narration": "The crowd already knows. It says so in public, every day. But studying it by hand takes months, even a year.",
+      "style": "Warm and plain; a tired, dry tone on the last sentence."
     },
     {
-      "id": "solution",
+      "id": "reveal",
       "tag": null,
-      "narration": "This is AutoNEAR. It collects evidence, scores every opportunity in the open, and prepares one allowed action: a testnet deployment with a spend cap of zero. A human must approve it."
+      "narration": "Meet AutoNEAR. It reads those signals nonstop, ranks what NEAR needs, and builds toward it. The owner keeps a hand on the brake.",
+      "style": "Lift into the product name, proud but not shouted; slow down on the brake line."
     },
     {
-      "id": "evidence",
-      "tag": "LIVE SNAPSHOT",
-      "narration": "Live snapshot: {{live.total|w}} public records. Treasury tooling scores {{live.treasury.score|d}}, from {{live.treasury.breakdown.counts.demand|w}} posts by {{live.treasury.breakdown.counts.authors|w}} authors. But only {{live.treasury.breakdown.counts.sources|w}} demand sources. So AutoNEAR flags it: low confidence. It tells you when not to trust it."
+      "id": "signals",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "narration": "{{prod.sourcesOk|W}} sources, all live. {{prod.feeds|w}} feeds. {{prod.evidence|w}} posts and commits read, each linked to where it came from.",
+      "style": "Steady and bright, like pointing at something real."
     },
     {
-      "id": "pipeline",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
-      "narration": "{{run.roleCount|W}} roles turn evidence into a brief. Code limits their tools and the run budget. Citations must point to evidence they were given. Suspected injection text is withheld from model prompts."
+      "id": "council",
+      "tag": "LIVE · PRODUCTION COUNCIL",
+      "narration": "Seven seats vote on every idea, and one of them is a skeptic. Today {{prod.winner.word}} clears the bar and gets a go. The vote repeats as new evidence arrives.",
+      "style": "Tighter and quicker, like seven people voting; drop low on say no."
     },
     {
-      "id": "gate",
-      "tag": "RECORDED RUN · FIXTURE INPUTS",
-      "narration": "Now the human gate. Wrong nonce: rejected. Changed payload: rejected. No named signer: rejected. Kill switch on: rejected. Only the exact confirmation phrase gets through."
+      "id": "swarm",
+      "tag": "BUILD REPLAY",
+      "narration": "Then a swarm takes over. Five cursors race through its product page. Copy. Layout. Style. Media. Check.",
+      "style": "Fast and playful; each of the five words lands like a tap."
     },
     {
-      "id": "verify",
-      "tag": "RECORDED RUN · MOCKED RPC",
-      "narration": "Approval is not execution. You sign in your own wallet. AutoNEAR records a deployment only after the chain checks out: signer, account, and code hash. Wrong hash? Refused. Mocked RPC in this recording."
+      "id": "contract",
+      "tag": "VERIFIED · MEASURED TEST RUN",
+      "narration": "The builder picks up a contract build that is compiled, tested and fingerprinted. {{suites.nearContract.passed|w}} tests pass. The agent can deploy only code the owner approved by that fingerprint.",
+      "style": "Precise and calm; slow slightly on only code the owner approved."
     },
     {
-      "id": "proof",
-      "tag": "VERIFIED {{suites.nearContract.verifiedOn}}",
-      "narration": "Underneath: registries in Rust for NEAR and Solidity for EVM. {{suites.nearContract.passed|w}} and {{suites.evmContract.passed|w}} passing tests, with fuzzing and invariants. They record approvals. They don't move funds."
+      "id": "vault",
+      "tag": "PUBLIC TESTNET · DEMO OWNER KEY · AUTOMATED",
+      "narration": "Within limits the owner sets, the agent works on its own. It draws its own gas and deploys approved code. The chain holds the line: {{testnet.refusalCount|w}} times on NEAR testnet, it said no.",
+      "style": "Confident with an edge; low and exact on the chain says no."
+    },
+    {
+      "id": "brake",
+      "tag": "RECORDED RUN · FIXTURE INPUTS · MOCKED RPC",
+      "narration": "The owner decides, and can stop it at any time. A wrong fingerprint is refused. That is the brake.",
+      "style": "Measured and human; the last sentence flat and final."
     },
     {
       "id": "close",
       "tag": null,
-      "narration": "AutoNEAR. Evidence in. Human approves. Chain verifies. Clone it, run the tests, and tell us which approval rule you would add."
+      "narration": "Next, the community tests every build and confirms it before it goes live. AutoNEAR: public demand in, a product on the table, a human on the brake. Judges: clone it, run the tests.",
+      "style": "Slow down for the finish; warm on the last line; light, direct call to action."
     }
   ]
 }

@@ -14,10 +14,10 @@ export const Evidence: React.FC<{ s: SceneTiming }> = ({ s }) => {
   const sec = useNarrationSec(s);
   const { at } = useAnchors(s);
   const live = data.live as any;
-  const tScore = at('Treasury', 0, 0.3);
-  const tBut = at('But', 0, 0.62);
-  const tFlag = at('flags', 0, 0.74);
-  const tTrust = at('tells', 0, 0.9);
+  const tScore = at('promising', 0, 0.62);
+  const tBut = tScore + 0.6;
+  const tFlag = at('warning.', 0, 0.9) - 0.5;
+  const tTrust = tFlag + 0.9;
   const countUp = Math.round(live.total * ramp(sec, 0.2, 1.4));
   const maxN = Math.max(...live.bySource.map((b: any) => b.n));
   const detail = ramp(sec, tScore, 0.6); // 0 = overview, 1 = treasury breakdown

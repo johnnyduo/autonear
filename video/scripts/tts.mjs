@@ -47,7 +47,7 @@ const API = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapi
 const CANDIDATES = vertexProject ? ['gemini-2.5-pro-preview-tts', 'gemini-2.5-flash-preview-tts'] : ['gemini-3.8-flash-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-pro-preview-tts', 'gemini-2.5-flash-preview-tts'];
 const isInteractions = (m) => /^gemini-3\./.test(m);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const styleShort = style.split('.')[0];
+const styleOf = (sceneStyle) => (sceneStyle ? `${style} ${sceneStyle}` : style);
 
 function authHeaders() {
   if (!vertexProject) return { 'content-type': 'application/json', 'x-goog-api-key': key };
@@ -73,11 +73,12 @@ async function post(url, body) {
 }
 
 /** -> { file, kind: 'wav' | 's16le', rate } written to audioDir */
-async function synth(model, text, outBase) {
+async function synth(model, text, outBase, sceneStyle) {
+  const sty = styleOf(sceneStyle);
   if (isInteractions(model)) {
     const j = await post(`${API}/interactions`, {
       model,
-      input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: styleShort }] }] }],
+      input: [{ type: 'user_input', content: [{ type: 'text', text, annotations: [{ type: 'speech_metadata', style: `${style.split('.')[0]}.${sceneStyle ? ' ' + sceneStyle : ''}`.slice(0, 400) }] }] }],
       response_format: { type: 'audio' },
       generation_config: { speech_config: [{ voice }] },
     });
@@ -91,7 +92,7 @@ async function synth(model, text, outBase) {
     ? `https://${vertexLocation}-aiplatform.googleapis.com/v1/projects/${vertexProject}/locations/${vertexLocation}/publishers/google/models/${model}:generateContent`
     : `${API}/models/${model}:generateContent`;
   const j = await post(endpoint, {
-    contents: [{ role: 'user', parts: [{ text: `Say in this style (do not read these instructions aloud): ${style}\n\n${text}` }] }],
+    contents: [{ role: 'user', parts: [{ text: `Say in this style (do not read these instructions aloud): ${sty}\n\n${text}` }] }],
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
   });
   const part = j.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
@@ -102,13 +103,13 @@ async function synth(model, text, outBase) {
 }
 
 let chosenModel = null;
-async function synthWithFallback(text, outBase) {
+async function synthWithFallback(text, outBase, sceneStyle) {
   const override = arg('model') || process.env.GEMINI_TTS_MODEL;
   const list = override ? [override] : chosenModel ? [chosenModel, ...CANDIDATES.filter((m) => m !== chosenModel)] : CANDIDATES;
   let lastErr;
   for (const m of list) {
-    try { const r = await synth(m, text, outBase); chosenModel = m; return { ...r, model: m }; }
-    catch (e) { lastErr = e; if (![400, 403, 404].includes(e.status) && !e.daily) throw e; console.warn(`  model ${m} unavailable (${e.message.slice(0, 120)}); trying next`); }
+    try { const r = await synth(m, text, outBase, sceneStyle); chosenModel = m; return { ...r, model: m }; }
+    catch (e) { lastErr = e; if (![400, 403, 404].includes(e.status) && !e.daily) throw e; console.warn(`  model ${m} unavailable (${e.message.slice(0, 700)}); trying next`); }
   }
   throw lastErr;
 }
@@ -138,10 +139,10 @@ console.log(`mode=${scratch ? 'SCRATCH' : 'GEMINI'} model=${model} voice=${scrat
 
 const scenes = [];
 for (const s of script.scenes) {
-  const text = spoken(s.narration, data);
+  const text = spoken(s.narration, data).replace(/AutoNEAR/g, 'Auto Near'); // speech-only respelling so the voice says two words
   const shown = display(s.narration, data);
   const mp3 = resolve(audioDir, `${s.id}.mp3`);
-  const hash = createHash('sha256').update(JSON.stringify([hashModel, scratch ? 'Daniel' : voice, scratch ? '' : style, text])).digest('hex').slice(0, 16);
+  const hash = createHash('sha256').update(JSON.stringify([hashModel, scratch ? 'Daniel' : voice, scratch ? '' : styleOf(s.style), text])).digest('hex').slice(0, 16);
   const cached = prev.scenes.find((p) => p.id === s.id);
   if (!flag('force') && cached?.hash === hash && existsSync(mp3)) {
     console.log(`= ${s.id} (cached)`);
@@ -154,7 +155,7 @@ for (const s of script.scenes) {
     execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', aiff, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=9', '-ar', '44100', '-b:a', '160k', mp3]);
     execFileSync('rm', ['-f', aiff]);
   } else {
-    const r = await synthWithFallback(text, resolve(audioDir, s.id));
+    const r = await synthWithFallback(text, resolve(audioDir, s.id), s.style);
     model = r.model;
     const inArgs = r.kind === 'wav' ? ['-i', r.file] : ['-f', 's16le', '-ar', String(r.rate), '-ac', '1', '-i', r.file];
     execFileSync('ffmpeg', ['-y', '-v', 'error', ...inArgs, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=9', '-ar', '44100', '-b:a', '192k', mp3]);

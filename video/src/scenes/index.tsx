@@ -1,10 +1,8 @@
 import React from 'react';
 import type { SceneTiming } from '../lib/timeline';
-import { Hook, Problem, Solution } from './act1';
-import { Evidence } from './evidence';
-import { Gate, Pipeline, Verify } from './trust';
-import { Close, Proof } from './finale';
+import { Ask, Crowd, Reveal, Signals } from './v3a';
+import { Brake, Close3, Contract3, Council3, Swarm, Vault3 } from './v3b';
 
 export const SCENES: Record<string, React.FC<{ s: SceneTiming }>> = {
-  hook: Hook, problem: Problem, solution: Solution, evidence: Evidence, pipeline: Pipeline, gate: Gate, verify: Verify, proof: Proof, close: Close,
+  ask: Ask, crowd: Crowd, reveal: Reveal, signals: Signals, council: Council3, swarm: Swarm, contract: Contract3, vault: Vault3, brake: Brake, close: Close3,
 };
