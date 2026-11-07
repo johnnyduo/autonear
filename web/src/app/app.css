@@ -50,6 +50,7 @@
 .ln-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 1440px; width: calc(100% - 2 * clamp(16px, 4vw, 48px)); margin: 8px auto 32px; }
 .ln-steps article { border-top: 1px solid var(--line-hi); padding-top: 14px; } .ln-steps h2 { font: 400 28px/1.1 var(--f-display); margin: 6px 0; } .ln-steps p { color: var(--chalk-2); }
 .ln-foot { margin: auto 0 0; padding: 24px clamp(16px, 4vw, 48px) 40px; color: var(--chalk-3); font-size: 13px; text-align: center; }
+.ln-quote { margin: 0 auto; max-width: 58ch; } .ln-quote blockquote { margin: 0; font: italic 400 clamp(18px, 1.8vw, 24px)/1.4 var(--f-display); color: var(--chalk-2); text-wrap: balance; } .ln-quote figcaption { margin-top: 12px; font-size: 12px; letter-spacing: .02em; color: var(--chalk-3); } .ln-quote cite { font-style: normal; color: var(--chalk-2); }
 /* scene */
 .leash { position: relative; } .leash-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
 .leash-tip { position: absolute; transform: translate(-50%, -140%); background: var(--ink-3); border: 1px solid var(--line-hi); border-radius: 8px; padding: 6px 10px; font-size: 13px; pointer-events: none; white-space: nowrap; display: grid; }

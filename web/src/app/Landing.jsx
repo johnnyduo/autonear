@@ -81,7 +81,12 @@ export default function Landing({ data, connected = false }) {
       <section className="ln-steps">
         {T.steps.map(([h, p], i) => <article key={h}><span className="eyebrow">Step {i + 1}</span><h2>{h}</h2><p>{p}</p></article>)}
       </section>
-      <footer className="ln-foot">Test network only. No real money. The agent holds its own small key; your wallet key never leaves your wallet.</footer>
+      <footer className="ln-foot">
+        <figure className="ln-quote">
+          <blockquote>&ldquo;Every program and every user of the system should operate using the least set of privileges necessary to complete the job.&rdquo;</blockquote>
+          <figcaption>Saltzer and Schroeder, <cite>The Protection of Information in Computer Systems</cite>, 1975</figcaption>
+        </figure>
+      </footer>
     </div>
   );
 }
