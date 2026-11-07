@@ -6,8 +6,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const timing = JSON.parse(readFileSync(resolve(root, 'src/data/timing.json'), 'utf8'));
-const total = timing.scenes.reduce((a, s) => a + 0.25 + s.durationSec + 0.4, 0) + 2.6;
+const V = process.argv.find((a) => a.startsWith('--variant='))?.split('=')[1];
+const timing = JSON.parse(readFileSync(resolve(root, `src/data/timing${V ? '.' + V : ''}.json`), 'utf8'));
+const total = timing.scenes.reduce((a, s) => a + (V ? 0.1 : 0.25) + s.durationSec + (V ? 0.2 : 0.4), 0) + (V ? 2.2 : 2.6);
 mkdirSync(resolve(root, 'public/music'), { recursive: true });
 mkdirSync(resolve(root, 'public/sfx'), { recursive: true });
 const ff = (...a) => execFileSync('ffmpeg', ['-y', '-v', 'error', ...a]);
@@ -21,7 +22,7 @@ ff('-f', 'lavfi', '-i', `sine=f=55:d=${D}`, '-f', 'lavfi', '-i', `sine=f=110:d=$
   `[0]volume=0.5[a];[1]volume=0.22,tremolo=f=0.12:d=0.6[b];[2]volume=0.12,tremolo=f=0.2:d=0.5[c];[3]volume=0.07,tremolo=f=0.17:d=0.7[d];` +
   `[4]lowpass=f=140,volume=0.55,volume='min(1,0.35+t/40)':eval=frame[k];[5]highpass=f=3500,lowpass=f=9000,tremolo=f=1.67:d=1,volume=0.5[n];` +
   `[a][b][c][d][k][n]amix=inputs=6:normalize=0,lowpass=f=6000,afade=t=in:d=2.5,afade=t=out:st=${(total - 3).toFixed(2)}:d=3,loudnorm=I=-24:TP=-3:LRA=7[out]`,
-  '-map', '[out]', '-ar', '44100', '-b:a', '192k', resolve(root, 'public/music/bed.mp3'));
+  '-map', '[out]', '-ar', '44100', '-b:a', '192k', resolve(root, `public/music/bed${V ? '-' + V : ''}.mp3`));
 
 // --- SFX ---
 const sfx = (name, src, fc) => ff(...src, '-filter_complex', fc, '-map', '[o]', '-ar', '44100', resolve(root, `public/sfx/${name}.wav`));

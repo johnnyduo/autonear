@@ -12,20 +12,29 @@
     "audio": "node scripts/audio.mjs",
     "verify": "node scripts/verify.mjs && tsc --noEmit",
     "stills": "node scripts/stills.mjs",
-    "render": "npm run verify && remotion render src/index.ts Main out/autonear-demo.mp4 --codec h264 --crf 16",
+    "render": "npm run verify && remotion render src/index.ts Main out/autonear-demo.mp4 --codec h264 --crf 16 --gl=angle",
+    "tts:cine": "node scripts/tts.mjs --variant=cine",
+    "verify:cine": "node scripts/verify.mjs --variant=cine && tsc --noEmit",
+    "render:cine": "npm run verify:cine && remotion render src/index.ts Cinematic out/autonear-cinematic.mp4 --codec h264 --crf 16 --gl=angle",
+    "tts:cine2": "node scripts/tts.mjs --variant=cine2",
+    "render:cine2": "node scripts/verify.mjs --variant=cine2 && tsc --noEmit && remotion render src/index.ts Cinematic2 out/autonear-cinematic-v2.mp4 --codec h264 --crf 16 --gl=angle",
     "build": "npm run capture && npm run tts && npm run audio && npm run render"
   },
   "dependencies": {
+    "@react-three/fiber": "9.8.2",
     "@remotion/captions": "4.0.541",
     "@remotion/cli": "4.0.541",
     "@remotion/google-fonts": "4.0.541",
     "@remotion/media": "4.0.541",
+    "@remotion/three": "4.0.541",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "remotion": "4.0.541"
+    "remotion": "4.0.541",
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@types/react": "19.2.2",
+    "@types/three": "0.187.0",
     "typescript": "5.9.3"
   }
 }

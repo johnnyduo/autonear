@@ -44,11 +44,15 @@ const Grain: React.FC = () => (
 );
 
 /* ---------- scene wrapper: soft in/out ---------- */
+/** The cinematic cut renders scenes over its own persistent 3D world: inside this context SceneFrame draws no background and no fade. */
+export const BareCtx = React.createContext(false);
 export const SceneFrame: React.FC<{ s: SceneTiming; children: React.ReactNode; glow?: string }> = ({ s, children, glow }) => {
+  const bare = React.useContext(BareCtx);
   const frame = useCurrentFrame();
   const inn = interpolate(frame, [0, 9], [0, 1], { extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
   const out = interpolate(frame, [s.frames - 8, s.frames], [1, 0], { extrapolateLeft: 'clamp' });
   const scale = interpolate(frame, [0, s.frames], [1.0, 1.015]);
+  if (bare) return <AbsoluteFill>{children}</AbsoluteFill>;
   return (
     <AbsoluteFill>
       <Stage glow={glow} />

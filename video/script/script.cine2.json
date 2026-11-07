@@ -1,0 +1,362 @@
+{
+  "title": "AutoNEAR · what does the community want? (cinematic v2)",
+  "track": "AI Security & Defense",
+  "voice": {
+    "name": "Puck",
+    "style": "A charismatic, warm launch-keynote storyteller who truly believes in the product: a smile in the voice, natural breaths, varied pitch, lively emphasis on the key words, never flat or robotic. Sounds like a real person selling an idea they love, with feeling that matches each moment."
+  },
+  "tokens_note": "Numbers only as {{tokens}} resolved from src/data/captured.json (and contracts.json). No typed digits in narration.",
+  "scenes": [
+    {
+      "id": "ask",
+      "tag": null,
+      "narration": "We all want NEAR to grow. But which way? What does the community really want right now, and how would we know?",
+      "style": "Hushed and curious, close to the microphone, but moving along at a natural pace. Lean into 'which way', then let the last question hang, almost a whisper.",
+      "segments": [
+        {
+          "text": "We all want NEAR to grow.",
+          "style": "Warm and sincere, a gentle wistful smile.",
+          "pause": 0.4
+        },
+        {
+          "text": "But which way?",
+          "style": "A beat of doubt, curious, leaning in, a little rising.",
+          "pause": 0.5
+        },
+        {
+          "text": "What does the community really want right now, and how would we know?",
+          "style": "Hushed and intimate, almost a whisper, slowing down on 'how would we know' and leaving it hanging.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "crowd",
+      "tag": null,
+      "narration": "The answer is already out there: in posts, issues and comments, in on-chain data, in research, in whatever Web3 is buzzing about. But reading it all by hand takes months. Sometimes a year.",
+      "style": "Quiet intensity, a storyteller leaning in, brisk steady pace without dragging. A touch of wonder as the signals are listed, then stretch only the word 'months' a little and drop to a flat, weary 'Sometimes a year.'",
+      "segments": [
+        {
+          "text": "The answer is already out there: in posts, issues and comments, in on-chain data, in research, in whatever Web3 is buzzing about.",
+          "style": "The excitement of revealing a secret: a gentle discovery that brightens with every item in the list, quick and lively.",
+          "pause": 0.3
+        },
+        {
+          "text": "But reading it all by hand takes months.",
+          "style": "A heavy, weary sigh of effort, slow, drawing out the word 'months'.",
+          "pause": 0.4
+        },
+        {
+          "text": "Sometimes a year.",
+          "style": "Flat and tired, almost a rueful laugh at the absurdity, quiet.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "reveal",
+      "tag": null,
+      "narration": "So we built AutoNEAR: a protocol that turns real community demand into live products on NEAR. Multi-agents keep reading the signals 24/7, a council votes on what to build, and the best idea is built and deployed, seamlessly, end to end. Humans in the loop keep the whole flow smooth.",
+      "style": "A sudden lift of energy, bright and proud, goosebumps. A breath before 'AutoNEAR', announce it like a title card, then brisk and excited as the chain unfolds. The last sentence is calm and reassuring. Keep a brisk, flowing pace.",
+      "segments": [
+        {
+          "text": "So we built AutoNEAR:",
+          "style": "Take a breath, then a proud, goosebump reveal as if unveiling the product on stage. Say AutoNEAR clearly and warmly, slowly.",
+          "pause": 0.25
+        },
+        {
+          "text": "a protocol that turns real community demand into live products on NEAR.",
+          "style": "Confident and bright, selling the vision with a smile in the voice.",
+          "pause": 0.3
+        },
+        {
+          "text": "Multi-agents keep reading the signals 24/7, a council votes on what to build, and the best idea is built and deployed, seamlessly, end to end.",
+          "style": "Fast, rhythmic and excited, building momentum like a drum roll, crisp on each stage, energy rising to 'end to end'.",
+          "pause": 0.35
+        },
+        {
+          "text": "Humans in the loop keep the whole flow smooth.",
+          "style": "Calm, warm and reassuring, settling down with a soft smile.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "signals",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "narration": "Starting with {{prod.sourcesOk|w}} sources, {{prod.feeds|w}} feeds and {{prod.evidence|w}} records. And as the agents research, the evidence keeps growing. Every record becomes a point of light.",
+      "style": "Rising momentum at a quick, driving pace. Each number lands within a second, like a drumroll, each one a notch higher, with almost no pause between them. Then wonder and awe on 'point of light', soft and glowing.",
+      "segments": [
+        {
+          "text": "Starting with {{prod.sourcesOk|w}} sources, {{prod.feeds|w}} feeds and {{prod.evidence|w}} records.",
+          "style": "Driving and brisk, counting each number like a drumroll with energy, every number a notch higher.",
+          "pause": 0.3
+        },
+        {
+          "text": "And as the agents research, the evidence keeps growing.",
+          "style": "Marvelling and upbeat, a little amazed.",
+          "pause": 0.3
+        },
+        {
+          "text": "Every record becomes a point of light.",
+          "style": "Soft, glowing wonder, slow, with a smile.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "rank",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "narration": "Every record scored, every idea voted on: {{prod.scores|w}} scores in all. A living constellation of product ideas comes alive, growing with real demand.",
+      "style": "Awe that widens and accelerates gently as the stars connect, then a satisfied, open landing on 'product ideas'. Keep a brisk, flowing pace; do not drag.",
+      "segments": [
+        {
+          "text": "Every record scored, every idea voted on: {{prod.scores|w}} scores in all.",
+          "style": "Crisp and energetic, building, clearly counting.",
+          "pause": 0.35
+        },
+        {
+          "text": "A living constellation of product ideas comes alive, growing with real demand.",
+          "style": "Awe that widens and rises, then lands warm and triumphant on 'real demand'.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "council",
+      "tag": "LIVE · PRODUCTION COUNCIL",
+      "narration": "Then the council votes. {{prod.seats|W}} specialist agents, one of them a skeptic, each judge every idea from their own expertise. The vote repeats as evidence arrives. Today, {{prod.winner.word}} rebalancing earns a go.",
+      "style": "Tense and precise like a countdown, quicker with each seat. Sly on 'one of them a skeptic'. Then pure release on 'earns a go': a smile in the voice, bright and triumphant. Keep a brisk, flowing pace; do not drag.",
+      "segments": [
+        {
+          "text": "Then the council votes.",
+          "style": "Hushed dramatic anticipation, like a host building tension before a reveal.",
+          "pause": 0.4
+        },
+        {
+          "text": "{{prod.seats|W}} specialist agents, one of them a skeptic, each judge every idea from their own expertise.",
+          "style": "Quick, sharp and precise, with a sly smirk on 'one of them a skeptic'.",
+          "pause": 0.3
+        },
+        {
+          "text": "The vote repeats as evidence arrives.",
+          "style": "Steady, rhythmic and certain.",
+          "pause": 0.5
+        },
+        {
+          "text": "Today, {{prod.winner.word}} rebalancing earns a go.",
+          "style": "Pure release: bright, joyful and triumphant, a big punch on 'go'.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "swarm",
+      "tag": "BUILD REPLAY",
+      "narration": "A go sends in the swarm. Five agents work one product page at once. Copy. Layout. Style. Media. Check. And a page takes shape in front of you.",
+      "style": "Fast, electric and playful, energy snapping upward. The five single words land like a beat drop, each crisp and punchy. End with a delighted exhale on 'takes shape'. Keep a brisk, flowing pace; do not drag.",
+      "segments": [
+        {
+          "text": "A go sends in the swarm.",
+          "style": "Electric, energy snapping upward.",
+          "pause": 0.25
+        },
+        {
+          "text": "Five agents work one product page at once.",
+          "style": "Fast and excited.",
+          "pause": 0.4
+        },
+        {
+          "text": "Copy.",
+          "style": "Punchy and bright, like a drum hit.",
+          "pause": 0.14
+        },
+        {
+          "text": "Layout.",
+          "style": "Punchy and bright, like a drum hit.",
+          "pause": 0.14
+        },
+        {
+          "text": "Style.",
+          "style": "Punchy and bright, like a drum hit.",
+          "pause": 0.14
+        },
+        {
+          "text": "Media.",
+          "style": "Punchy and bright, like a drum hit.",
+          "pause": 0.14
+        },
+        {
+          "text": "Check.",
+          "style": "Punchy and satisfied, the final hit of the drum fill.",
+          "pause": 0.4
+        },
+        {
+          "text": "And a page takes shape in front of you.",
+          "style": "Delighted, warm, a satisfied exhale.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "contract",
+      "tag": "VERIFIED · MEASURED TEST RUN",
+      "narration": "Beneath it sits a real build, freshly compiled, tested and sealed with a fingerprint, a hash of its exact code. {{suites.nearContract.passed|W}} tests pass. Deployment goes only to the build that matches that fingerprint.",
+      "style": "Calm, precise, quiet engineering pride, at a brisk flowing pace without dragging. A small emphasis on the number, firm and level on the last sentence.",
+      "segments": [
+        {
+          "text": "Beneath it sits a real build, freshly compiled, tested and sealed with a fingerprint, a hash of its exact code.",
+          "style": "Calm and precise, quiet engineering pride, smooth and confident.",
+          "pause": 0.35
+        },
+        {
+          "text": "{{suites.nearContract.passed|W}} tests pass.",
+          "style": "Slow and weighty, a proud satisfied nod.",
+          "pause": 0.4
+        },
+        {
+          "text": "Deployment goes only to the build that matches that fingerprint.",
+          "style": "Firm, level and reassuring.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "vault",
+      "tag": "PUBLIC TESTNET · DEMO KEY · AUTOMATED",
+      "narration": "Now the agents work on their own, inside guardrails: they hold their own budget, manage gas, deploy, and re-evaluate. On NEAR testnet, the vault refused {{testnet.refusalCount|w}} moves that broke the rules. Over the spending cap. Refused. Duplicate deploys. Refused. Code below the vetted standard. Refused. Mandate paused. Refused.",
+      "style": "Confident freedom first, brisk. Then each 'Refused' lands like a door slamming: flat, hard, immediate, with only a quarter-second of silence before the next. Move quickly; no long pauses.",
+      "segments": [
+        {
+          "text": "Now the agents work on their own, inside guardrails: they hold their own budget, manage gas, deploy, and re-evaluate.",
+          "style": "Confident and liberated, upbeat, a free-flowing energetic list.",
+          "pause": 0.35
+        },
+        {
+          "text": "On NEAR testnet, the vault refused {{testnet.refusalCount|w}} moves that broke the rules.",
+          "style": "Serious and tightening, a dramatic setup.",
+          "pause": 0.45
+        },
+        {
+          "text": "Over the spending cap.",
+          "style": "Clear and matter-of-fact.",
+          "pause": 0.18
+        },
+        {
+          "text": "Refused.",
+          "style": "Flat, hard and final, like a heavy door slamming, no emotion, very short.",
+          "pause": 0.35
+        },
+        {
+          "text": "Duplicate deploys.",
+          "style": "Clear and matter-of-fact.",
+          "pause": 0.18
+        },
+        {
+          "text": "Refused.",
+          "style": "Flat, hard and final, like a heavy door slamming, no emotion, very short.",
+          "pause": 0.35
+        },
+        {
+          "text": "Code below the vetted standard.",
+          "style": "Clear and matter-of-fact.",
+          "pause": 0.18
+        },
+        {
+          "text": "Refused.",
+          "style": "Flat, hard and final, like a heavy door slamming, no emotion, very short.",
+          "pause": 0.35
+        },
+        {
+          "text": "Mandate paused.",
+          "style": "Clear and matter-of-fact.",
+          "pause": 0.18
+        },
+        {
+          "text": "Refused.",
+          "style": "Flat, hard and final, like a heavy door slamming, no emotion, very short.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "brake",
+      "tag": "RECORDED RUN · FIXTURE INPUTS · MOCKED RPC",
+      "narration": "Humans in the loop watch the workflow, step in to correct course, and keep everything smooth. Hold to approve. Pause at any moment. A wrong fingerprint is refused.",
+      "style": "Warm, grounded and reassuring at a steady brisk pace, supportive rather than commanding. A little weight on 'Hold to approve'. A quiet smile on the last line.",
+      "segments": [
+        {
+          "text": "Humans in the loop watch the workflow, step in to correct course, and keep everything smooth.",
+          "style": "Warm, grounded and friendly, reassuring.",
+          "pause": 0.4
+        },
+        {
+          "text": "Hold to approve.",
+          "style": "Slow and deliberate, with weight.",
+          "pause": 0.35
+        },
+        {
+          "text": "Pause at any moment.",
+          "style": "Light and easy.",
+          "pause": 0.35
+        },
+        {
+          "text": "A wrong fingerprint is refused.",
+          "style": "Firm, crisp and matter-of-fact, with a small smile at the end.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "tag": "ROADMAP · NEXT",
+      "narration": "Next, the community joins the loop: people test each build and confirm it before it goes live.",
+      "style": "Open, inviting and optimistic, with a smile, as if turning to face the audience. Opens wide on 'joins in'. Keep a brisk, flowing pace; do not drag.",
+      "segments": [
+        {
+          "text": "Next, the community joins the loop:",
+          "style": "Open and inviting, a smile, turning to face the audience.",
+          "pause": 0.3
+        },
+        {
+          "text": "people test each build and confirm it before it goes live.",
+          "style": "Optimistic and warm, widening, a promise.",
+          "pause": 0
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "tag": null,
+      "narration": "AutoNEAR. Real Web3 demand in, researched automatically. World-class standards, deployed automatically. The community in the loop, taking it live. Judges: clone the repo and run the tests.",
+      "style": "Proud and resolute. Each short phrase is its own confident beat, with only a brief pause between them. The last line is direct and friendly, a warm invitation.",
+      "segments": [
+        {
+          "text": "AutoNEAR.",
+          "style": "Proud and resonant, slow, like a title card.",
+          "pause": 0.45
+        },
+        {
+          "text": "Real Web3 demand in, researched automatically.",
+          "style": "Confident and rhythmic, a beat of its own, rising.",
+          "pause": 0.3
+        },
+        {
+          "text": "World-class standards, deployed automatically.",
+          "style": "Confident and rhythmic, a beat of its own, rising.",
+          "pause": 0.3
+        },
+        {
+          "text": "The community in the loop, taking it live.",
+          "style": "Warm and rising, an inspiring beat, with a smile.",
+          "pause": 0.5
+        },
+        {
+          "text": "Judges: clone the repo and run the tests.",
+          "style": "Direct and friendly, a warm confident invitation with a grin.",
+          "pause": 0
+        }
+      ]
+    }
+  ]
+}

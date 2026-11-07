@@ -1,0 +1,468 @@
+{
+  "mode": "gemini",
+  "model": "gemini-3.8-flash-tts",
+  "voice": "Puck",
+  "generatedAt": "2026-11-07T14:13:13.138Z",
+  "scenes": [
+    {
+      "id": "ask",
+      "hash": "6c0008869afeaf7c",
+      "file": "audio-cine/ask.mp3",
+      "durationSec": 8.48,
+      "spoken": "We all want NEAR to grow. But which way? What does the network need right now, and how would we know?",
+      "display": "We all want NEAR to grow. But which way? What does the network need right now, and how would we know?",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0.202585,
+          "end": 8.188231
+        },
+        "pauses": [
+          {
+            "start": 2.283,
+            "end": 2.726
+          },
+          {
+            "start": 2.821,
+            "end": 3.077
+          },
+          {
+            "start": 3.775,
+            "end": 4.346
+          },
+          {
+            "start": 6.495,
+            "end": 7.043
+          }
+        ]
+      }
+    },
+    {
+      "id": "crowd",
+      "hash": "58f05141b0233381",
+      "file": "audio-cine/crowd.mp3",
+      "durationSec": 10.76,
+      "spoken": "The answer is already out there. People say it in public, in posts, in issues, in commits. Studying all that by hand takes months. Sometimes a year.",
+      "display": "The answer is already out there. People say it in public, in posts, in issues, in commits. Studying all that by hand takes months. Sometimes a year.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0.27678,
+          "end": 10.469388
+        },
+        "pauses": [
+          {
+            "start": 2.112,
+            "end": 2.471
+          },
+          {
+            "start": 6.349,
+            "end": 6.589
+          },
+          {
+            "start": 8.134,
+            "end": 8.28
+          }
+        ]
+      }
+    },
+    {
+      "id": "reveal",
+      "hash": "d863d3b1a575165c",
+      "file": "audio-cine/reveal.mp3",
+      "durationSec": 9.6,
+      "spoken": "So we built Auto Near. It keeps reading those signals, ranks the products NEAR could use, and moves the best one toward a build. The owner sets the limits.",
+      "display": "So we built AutoNEAR. It keeps reading those signals, ranks the products NEAR could use, and moves the best one toward a build. The owner sets the limits.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0.227098,
+          "end": 9.26381
+        },
+        "pauses": [
+          {
+            "start": 1.826,
+            "end": 2.154
+          },
+          {
+            "start": 5.708,
+            "end": 5.906
+          },
+          {
+            "start": 7.586,
+            "end": 8.056
+          }
+        ]
+      }
+    },
+    {
+      "id": "signals",
+      "hash": "4bc4b90850fea14b",
+      "file": "audio-cine/signals.mp3",
+      "durationSec": 13.64,
+      "spoken": "Thirteen sources checked in. Forty-nine feeds. Four hundred and twenty-four records, each stored with where it came from. Every one becomes a point of light.",
+      "display": "13 sources checked in. 49 feeds. 424 records, each stored with where it came from. Every one becomes a point of light.",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "cal": {
+        "speech": {
+          "start": 0.314172,
+          "end": 13.23195
+        },
+        "pauses": [
+          {
+            "start": 2.203,
+            "end": 2.471
+          },
+          {
+            "start": 4.089,
+            "end": 4.358
+          },
+          {
+            "start": 4.358,
+            "end": 4.568
+          },
+          {
+            "start": 7.28,
+            "end": 7.658
+          },
+          {
+            "start": 8.243,
+            "end": 8.385
+          },
+          {
+            "start": 9.991,
+            "end": 10.322
+          },
+          {
+            "start": 10.342,
+            "end": 10.513
+          },
+          {
+            "start": 11.373,
+            "end": 11.682
+          }
+        ]
+      }
+    },
+    {
+      "id": "rank",
+      "hash": "922c899a757a26c2",
+      "file": "audio-cine/rank.mp3",
+      "durationSec": 9,
+      "spoken": "Four hundred and eighty scores later, those points pull together into a constellation of seven product ideas.",
+      "display": "480 scores later, those points pull together into a constellation of 7 product ideas.",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "cal": {
+        "speech": {
+          "start": 0.266213,
+          "end": 8.705465
+        },
+        "pauses": [
+          {
+            "start": 2.96,
+            "end": 3.232
+          },
+          {
+            "start": 5.207,
+            "end": 5.443
+          }
+        ]
+      }
+    },
+    {
+      "id": "council",
+      "hash": "8cf230534c54118c",
+      "file": "audio-cine/council.mp3",
+      "durationSec": 14.6,
+      "spoken": "Then the council votes. Seven seats, one of them a skeptic, score every idea by their own rules. The vote repeats as evidence arrives. Today, treasury earns a go.",
+      "display": "Then the council votes. 7 seats, one of them a skeptic, score every idea by their own rules. The vote repeats as evidence arrives. Today, treasury earns a go.",
+      "tag": "LIVE · PRODUCTION COUNCIL",
+      "cal": {
+        "speech": {
+          "start": 0.257778,
+          "end": 14.351088
+        },
+        "pauses": [
+          {
+            "start": 3.451,
+            "end": 3.61
+          },
+          {
+            "start": 4.787,
+            "end": 5.011
+          },
+          {
+            "start": 7.966,
+            "end": 8.586
+          },
+          {
+            "start": 11.159,
+            "end": 11.6
+          },
+          {
+            "start": 12.08,
+            "end": 12.538
+          },
+          {
+            "start": 13.187,
+            "end": 13.342
+          }
+        ]
+      }
+    },
+    {
+      "id": "swarm",
+      "hash": "ae55a1cf59ba96f7",
+      "file": "audio-cine/swarm.mp3",
+      "durationSec": 11.8,
+      "spoken": "A go sends in the swarm. Five agents work one product page at once. Copy. Layout. Style. Media. Check. And a page takes shape in front of you.",
+      "display": "A go sends in the swarm. Five agents work one product page at once. Copy. Layout. Style. Media. Check. And a page takes shape in front of you.",
+      "tag": "BUILD REPLAY",
+      "cal": {
+        "speech": {
+          "start": 0.238753,
+          "end": 11.502676
+        },
+        "pauses": [
+          {
+            "start": 2.319,
+            "end": 2.549
+          },
+          {
+            "start": 5.174,
+            "end": 5.471
+          },
+          {
+            "start": 5.898,
+            "end": 6.06
+          },
+          {
+            "start": 7.272,
+            "end": 7.481
+          },
+          {
+            "start": 7.995,
+            "end": 8.214
+          },
+          {
+            "start": 8.629,
+            "end": 9.033
+          },
+          {
+            "start": 10.412,
+            "end": 10.675
+          }
+        ]
+      }
+    },
+    {
+      "id": "contract",
+      "hash": "e5974e7885299712",
+      "file": "audio-cine/contract.mp3",
+      "durationSec": 12.6,
+      "spoken": "Beneath it sits a contract build, compiled, tested and given a code fingerprint. Eighty-four tests pass. The agent deploys only what the owner approved.",
+      "display": "Beneath it sits a contract build, compiled, tested and given a code fingerprint. 84 tests pass. The agent deploys only what the owner approved.",
+      "tag": "VERIFIED · MEASURED TEST RUN",
+      "cal": {
+        "speech": {
+          "start": 0.26551,
+          "end": 12.114989
+        },
+        "pauses": [
+          {
+            "start": 2.53,
+            "end": 2.812
+          },
+          {
+            "start": 3.494,
+            "end": 3.742
+          },
+          {
+            "start": 6.06,
+            "end": 6.396
+          },
+          {
+            "start": 6.559,
+            "end": 6.724
+          },
+          {
+            "start": 8.341,
+            "end": 8.823
+          },
+          {
+            "start": 10.107,
+            "end": 10.433
+          }
+        ]
+      }
+    },
+    {
+      "id": "vault",
+      "hash": "e3f2bb42043fe6e7",
+      "file": "audio-cine/vault.mp3",
+      "durationSec": 22.8,
+      "spoken": "Now the agent works on its own, inside the owner's limits. It draws its own gas and deploys approved code. And on NEAR testnet, the vault refused four out-of-bounds moves. Over the cap. Refused. Too many deploys. Refused. Wrong template. Refused. Paused. Refused.",
+      "display": "Now the agent works on its own, inside the owner's limits. It draws its own gas and deploys approved code. And on NEAR testnet, the vault refused 4 out-of-bounds moves. Over the cap. Refused. Too many deploys. Refused. Wrong template. Refused. Paused. Refused.",
+      "tag": "PUBLIC TESTNET · DEMO OWNER KEY · AUTOMATED",
+      "cal": {
+        "speech": {
+          "start": 0.306599,
+          "end": 22.430748
+        },
+        "pauses": [
+          {
+            "start": 2.845,
+            "end": 3.019
+          },
+          {
+            "start": 4.875,
+            "end": 5.198
+          },
+          {
+            "start": 8.54,
+            "end": 9.007
+          },
+          {
+            "start": 10.395,
+            "end": 10.671
+          },
+          {
+            "start": 13.484,
+            "end": 14.037
+          },
+          {
+            "start": 14.643,
+            "end": 14.994
+          },
+          {
+            "start": 15.612,
+            "end": 15.911
+          },
+          {
+            "start": 16.915,
+            "end": 17.178
+          },
+          {
+            "start": 17.843,
+            "end": 18.104
+          },
+          {
+            "start": 18.973,
+            "end": 19.353
+          },
+          {
+            "start": 20.077,
+            "end": 20.509
+          },
+          {
+            "start": 21.199,
+            "end": 21.633
+          }
+        ]
+      }
+    },
+    {
+      "id": "brake",
+      "hash": "7b1b8959631f632a",
+      "file": "audio-cine/brake.mp3",
+      "durationSec": 12.76,
+      "spoken": "And the owner always has the final word. Hold to approve. Pause or revoke at any moment. A wrong fingerprint is refused. A human stays on the brake.",
+      "display": "And the owner always has the final word. Hold to approve. Pause or revoke at any moment. A wrong fingerprint is refused. A human stays on the brake.",
+      "tag": "RECORDED RUN · FIXTURE INPUTS · MOCKED RPC",
+      "cal": {
+        "speech": {
+          "start": 0.211451,
+          "end": 12.396848
+        },
+        "pauses": [
+          {
+            "start": 0.966,
+            "end": 1.175
+          },
+          {
+            "start": 3.002,
+            "end": 3.592
+          },
+          {
+            "start": 4.75,
+            "end": 5.178
+          },
+          {
+            "start": 6.688,
+            "end": 6.841
+          },
+          {
+            "start": 7.487,
+            "end": 8.117
+          },
+          {
+            "start": 9.965,
+            "end": 10.516
+          }
+        ]
+      }
+    },
+    {
+      "id": "community",
+      "hash": "02f0d21c6163aa55",
+      "file": "audio-cine/community.mp3",
+      "durationSec": 6.72,
+      "spoken": "Next, the community joins in. People will test each build and confirm it before it goes live.",
+      "display": "Next, the community joins in. People will test each build and confirm it before it goes live.",
+      "tag": "ROADMAP · NEXT",
+      "cal": {
+        "speech": {
+          "start": 0.305896,
+          "end": 6.467483
+        },
+        "pauses": [
+          {
+            "start": 2.509,
+            "end": 2.756
+          },
+          {
+            "start": 5.066,
+            "end": 5.232
+          }
+        ]
+      }
+    },
+    {
+      "id": "close",
+      "hash": "7f13551183bd437a",
+      "file": "audio-cine/close.mp3",
+      "durationSec": 11.96,
+      "spoken": "Auto Near. Public signals in. A product you can inspect. A human on the brake. Judges, clone the repo and run the tests.",
+      "display": "AutoNEAR. Public signals in. A product you can inspect. A human on the brake. Judges, clone the repo and run the tests.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0.274263,
+          "end": 11.575147
+        },
+        "pauses": [
+          {
+            "start": 1.401,
+            "end": 1.897
+          },
+          {
+            "start": 3.428,
+            "end": 3.937
+          },
+          {
+            "start": 6.03,
+            "end": 6.557
+          },
+          {
+            "start": 7.964,
+            "end": 8.536
+          },
+          {
+            "start": 9.21,
+            "end": 9.4
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -6,37 +6,42 @@ import { fileURLToPath } from 'node:url';
 import { spoken } from '../src/lib/narration.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const V = process.argv.find((a) => a.startsWith('--variant='))?.split('=')[1];
+const sfx = V ? `.${V}` : '';
+const LEAD = V ? 0.1 : 0.25, GAP = V ? 0.2 : 0.4;
 const rd = (p) => JSON.parse(readFileSync(resolve(root, p), 'utf8'));
-const script = rd('script/script.json'), data = rd('src/data/captured.json'), meta = rd('script/meta.json');
-const timing = existsSync(resolve(root, 'src/data/timing.json')) ? rd('src/data/timing.json') : null;
+const script = rd(`script/script${sfx}.json`), data = rd('src/data/captured.json'), meta = rd('script/meta.json');
+const timing = existsSync(resolve(root, `src/data/timing${sfx}.json`)) ? rd(`src/data/timing${sfx}.json`) : null;
 const fails = [], warns = [];
 const must = (c, m) => { if (!c) fails.push(m); };
 
 // 1. tokens resolve (spoken() throws on a missing path) and no bare digits hide in narration
 for (const s of script.scenes) {
   let t; try { t = spoken(s.narration, data); } catch (e) { fails.push(`${s.id}: ${e.message}`); continue; }
-  const raw = s.narration.replace(/\{\{[^}]+\}\}/g, '');
+  const raw = s.narration.replace(/\{\{[^}]+\}\}/g, '').replace(/Web3|24\/7/g, 'x');
   must(!/\d/.test(raw), `${s.id}: hard-coded digit in narration; use a {{token}} so it cannot drift from captured data`);
   must(t.length > 0, `${s.id}: empty narration`);
 }
 
+// 1b. segmented scenes: the takes, joined, must equal the narration exactly
+for (const s of script.scenes) if (s.segments) must(s.segments.map((g) => g.text).join(' ').replace(/\s+/g, ' ') === s.narration.replace(/\s+/g, ' '), `${s.id}: segments do not add up to the narration`);
 // 2. banned / overclaiming words (Codex fact-check found these overstate what the code proves)
 const BANNED = [/\baudited\b/i, /\bguarantee/i, /\bunhackable\b/i, /\bproduction[- ]ready\b/i, /\bmainnet\b/i, /\bnever (let|move|holds?)\b/i, /\breal funds\b/i, /\bautonomous(ly)? (deploy|execut)/i, /\bsecure[sd]?\b/i];
 for (const s of script.scenes) for (const re of BANNED) must(!re.test(s.narration), `${s.id}: banned claim word ${re}`);
 
 // 3. length budget: X allows 2:20 for most accounts; pitch target <= 105 s total
 const words = script.scenes.map((s) => spoken(s.narration, data).split(/\s+/).length).reduce((a, b) => a + b, 0);
-must(words <= 245, `narration is ${words} words (budget 245)`);
+must(words <= (V ? 380 : 245), `narration is ${words} words (budget ${V ? 380 : 245})`);
 if (timing) {
-  const total = timing.scenes.reduce((a, s) => a + 0.25 + s.durationSec + 0.4, 0) + 2.6;
-  must(total <= 125, `video would be ${total.toFixed(1)}s (budget 125s)`);
-  if (total > 105) warns.push(`video ${total.toFixed(1)}s is above the 105s pitch target`);
+  const total = timing.scenes.reduce((a, s) => a + LEAD + s.durationSec + GAP, 0) + (V ? 2.2 : 2.6);
+  must(total <= (V ? 190 : 125), `video would be ${total.toFixed(1)}s (budget ${V ? 190 : 125}s)`);
+  if (total > (V ? 170 : 105)) warns.push(`video ${total.toFixed(1)}s is above the ${V ? '2:50' : '105s pitch'} target`);
   must(timing.scenes.length === script.scenes.length, 'timing.json is stale: rerun `npm run tts`');
   if (timing.mode !== 'gemini') warns.push(`narration is "${timing.mode}" (placeholder voice), not Gemini. Set GEMINI_API_KEY and run npm run tts`);
 }
 
 // 4. honesty: scenes built from fixtures/mocks must say so on screen
-const need = { signals: /LIVE/, council: /LIVE/, swarm: /REPLAY/, contract: /VERIFIED/, vault: /TESTNET.*DEMO OWNER KEY/, brake: /FIXTURE.*MOCKED/ };
+const need = { ...(V ? { rank: /LIVE/, community: /ROADMAP/ } : {}), signals: /LIVE/, council: /LIVE/, swarm: /REPLAY/, contract: /VERIFIED/, vault: V ? /TESTNET.*DEMO KEY/ : /TESTNET.*DEMO OWNER KEY/, brake: /FIXTURE.*MOCKED/ };
 for (const [id, re] of Object.entries(need)) must(re.test(script.scenes.find((s) => s.id === id)?.tag ?? ''), `${id}: provenance tag must match ${re}`);
 
 // 5. captured data must be fresh and green; contract numbers must be MEASURED (contracts.json), not typed

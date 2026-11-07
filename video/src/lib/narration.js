@@ -34,7 +34,7 @@ export function resolveTokens(text, data, mode /* 'spoken' | 'display' */) {
   });
 }
 
-export const spoken = (text, data) => resolveTokens(text, data, 'spoken');
+export const spoken = (text, data) => resolveTokens(text, data, 'spoken').replace(/24\/7/g, 'twenty-four seven');
 export const display = (text, data) => resolveTokens(text, data, 'display');
 
 /** Split a display sentence into caption chunks (<= maxWords), breaking at punctuation first. */

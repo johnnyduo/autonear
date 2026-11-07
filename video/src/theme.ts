@@ -6,6 +6,7 @@ export const C = {
   signal: '#c6f432', signalInk: '#10160a', risk: '#ff6a3d', warn: '#f2b84b',
 } as const;
 export const F = {
+  kinetic: "'Anybody', 'Inter Tight', sans-serif",
   display: "'Instrument Serif', 'Times New Roman', serif",
   body: "'Inter Tight', system-ui, sans-serif",
   mono: "'JetBrains Mono', ui-monospace, Menlo, monospace",

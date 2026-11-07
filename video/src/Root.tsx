@@ -5,6 +5,10 @@ import { FPS, H, W } from './theme';
 import { buildTimeline } from './lib/timeline';
 import { Captions, Provenance, Sfx } from './components';
 import { SCENES } from './scenes';
+import { CineMain } from './cine/Main';
+import { buildTimeline as buildCine } from './cine/timeline';
+import { CineMain as CineMain2 } from './cine2/Main';
+import { buildTimeline as buildCine2 } from './cine2/timeline';
 
 loadFonts();
 
@@ -31,5 +35,13 @@ const Main: React.FC = () => {
 
 export const RemotionRoot: React.FC = () => {
   const tl = buildTimeline();
-  return <Composition id="Main" component={Main} durationInFrames={tl.totalFrames} fps={FPS} width={W} height={H} />;
+  const cine = buildCine();
+  const cine2 = buildCine2();
+  return (
+    <>
+      <Composition id="Main" component={Main} durationInFrames={tl.totalFrames} fps={FPS} width={W} height={H} />
+      <Composition id="Cinematic" component={CineMain} durationInFrames={cine.totalFrames} fps={FPS} width={W} height={H} />
+      <Composition id="Cinematic2" component={CineMain2} durationInFrames={cine2.totalFrames} fps={FPS} width={W} height={H} />
+    </>
+  );
 };
