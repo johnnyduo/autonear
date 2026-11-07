@@ -1,0 +1,83 @@
+{
+  "title": "AutoNEAR · what does NEAR need? (v4, cinematic)",
+  "track": "AI Security & Defense",
+  "voice": {
+    "name": "Puck",
+    "style": "Cinematic trailer narration, warm and human, with real feeling that follows each moment on screen. Keep a brisk pace of about two and a half words per second, with natural breaths. Each scene continues straight from the previous one in the same voice."
+  },
+  "tokens_note": "Numbers only as {{tokens}} resolved from src/data/captured.json (and contracts.json). No typed digits in narration.",
+  "scenes": [
+    {
+      "id": "ask",
+      "tag": null,
+      "narration": "We all want NEAR to grow. But which way? What does the network need right now, and how would we know?",
+      "style": "Hushed and curious, close to the microphone, but moving along at a natural pace. Lean into 'which way', then let the last question hang, almost a whisper."
+    },
+    {
+      "id": "crowd",
+      "tag": null,
+      "narration": "The answer is already out there. People say it in public, in posts, in issues, in commits. Studying all that by hand takes months. Sometimes a year.",
+      "style": "Quiet intensity, a storyteller leaning in, brisk steady pace without dragging. Stretch only the word 'months' a little, then drop to a flat, weary 'Sometimes a year.'"
+    },
+    {
+      "id": "reveal",
+      "tag": null,
+      "narration": "So we built AutoNEAR. It keeps reading those signals, ranks the products NEAR could use, and moves the best one toward a build. The owner sets the limits.",
+      "style": "A sudden lift of energy, bright and proud, goosebumps. Take a breath of silence, announce 'AutoNEAR' like a title card, then warm and brisk. The last sentence is calm and reassuring. Keep a brisk, flowing pace; do not drag."
+    },
+    {
+      "id": "signals",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "narration": "{{prod.sourcesOk|W}} sources checked in. {{prod.feeds|W}} feeds. {{prod.evidence|W}} records, each stored with where it came from. Every one becomes a point of light.",
+      "style": "Rising momentum at a quick, driving pace. Each number lands within a second, like a drumroll, each one a notch higher, with almost no pause between them. Then wonder and awe on 'point of light', soft and glowing."
+    },
+    {
+      "id": "rank",
+      "tag": "LIVE · PRODUCTION SNAPSHOT",
+      "narration": "{{prod.scores|W}} scores later, those points pull together into a constellation of {{prod.opportunities|w}} product ideas.",
+      "style": "Awe that widens and accelerates gently as the stars connect, then a satisfied, open landing on 'product ideas'. Keep a brisk, flowing pace; do not drag."
+    },
+    {
+      "id": "council",
+      "tag": "LIVE · PRODUCTION COUNCIL",
+      "narration": "Then the council votes. {{prod.seats|W}} seats, one of them a skeptic, score every idea by their own rules. The vote repeats as evidence arrives. Today, {{prod.winner.word}} earns a go.",
+      "style": "Tense and precise like a countdown, quicker with each seat. Sly on 'one of them a skeptic'. Then pure release on 'earns a go': a smile in the voice, bright and triumphant. Keep a brisk, flowing pace; do not drag."
+    },
+    {
+      "id": "swarm",
+      "tag": "BUILD REPLAY",
+      "narration": "A go sends in the swarm. Five agents work one product page at once. Copy. Layout. Style. Media. Check. And a page takes shape in front of you.",
+      "style": "Fast, electric and playful, energy snapping upward. The five single words land like a beat drop, each crisp and punchy. End with a delighted exhale on 'takes shape'. Keep a brisk, flowing pace; do not drag."
+    },
+    {
+      "id": "contract",
+      "tag": "VERIFIED · MEASURED TEST RUN",
+      "narration": "Beneath it sits a contract build, compiled, tested and given a code fingerprint. {{suites.nearContract.passed|W}} tests pass. The agent deploys only what the owner approved.",
+      "style": "Calm, precise, quiet engineering pride, at a brisk flowing pace without dragging. A small emphasis on the number, firm and level on the last sentence."
+    },
+    {
+      "id": "vault",
+      "tag": "PUBLIC TESTNET · DEMO OWNER KEY · AUTOMATED",
+      "narration": "Now the agent works on its own, inside the owner's limits. It draws its own gas and deploys approved code. And on NEAR testnet, the vault refused {{testnet.refusalCount|w}} out-of-bounds moves. Over the cap. Refused. Too many deploys. Refused. Wrong template. Refused. Paused. Refused.",
+      "style": "Confident freedom first, brisk. Then each 'Refused' lands like a door slamming: flat, hard, immediate, with only a quarter-second of silence before the next. Move quickly; no long pauses."
+    },
+    {
+      "id": "brake",
+      "tag": "RECORDED RUN · FIXTURE INPUTS · MOCKED RPC",
+      "narration": "And the owner always has the final word. Hold to approve. Pause or revoke at any moment. A wrong fingerprint is refused. A human stays on the brake.",
+      "style": "Warm, grounded and reassuring at a steady brisk pace. A little weight on 'Hold to approve'. A quiet smile on the very last line."
+    },
+    {
+      "id": "community",
+      "tag": "ROADMAP · NEXT",
+      "narration": "Next, the community joins in. People will test each build and confirm it before it goes live.",
+      "style": "Open, inviting and optimistic, with a smile, as if turning to face the audience. Opens wide on 'joins in'. Keep a brisk, flowing pace; do not drag."
+    },
+    {
+      "id": "close",
+      "tag": null,
+      "narration": "AutoNEAR. Public signals in. A product you can inspect. A human on the brake. Judges, clone the repo and run the tests.",
+      "style": "Proud and resolute. Each short phrase is its own confident beat, with only a brief pause between them. The last line is direct and friendly, a warm invitation."
+    }
+  ]
+}

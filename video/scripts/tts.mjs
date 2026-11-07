@@ -14,6 +14,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1];
 const flag = (n) => process.argv.includes(`--${n}`);
+// --variant=cine builds the cinematic cut from script.cine.json into audio-cine/ and timing.cine.json, leaving the default cut untouched.
+const V = arg('variant');
+const sfx = V ? `.${V}` : '';
+const audioSub = V ? `audio-${V}` : 'audio';
 
 function loadEnvFile() {
   const p = resolve(root, '.env');
@@ -25,11 +29,11 @@ function loadEnvFile() {
 }
 loadEnvFile();
 
-const script = JSON.parse(readFileSync(resolve(root, 'script/script.json'), 'utf8'));
+const script = JSON.parse(readFileSync(resolve(root, `script/script${sfx}.json`), 'utf8'));
 const data = JSON.parse(readFileSync(resolve(root, 'src/data/captured.json'), 'utf8'));
-const audioDir = resolve(root, 'public/audio');
+const audioDir = resolve(root, `public/${audioSub}`);
 mkdirSync(audioDir, { recursive: true });
-const timingPath = resolve(root, 'src/data/timing.json');
+const timingPath = resolve(root, `src/data/timing${sfx}.json`);
 const prev = existsSync(timingPath) ? JSON.parse(readFileSync(timingPath, 'utf8')) : { scenes: [] };
 
 const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -142,14 +146,45 @@ for (const s of script.scenes) {
   const text = spoken(s.narration, data).replace(/AutoNEAR/g, 'Auto Near'); // speech-only respelling so the voice says two words
   const shown = display(s.narration, data);
   const mp3 = resolve(audioDir, `${s.id}.mp3`);
-  const hash = createHash('sha256').update(JSON.stringify([hashModel, scratch ? 'Daniel' : voice, scratch ? '' : styleOf(s.style), text])).digest('hex').slice(0, 16);
+  const hash = createHash('sha256').update(JSON.stringify([hashModel, scratch ? 'Daniel' : voice, scratch ? '' : styleOf(s.style), text, s.segments ?? null])).digest('hex').slice(0, 16);
   const cached = prev.scenes.find((p) => p.id === s.id);
   if (!flag('force') && cached?.hash === hash && existsSync(mp3)) {
     console.log(`= ${s.id} (cached)`);
     scenes.push({ ...cached, spoken: text, display: shown, tag: s.tag ? display(s.tag, data) : null, cal: analyze(mp3, cached.durationSec) });
     continue;
   }
-  if (scratch) {
+  if (s.segments?.length && !scratch) {
+    // Per-phrase direction: each segment is its own take with its own emotion; takes are joined with a chosen breath of silence.
+    const list = [];
+    for (let i = 0; i < s.segments.length; i++) {
+      const g = s.segments[i];
+      const t = spoken(g.text, data).replace(/AutoNEAR/g, 'Auto Near');
+      // raw takes are cached by (text, style, voice) so retiming/trimming never re-pays for synthesis
+      mkdirSync(resolve(audioDir, 'seg'), { recursive: true });
+      const sh = createHash('sha256').update(JSON.stringify([hashModel, voice, styleOf(g.style), t])).digest('hex').slice(0, 16);
+      const raw = resolve(audioDir, 'seg', `${sh}.wav`);
+      if (!existsSync(raw)) {
+        const r = await synthWithFallback(t, resolve(audioDir, `${s.id}.s${i}`), g.style);
+        model = r.model;
+        const inArgs = r.kind === 'wav' ? ['-i', r.file] : ['-f', 's16le', '-ar', String(r.rate), '-ac', '1', '-i', r.file];
+        execFileSync('ffmpeg', ['-y', '-v', 'error', ...inArgs, '-ar', '44100', '-ac', '1', raw]);
+        execFileSync('rm', ['-f', r.file]);
+      }
+      // trim the model's leading/trailing silence so the only pauses are the ones the script asks for
+      const wav = resolve(audioDir, `${s.id}.s${i}.n.wav`);
+      const trim = 'silenceremove=start_periods=1:start_threshold=-42dB:start_silence=0.04,areverse,silenceremove=start_periods=1:start_threshold=-42dB:start_silence=0.06,areverse';
+      execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', raw, '-af', trim, '-ar', '44100', '-ac', '1', wav]);
+      list.push(wav);
+      if (i < s.segments.length - 1) {
+        const sil = resolve(audioDir, `${s.id}.s${i}.sil.wav`);
+        execFileSync('ffmpeg', ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono', '-t', String(g.pause ?? 0.2), sil]); list.push(sil);
+      }
+    }
+    const lf = resolve(audioDir, `${s.id}.list.txt`);
+    writeFileSync(lf, list.map((f) => `file '${f}'`).join('\n'));
+    execFileSync('ffmpeg', ['-y', '-v', 'error', '-f', 'concat', '-safe', '0', '-i', lf, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=9', '-ar', '44100', '-b:a', '192k', mp3]);
+    execFileSync('rm', ['-f', lf, ...list]);
+  } else if (scratch) {
     const aiff = resolve(audioDir, `${s.id}.aiff`);
     execFileSync('say', ['-v', 'Daniel', '-r', '178', '-o', aiff, text]);
     execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', aiff, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=9', '-ar', '44100', '-b:a', '160k', mp3]);
@@ -165,8 +200,8 @@ for (const s of script.scenes) {
   const words = text.split(/\s+/).length;
   const wps = words / durationSec;
   console.log(`+ ${s.id}: ${durationSec.toFixed(2)}s, ${words} words, ${wps.toFixed(2)} w/s`);
-  if (!scratch && (wps < 1.6 || wps > 4)) console.warn(`  ! ${s.id}: ${wps.toFixed(2)} words/s is outside the normal 1.6-4 range; the style prompt may have been spoken aloud or truncated. Listen to public/audio/${s.id}.mp3.`);
-  scenes.push({ id: s.id, hash, file: `audio/${s.id}.mp3`, durationSec, spoken: text, display: shown, tag: s.tag ? display(s.tag, data) : null, cal: analyze(mp3, durationSec) });
+  if (!scratch && (wps < 1.6 || wps > 4)) console.warn(`  ! ${s.id}: ${wps.toFixed(2)} words/s is outside the normal 1.6-4 range; the style prompt may have been spoken aloud or truncated. Listen to public/${audioSub}/${s.id}.mp3.`);
+  scenes.push({ id: s.id, hash, file: `${audioSub}/${s.id}.mp3`, durationSec, spoken: text, display: shown, tag: s.tag ? display(s.tag, data) : null, cal: analyze(mp3, durationSec) });
 }
 
 writeFileSync(timingPath, JSON.stringify({ mode: scratch ? 'scratch' : 'gemini', model, voice: scratch ? 'Daniel' : voice, generatedAt: new Date().toISOString(), scenes }, null, 2));
