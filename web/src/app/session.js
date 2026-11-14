@@ -3,9 +3,10 @@
 // A wallet that is not the vault owner is "connected, read-only": no token is issued and every write control stays disabled.
 import { useSyncExternalStore } from 'react';
 import { api, setToken } from '../api.js';
+import { netOf } from './session-net.js';
 
 const KEY = 'autonear.owner';
-let state = { address: null, isOwner: false, exp: 0, busy: false, error: '' };
+let state = { address: null, isOwner: false, exp: 0, busy: false, error: '', net: 'unknown', switching: false };
 const subs = new Set();
 const emit = () => subs.forEach((f) => f());
 const set = (p) => { state = { ...state, ...p }; emit(); };
@@ -41,7 +42,7 @@ export async function connectAndSignIn(connectorId) {
     const r = await api('/api/auth/session', { method: 'POST', body: { address, message: ch.message, signature } });
     if (r.token) setToken(r.token);
     set({ address: r.address ?? address.toLowerCase(), isOwner: Boolean(r.isOwner), exp: r.exp ?? Date.now() + 8 * 3600_000, busy: false });
-    persist(); watchWallet(config, actions);
+    persist(); watchWallet(config, actions); trackNet(getConnection(config).connector);
     return r;
   } catch (e) {
     const msg = e.message === 'NO_WALLET' ? 'NO_WALLET' : /user rejected|denied/i.test(e.message) ? 'You closed the wallet window. Nothing was signed.' : e.message;
@@ -51,6 +52,32 @@ export async function connectAndSignIn(connectorId) {
 }
 
 let unwatch = null;
+let offNet = null;
+/** Read-only: which network the wallet is on, kept current. Nothing is asked of the wallet here, so no pop-up appears. */
+async function trackNet(connector) {
+  offNet?.(); offNet = null;
+  try {
+    const p = await connector?.getProvider(); if (!p?.request) return;
+    const update = (id) => set({ net: netOf(id) });
+    update(await p.request({ method: 'eth_chainId' }));
+    p.on?.('chainChanged', update); offNet = () => p.removeListener?.('chainChanged', update);
+  } catch { set({ net: 'unknown' }); }
+}
+
+/** One click from the owner: switch the wallet to NEAR testnet, adding the network first if the wallet does not know it. */
+export async function switchToNear() {
+  set({ switching: true, error: '' });
+  try {
+    const { config, getConnection } = await wagmi();
+    const p = await getConnection(config).connector?.getProvider();
+    if (!p?.request) throw new Error('The wallet is not connected. Connect it again.');
+    const { ensureNearChain } = await import('../wallet/nearEth.js');
+    await ensureNearChain(p);
+    set({ net: netOf(await p.request({ method: 'eth_chainId' })), switching: false });
+  } catch (e) {
+    set({ switching: false, error: /user rejected|denied/i.test(String(e?.message)) ? 'You closed the wallet window. The network was not changed.' : String(e?.message ?? e) });
+  }
+}
 /** If the wallet switches to another account (or disconnects) the session no longer matches it: drop it rather than show owner controls for the wrong wallet. */
 function watchWallet(config, actions) {
   unwatch?.();
@@ -60,13 +87,14 @@ function watchWallet(config, actions) {
 /** On load: a restored session is only trusted after the server confirms it. */
 export async function verifySession() {
   if (!state.address) return;
-  try { const me = await api('/api/auth/me'); if (state.isOwner && !me.isOwner) { setToken(''); set({ address: null, isOwner: false, exp: 0 }); persist(); } } catch { /* offline: keep what we have */ }
+  try { const me = await api('/api/auth/me'); if (state.isOwner && !me.isOwner) { setToken(''); set({ address: null, isOwner: false, exp: 0 }); persist(); return; } } catch { /* offline: keep what we have */ }
+  try { const w = await wagmi(); await w.reconnect(w.config); trackNet(w.getConnection(w.config).connector); } catch { /* the wallet is not available now: the network stays unknown */ }
 }
 
 export async function signOut() {
-  unwatch?.(); unwatch = null;
+  unwatch?.(); unwatch = null; offNet?.(); offNet = null;
   try { const { config, disconnect } = await wagmi(); await disconnect(config); } catch { /* not connected */ }
   setToken('');
-  set({ address: null, isOwner: false, exp: 0, error: '' });
+  set({ address: null, isOwner: false, exp: 0, error: '', net: 'unknown' });
   persist();
 }

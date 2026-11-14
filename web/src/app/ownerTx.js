@@ -47,5 +47,19 @@ export async function sendSetupSigned({ account }) {
   return near.sendSetupWithEthSign({ provider, account: account.toLowerCase() });
 }
 
+/**
+ * Mint the free TEST token (mock USDC) straight into a vault: one wallet signature. The token's own rules are checked first so the wallet is not opened for something that cannot work
+ * (more than the per-call ceiling). A receiver that is not registered on the token yet gets its storage paid with 0.0025 NEAR attached (the token refunds the excess).
+ */
+export async function mintTestToken({ account, token, to, base, decimals }) {
+  const { mintCall } = await import('./vaultView.js');
+  const near = await import('../wallet/nearEth.js'); const provider = await walletProvider(account);
+  const registered = await near.viewNear({ contract: token, method: 'storage_balance_of', args: { account_id: to } });
+  const call = mintCall({ token, to, base, decimals, registered }); // throws for anything the token would refuse, before the wallet opens
+  const { hash } = await near.callNear({ provider, account: account.toLowerCase(), ...call });
+  const r = await near.waitForReceipt(hash); if (!r.ok) throw new Error('The token did not accept the mint. Nothing was added.');
+  return { hash, explorer: near.explorerTx(hash) };
+}
+
 /** Read the vault's own config (owner, pending owner, paused) straight from NEAR. */
 export async function readNearVault(vault) { const near = await import('../wallet/nearEth.js'); return near.viewNear({ contract: vault, method: 'config' }); }

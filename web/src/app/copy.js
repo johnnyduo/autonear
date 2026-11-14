@@ -19,7 +19,7 @@ export const T = {
   signHint: 'You will be asked to sign a message. It is free and sends nothing on chain.',
   readOnly: 'This wallet is not the owner of the vault, so you can look around but not change anything.',
   contractWallet: 'Smart-contract wallets and multisigs cannot sign in here yet. Ask the operator for access.',
-  testnet: 'Testnet only',
+  testnet: 'Testnet',
   demoBadge: 'Demo data',
   demoNote: 'Illustrated data so you can see how it works. Nothing here is real or can be changed.',
   demoNoVault: 'No vault is connected yet, so the vault numbers and history below are illustrations. Your real requests and settings are shown as they are.',

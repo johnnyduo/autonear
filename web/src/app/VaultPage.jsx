@@ -11,12 +11,16 @@ import { readNearVault, sendNearTx, sendSetupSigned, sendVaultTx } from './owner
 import OnboardHelp from './OnboardHelp.jsx';
 import HoldButton from './HoldButton.jsx';
 import Payments from './Payments.jsx';
+import PayBudget from './PayBudget.jsx';
 
 const tn = (f) => (f > 0.9 ? 'risk' : f > 0.7 ? 'warn' : '');
 
 export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, toast }) {
   const canWrite = canOwn && !demo; // a made-up vault cannot be changed
-  const v = mainVault(data.vault); const s = data.status.data; const stopped = Boolean(s?.paused);
+  const list = data.vault?.vaults ?? []; // more than one vault: pick which one this page shows (the choice is remembered for the session)
+  const [pick, setPick] = useState(() => { try { return sessionStorage.getItem('autonear.vault.pick'); } catch { return null; } });
+  const choose = (a) => { setPick(a); try { sessionStorage.setItem('autonear.vault.pick', a); } catch { /* private window */ } };
+  const v = list.find((x) => x.address === pick) ?? mainVault(data.vault); const s = data.status.data; const stopped = Boolean(s?.paused);
   const [busy, setBusy] = useState(''); const [amt, setAmt] = useState('');
   const why = !owner.address ? 'Connect your wallet to change this.' : !owner.isOwner ? T.readOnly : demo ? T.demoNote : '';
   const evm = String(v?.chainId ?? '').startsWith('evm:'); const chainNum = evm ? Number(String(v.chainId).slice(4)) : null;
@@ -70,6 +74,13 @@ export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, t
 
   return (
     <div className="ap-wrap vp">
+      {list.length > 1 && (
+        <div className="vp-tabs" role="group" aria-label="Choose a vault">
+          {list.map((x) => <button key={x.address} type="button" className={`vp-tab${x.address === v.address ? ' on' : ''}`} aria-pressed={x.address === v.address} onClick={() => choose(x.address)}>
+            <span className="vp-addr">{shortAddr(x.address, 10, 6)}</span>{x.payouts && <span className="chip mineral">Pays tokens</span>}
+          </button>)}
+        </div>
+      )}
       <header className="vp-head">
         <div>
           <h1 className="pg">Vault</h1>
@@ -129,6 +140,7 @@ export default function VaultPage({ data, owner, canWrite: canOwn, demo, opts, t
         </> : <div className="vp-empty"><Icon name="vault" size={28} /><p>No limits are set. The agent cannot take anything from this vault until you set them.</p></div>}
       </section>
 
+      {v.payouts && (!live || (v.payouts.tokens ?? []).some((t) => !t.symbol)) && <PayBudget v={v} owner={owner} canWrite={canWrite} demo={demo} opts={opts} toast={toast} />}
       {v.payouts && <Payments v={v} data={data} owner={owner} canWrite={canWrite} demo={demo} opts={opts} toast={toast} stopped={stopped} />}
 
       <div className="vp-two">

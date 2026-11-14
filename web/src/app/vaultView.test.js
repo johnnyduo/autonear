@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { vaultStatus, fuelState, budgetUse, withdrawCheck, maxText, shortAddr, payFuelWarning, payoutsNeedNote, LOW_FUEL } from './vaultView.js';
+import { vaultStatus, fuelState, budgetUse, withdrawCheck, maxText, shortAddr, payFuelWarning, payoutsNeedNote, mintCheck, mintCall, isMockToken, parsePeople, payBudgetCheck, PAY_DEFAULTS, PAY_FUEL, MINT_MAX_WHOLE, MINT_PRESETS, LOW_FUEL } from './vaultView.js';
 
 const NEAR = 10n ** 24n;
 test('vaultStatus: the most urgent thing wins, in a fixed order, and each state names the next step', () => {
@@ -44,4 +44,48 @@ test('payFuelWarning: only a paying vault with NO spendable NEAR is warned; unkn
 test('payoutsNeedNote: shown only for a grant with at least one payout token', () => {
   assert.match(payoutsNeedNote({ payouts: { tokens: [{ token: 'usdc.testnet' }] } }), /1 NEAR reserve/);
   for (const p of [null, {}, { payouts: {} }, { payouts: { tokens: [] } }, { payouts: { tokens: 'x' } }]) assert.equal(payoutsNeedNote(p), '', JSON.stringify(p));
+});
+
+test('mintCheck: quiet when empty, explains every bad input, accepts up to the contract ceiling and no further', () => {
+  assert.deepEqual(mintCheck('', 6), { base: null, error: '' });
+  for (const bad of ['abc', '-5', '1e3', '1,000']) assert.match(mintCheck(bad, 6).error, /number/, bad);
+  assert.match(mintCheck('0', 6).error, /more than zero/); assert.match(mintCheck('1.1234567', 6).error, /6 decimals/);
+  assert.deepEqual(mintCheck('100', 6), { base: 100_000_000n, error: '' }); assert.deepEqual(mintCheck('12.5', 6), { base: 12_500_000n, error: '' });
+  assert.equal(mintCheck('10000', 6).base, MINT_MAX_WHOLE * 10n ** 6n, 'exactly the ceiling is allowed'); assert.match(mintCheck('10000.000001', 6).error, /at most 10,000/); assert.match(mintCheck('10001', 6).error, /at most 10,000/);
+  assert.ok(MINT_PRESETS.every((n) => mintCheck(String(n), 6).base !== null));
+});
+test('isMockToken: only a token whose own metadata says "Mock ..." counts; anything else gets no faucet card', () => {
+  assert.equal(isMockToken({ name: 'Mock USDC (testnet, anyone can mint)' }), true); assert.equal(isMockToken({ name: 'mock usdc' }), true);
+  for (const m of [null, {}, { name: 'USD Coin' }, { name: 'Not a Mockup' }, { name: 'Mockingbird' }, { name: 5 }]) assert.equal(isMockToken(m), false, JSON.stringify(m));
+});
+
+test('mintCall: the exact call for the mint button; storage is paid only for a receiver that is not registered; impossible amounts never become a call', () => {
+  const c = mintCall({ token: 'usdc.testnet', to: 'vault.testnet', base: 100_000_000n, decimals: 6, registered: { total: '1' } });
+  assert.deepEqual(c, { receiver: 'usdc.testnet', method: 'mint', args: { account_id: 'vault.testnet', amount: '100000000' }, deposit: 0n });
+  assert.equal(mintCall({ token: 'usdc.testnet', to: 'v.testnet', base: 1n, decimals: 6, registered: null }).deposit, 25n * 10n ** 20n);
+  for (const base of [0n, -1n, 10_000n * 10n ** 6n + 1n, null, undefined, 5]) assert.throws(() => mintCall({ token: 't', to: 'v', base, decimals: 6, registered: null }), /./, String(base));
+  assert.equal(mintCall({ token: 't', to: 'v', base: 10_000n * 10n ** 6n, decimals: 6, registered: {} }).args.amount, '10000000000');
+});
+
+const HASH = 'ab'.repeat(32); const CTX = { agent: 'ab'.repeat(32), decimals: 6, vault: 'vault-v2.me.testnet', chainId: 'near-testnet', owner: '0x5ebaddf71482d40044391923be1fc42938129988', artifactHash: HASH };
+const GOOD = { token: 'usdc.me.testnet', ...PAY_DEFAULTS, people: 'alice.me.testnet\nbob.me.testnet' };
+test('parsePeople: one per line or comma, lower-cased, no duplicates, no blanks', () => {
+  assert.deepEqual(parsePeople(' Alice.testnet \n\n bob.testnet, ALICE.testnet ; carol.testnet'), ['alice.testnet', 'bob.testnet', 'carol.testnet']); assert.deepEqual(parsePeople(''), []); assert.deepEqual(parsePeople(null), []);
+});
+test('payBudgetCheck: a good form becomes exactly the request the server expects (small fixed fuel allowance, no deploys, token amounts in base units)', () => {
+  const r = payBudgetCheck(GOOD, CTX); assert.deepEqual(r.errors, {}); const b = r.body;
+  assert.deepEqual(b.payouts, { tokens: [{ token: 'usdc.me.testnet', perPayCap: '10000000', periodCap: '50000000', totalCap: '200000000' }], payees: ['alice.me.testnet', 'bob.me.testnet'] });
+  assert.deepEqual(b.agent, { account: 'ab'.repeat(32) }); assert.equal(payBudgetCheck(GOOD, { ...CTX, agent: undefined }).body.agent, undefined, 'no known agent: the server uses its own');
+  assert.equal(b.vault.address, 'vault-v2.me.testnet'); assert.equal(b.vault.owner, CTX.owner); assert.deepEqual(b.templates, [{ artifactHash: HASH }]); assert.deepEqual(b.fund, { amount: '0' });
+  assert.equal(b.mandate.maxDeploys, 0); assert.equal(b.mandate.expiresInSecs, 7 * 86400); assert.equal(BigInt(b.mandate.perDrawCap) <= BigInt(b.mandate.periodCap) && BigInt(b.mandate.periodCap) <= BigInt(b.mandate.totalCap), true);
+  assert.equal(BigInt(PAY_FUEL.totalCap) <= 10n ** 24n, true, 'the fuel allowance stays at or under 1 NEAR');
+});
+test('payBudgetCheck: every wrong input says what is wrong and builds nothing', () => {
+  const bad = (over, ctx = {}) => payBudgetCheck({ ...GOOD, ...over }, { ...CTX, ...ctx });
+  assert.match(bad({ token: 'NOT A TOKEN!' }).errors.token, /token’s account/); assert.match(bad({ token: 'vault-v2.me.testnet' }).errors.token, /own token/); assert.match(bad({}, { decimals: undefined }).errors.token, /Could not read/);
+  assert.match(bad({ each: '0' }).errors.each, /above zero/); assert.match(bad({ day: 'x' }).errors.day, /above zero/); assert.match(bad({ total: '' }).errors.total, /above zero/);
+  assert.match(bad({ each: '60' }).errors.each, /daily limit/); assert.match(bad({ day: '300' }).errors.day, /total/); assert.match(bad({ each: '1.1234567' }).errors.each, /above zero/);
+  assert.match(bad({ people: '' }).errors.people, /at least one/); assert.match(bad({ people: 'alice.testnet\nBad Name' }).errors.people, /not a NEAR account/); assert.match(bad({ people: 'usdc.me.testnet' }).errors.people, /token itself/); assert.match(bad({ people: 'vault-v2.me.testnet' }).errors.people, /pay itself/);
+  assert.match(bad({ people: Array.from({ length: 65 }, (_, i) => `p${i}.testnet`).join('\n') }).errors.people, /At most 64/); assert.match(bad({}, { artifactHash: '' }).errors.setup, /attested/);
+  for (const over of [{ token: '!' }, { each: '0' }, { people: '' }]) assert.equal(bad(over).body, null);
 });
