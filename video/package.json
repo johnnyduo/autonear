@@ -18,7 +18,13 @@
     "render:cine": "npm run verify:cine && remotion render src/index.ts Cinematic out/autonear-cinematic.mp4 --codec h264 --crf 16 --gl=angle",
     "tts:cine2": "node scripts/tts.mjs --variant=cine2",
     "render:cine2": "node scripts/verify.mjs --variant=cine2 && tsc --noEmit && remotion render src/index.ts Cinematic2 out/autonear-cinematic-v2.mp4 --codec h264 --crf 16 --gl=angle",
-    "build": "npm run capture && npm run tts && npm run audio && npm run render"
+    "build": "npm run capture && npm run tts && npm run audio && npm run render",
+    "tts:pd": "node scripts/tts.mjs --variant=pd",
+    "record:pd": "node scripts/pd-anchors.mjs && /opt/homebrew/opt/python@3.14/bin/python3.14 scripts/pd_record.py",
+    "tts:dm": "node scripts/tts.mjs --variant=dm",
+    "record:dm": "node scripts/dm-anchors.mjs && /opt/homebrew/opt/python@3.14/bin/python3.14 scripts/dm_record.py",
+    "render:dm": "node scripts/verify.mjs --variant=dm && tsc --noEmit && remotion render src/index.ts ProductDemoV3 out/autonear-product-demo-v3.mp4 --codec h264 --crf 16 --gl=angle",
+    "render:pd": "node scripts/verify.mjs --variant=pd && tsc --noEmit && remotion render src/index.ts ProductDemo out/autonear-product-demo.mp4 --codec h264 --crf 16 --gl=angle"
   },
   "dependencies": {
     "@react-three/fiber": "9.8.2",

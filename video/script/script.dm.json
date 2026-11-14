@@ -1,0 +1,64 @@
+{
+ "title": "AutoNEAR product demo v3",
+ "track": "AI Security & Defense",
+ "voice": {
+  "name": "Charon",
+  "style": "Calm, warm, conversational product walkthrough by a real person talking to a colleague, at an easy natural pace with real breaths, never an announcer and never salesy."
+ },
+ "scenes": [
+  {
+   "id": "landing",
+   "tag": null,
+   "narration": "This is AutoNEAR. It reads public activity on NEAR, finds what people want, and prepares the product to build. Find demand. Build within limits. Let me walk you through it, from the first signal to the last transaction.",
+   "style": "Quiet confidence. A short pause after each sentence; land the two short phrases firmly."
+  },
+  {
+   "id": "home",
+   "tag": "LIVE APP · DEMO DATA",
+   "narration": "Everything starts on Home. Each point here is one public record: over five hundred, from thirteen sources. Scroll down, and the records are grouped into product ideas, with the number of sources that agree.",
+   "style": "Easy and relaxed, like showing a colleague your screen."
+  },
+  {
+   "id": "watch",
+   "tag": "LIVE APP · DEMO DATA",
+   "narration": "On Watch, you tell the agents what matters: topics to follow, events to keep an eye on, and words to ignore. Below that is every source they read, and when each was last checked.",
+   "style": "Plain and helpful. Light emphasis on the three things you can choose."
+  },
+  {
+   "id": "council",
+   "tag": "LIVE APP · DEMO DATA",
+   "narration": "Then the council. Seven specialist agents, one of them a skeptic, vote on each idea. Let's replay the vote. Treasury rebalancing scores eighty. It needed sixty-two. That is a go.",
+   "style": "Build a little energy toward the result; say the final sentence with quiet satisfaction."
+  },
+  {
+   "id": "build",
+   "tag": "LIVE APP · DEMO DATA",
+   "narration": "A go becomes a landing page. The agents write the copy, the layout and the style, and run their checks. You review the page, then you approve it.",
+   "style": "Clear and steady, a touch slower on the last sentence."
+  },
+  {
+   "id": "approvals",
+   "tag": "LIVE APP · DEMO DATA",
+   "narration": "Anything that costs money or goes live waits here as a card: what it does, what it costs, when it expires. In Manual mode, you hold to approve. In Auto mode, the agent acts by itself, inside your limits.",
+   "style": "Calm and precise. Mark the contrast between Manual and Auto."
+  },
+  {
+   "id": "vault",
+   "tag": "PUBLIC TESTNET · DEMO DATA",
+   "narration": "The limits live in a vault on NEAR: half a NEAR per action, two a day, ten in total, and an expiry date. The blockchain enforces them, not our server. Anything outside the limits is refused.",
+   "style": "Serious and assured. Slow down on the numbers. Firm on the last sentence."
+  },
+  {
+   "id": "proof",
+   "tag": "RECORDED RUN · NEAR TESTNET · DEMO KEY",
+   "narration": "Activity logs every step. The agent starting. Fuel taken. A payment refused for going over the limit. Below that, a recorded run on NEAR testnet, with its transaction hashes.",
+   "style": "Matter-of-fact, like reading a log aloud; short beats between the steps."
+  },
+  {
+   "id": "close",
+   "tag": null,
+   "narration": "That is AutoNEAR. It reads public NEAR demand, scores the ideas, and prepares the builds, inside limits you set. Find demand. Build within limits. The code is open: clone it, run the tests, try the demo.",
+   "style": "Warm and conclusive. A small smile on the last line."
+  }
+ ]
+}

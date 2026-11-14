@@ -1,0 +1,413 @@
+{
+  "mode": "gemini",
+  "model": "gemini-3.8-flash-tts",
+  "voice": "Charon",
+  "generatedAt": "2026-11-14T13:31:58.398Z",
+  "scenes": [
+    {
+      "id": "landing",
+      "hash": "d55197ea9a45af04",
+      "file": "audio-dm/landing.mp3",
+      "durationSec": 15.72,
+      "spoken": "This is Auto Near. It reads public activity on NEAR, finds what people want, and prepares the product to build. Find demand. Build within limits. Let me walk you through it, from the first signal to the last transaction.",
+      "display": "This is AutoNEAR. It reads public activity on NEAR, finds what people want, and prepares the product to build. Find demand. Build within limits. Let me walk you through it, from the first signal to the last transaction.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0.270567,
+          "end": 15.373923
+        },
+        "pauses": [
+          {
+            "start": 1.421,
+            "end": 2.105
+          },
+          {
+            "start": 3.841,
+            "end": 4.232
+          },
+          {
+            "start": 5.622,
+            "end": 6.056
+          },
+          {
+            "start": 7.687,
+            "end": 8.604
+          },
+          {
+            "start": 9.352,
+            "end": 9.844
+          },
+          {
+            "start": 10.695,
+            "end": 11.704
+          },
+          {
+            "start": 12.541,
+            "end": 13.092
+          },
+          {
+            "start": 14.097,
+            "end": 14.274
+          }
+        ]
+      }
+    },
+    {
+      "id": "home",
+      "hash": "8d31cfaf4d7dc4a0",
+      "file": "audio-dm/home.mp3",
+      "durationSec": 12.72,
+      "spoken": "Everything starts on Home. Each point here is one public record: over five hundred, from thirteen sources. Scroll down, and the records are grouped into product ideas, with the number of sources that agree.",
+      "display": "Everything starts on Home. Each point here is one public record: over five hundred, from thirteen sources. Scroll down, and the records are grouped into product ideas, with the number of sources that agree.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0.312472,
+          "end": 12.388549
+        },
+        "pauses": [
+          {
+            "start": 1.777,
+            "end": 2.27
+          },
+          {
+            "start": 4.324,
+            "end": 4.779
+          },
+          {
+            "start": 7.103,
+            "end": 7.793
+          },
+          {
+            "start": 10.845,
+            "end": 11.036
+          }
+        ]
+      }
+    },
+    {
+      "id": "watch",
+      "hash": "f73002a9c21c98f5",
+      "file": "audio-dm/watch.mp3",
+      "durationSec": 11.76,
+      "spoken": "On Watch, you tell the agents what matters: topics to follow, events to keep an eye on, and words to ignore. Below that is every source they read, and when each was last checked.",
+      "display": "On Watch, you tell the agents what matters: topics to follow, events to keep an eye on, and words to ignore. Below that is every source they read, and when each was last checked.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0.276009,
+          "end": 11.477483
+        },
+        "pauses": [
+          {
+            "start": 0.951,
+            "end": 1.102
+          },
+          {
+            "start": 2.553,
+            "end": 3.216
+          },
+          {
+            "start": 4.348,
+            "end": 4.625
+          },
+          {
+            "start": 5.968,
+            "end": 6.27
+          },
+          {
+            "start": 7.212,
+            "end": 8.144
+          }
+        ]
+      }
+    },
+    {
+      "id": "council",
+      "hash": "d6384b43a1ebc247",
+      "file": "audio-dm/council.mp3",
+      "durationSec": 14.96,
+      "spoken": "Then the council. Seven specialist agents, one of them a skeptic, vote on each idea. Let's replay the vote. Treasury rebalancing scores eighty. It needed sixty-two. That is a go.",
+      "display": "Then the council. Seven specialist agents, one of them a skeptic, vote on each idea. Let's replay the vote. Treasury rebalancing scores eighty. It needed sixty-two. That is a go.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0.242313,
+          "end": 14.96
+        },
+        "pauses": [
+          {
+            "start": 1.149,
+            "end": 1.823
+          },
+          {
+            "start": 3.435,
+            "end": 3.642
+          },
+          {
+            "start": 5.015,
+            "end": 5.293
+          },
+          {
+            "start": 6.452,
+            "end": 7.295
+          },
+          {
+            "start": 8.007,
+            "end": 9.656
+          },
+          {
+            "start": 11.637,
+            "end": 12.184
+          },
+          {
+            "start": 13.155,
+            "end": 13.907
+          },
+          {
+            "start": 14.696,
+            "end": 14.836
+          }
+        ]
+      }
+    },
+    {
+      "id": "build",
+      "hash": "c491b3d59fc544dd",
+      "file": "audio-dm/build.mp3",
+      "durationSec": 9.84,
+      "spoken": "A go becomes a landing page. The agents write the copy, the layout and the style, and run their checks. You review the page, then you approve it.",
+      "display": "A go becomes a landing page. The agents write the copy, the layout and the style, and run their checks. You review the page, then you approve it.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0.184966,
+          "end": 9.32102
+        },
+        "pauses": [
+          {
+            "start": 1.809,
+            "end": 2.374
+          },
+          {
+            "start": 3.668,
+            "end": 4.014
+          },
+          {
+            "start": 5.347,
+            "end": 5.754
+          },
+          {
+            "start": 6.605,
+            "end": 7.139
+          },
+          {
+            "start": 8.147,
+            "end": 8.656
+          }
+        ]
+      }
+    },
+    {
+      "id": "approvals",
+      "hash": "22a3262fba9c7cf6",
+      "file": "audio-dm/approvals.mp3",
+      "durationSec": 15.64,
+      "spoken": "Anything that costs money or goes live waits here as a card: what it does, what it costs, when it expires. In Manual mode, you hold to approve. In Auto mode, the agent acts by itself, inside your limits.",
+      "display": "Anything that costs money or goes live waits here as a card: what it does, what it costs, when it expires. In Manual mode, you hold to approve. In Auto mode, the agent acts by itself, inside your limits.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0.347392,
+          "end": 15.399342
+        },
+        "pauses": [
+          {
+            "start": 3.477,
+            "end": 3.656
+          },
+          {
+            "start": 4.191,
+            "end": 4.696
+          },
+          {
+            "start": 6.773,
+            "end": 6.968
+          },
+          {
+            "start": 7.756,
+            "end": 8.287
+          },
+          {
+            "start": 9.598,
+            "end": 9.747
+          },
+          {
+            "start": 10.955,
+            "end": 11.546
+          },
+          {
+            "start": 14.165,
+            "end": 14.574
+          }
+        ]
+      }
+    },
+    {
+      "id": "vault",
+      "hash": "9faa335dd7107ef6",
+      "file": "audio-dm/vault.mp3",
+      "durationSec": 13.52,
+      "spoken": "The limits live in a vault on NEAR: half a NEAR per action, two a day, ten in total, and an expiry date. The blockchain enforces them, not our server. Anything outside the limits is refused.",
+      "display": "The limits live in a vault on NEAR: half a NEAR per action, two a day, ten in total, and an expiry date. The blockchain enforces them, not our server. Anything outside the limits is refused.",
+      "tag": "PUBLIC TESTNET · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0.195283,
+          "end": 13.195669
+        },
+        "pauses": [
+          {
+            "start": 2.116,
+            "end": 2.693
+          },
+          {
+            "start": 3.853,
+            "end": 4.266
+          },
+          {
+            "start": 4.89,
+            "end": 5.236
+          },
+          {
+            "start": 6.235,
+            "end": 6.461
+          },
+          {
+            "start": 7.602,
+            "end": 8.094
+          },
+          {
+            "start": 9.209,
+            "end": 9.526
+          },
+          {
+            "start": 10.188,
+            "end": 11.16
+          },
+          {
+            "start": 12.36,
+            "end": 12.559
+          }
+        ]
+      }
+    },
+    {
+      "id": "proof",
+      "hash": "4c08d87189428fb0",
+      "file": "audio-dm/proof.mp3",
+      "durationSec": 13.36,
+      "spoken": "Activity logs every step. The agent starting. Fuel taken. A payment refused for going over the limit. Below that, a recorded run on NEAR testnet, with its transaction hashes.",
+      "display": "Activity logs every step. The agent starting. Fuel taken. A payment refused for going over the limit. Below that, a recorded run on NEAR testnet, with its transaction hashes.",
+      "tag": "RECORDED RUN · NEAR TESTNET · DEMO KEY",
+      "cal": {
+        "speech": {
+          "start": 0.305533,
+          "end": 13.054127
+        },
+        "pauses": [
+          {
+            "start": 2.241,
+            "end": 2.911
+          },
+          {
+            "start": 4.022,
+            "end": 4.386
+          },
+          {
+            "start": 5.289,
+            "end": 5.803
+          },
+          {
+            "start": 7.806,
+            "end": 8.606
+          },
+          {
+            "start": 9.128,
+            "end": 9.492
+          },
+          {
+            "start": 11.308,
+            "end": 11.752
+          }
+        ]
+      }
+    },
+    {
+      "id": "close",
+      "hash": "69d87d1f5f272c96",
+      "file": "audio-dm/close.mp3",
+      "durationSec": 16.8,
+      "spoken": "That is Auto Near. It reads public NEAR demand, scores the ideas, and prepares the builds, inside limits you set. Find demand. Build within limits. The code is open: clone it, run the tests, try the demo.",
+      "display": "That is AutoNEAR. It reads public NEAR demand, scores the ideas, and prepares the builds, inside limits you set. Find demand. Build within limits. The code is open: clone it, run the tests, try the demo.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0.273152,
+          "end": 16.469932
+        },
+        "pauses": [
+          {
+            "start": 0.527,
+            "end": 1.046
+          },
+          {
+            "start": 1.979,
+            "end": 2.505
+          },
+          {
+            "start": 4.182,
+            "end": 4.457
+          },
+          {
+            "start": 5.648,
+            "end": 5.87
+          },
+          {
+            "start": 7.024,
+            "end": 7.532
+          },
+          {
+            "start": 8.873,
+            "end": 9.122
+          },
+          {
+            "start": 9.153,
+            "end": 9.836
+          },
+          {
+            "start": 10.631,
+            "end": 11.258
+          },
+          {
+            "start": 12.158,
+            "end": 12.772
+          },
+          {
+            "start": 13.486,
+            "end": 13.962
+          },
+          {
+            "start": 14.41,
+            "end": 14.884
+          },
+          {
+            "start": 15.511,
+            "end": 15.911
+          }
+        ]
+      }
+    }
+  ]
+}

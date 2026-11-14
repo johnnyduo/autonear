@@ -9,6 +9,10 @@ import { CineMain } from './cine/Main';
 import { buildTimeline as buildCine } from './cine/timeline';
 import { CineMain as CineMain2 } from './cine2/Main';
 import { buildTimeline as buildCine2 } from './cine2/timeline';
+import { PdMain } from './pd/Main';
+import { buildTimeline as buildPd } from './pd/timeline';
+import { DmMain } from './dm/Main';
+import { buildTimeline as buildDm } from './dm/timeline';
 
 loadFonts();
 
@@ -37,10 +41,14 @@ export const RemotionRoot: React.FC = () => {
   const tl = buildTimeline();
   const cine = buildCine();
   const cine2 = buildCine2();
+  const pd = buildPd();
+  const dm = buildDm();
   return (
     <>
       <Composition id="Main" component={Main} durationInFrames={tl.totalFrames} fps={FPS} width={W} height={H} />
       <Composition id="Cinematic" component={CineMain} durationInFrames={cine.totalFrames} fps={FPS} width={W} height={H} />
+      <Composition id="ProductDemo" component={PdMain} durationInFrames={pd.totalFrames} fps={FPS} width={W} height={H} />
+      <Composition id="ProductDemoV3" component={DmMain} durationInFrames={dm.totalFrames} fps={FPS} width={W} height={H} />
       <Composition id="Cinematic2" component={CineMain2} durationInFrames={cine2.totalFrames} fps={FPS} width={W} height={H} />
     </>
   );

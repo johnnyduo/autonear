@@ -1,0 +1,413 @@
+{
+  "mode": "gemini",
+  "model": "gemini-3.8-flash-tts",
+  "voice": "Puck",
+  "generatedAt": "2026-11-14T09:34:35.799Z",
+  "scenes": [
+    {
+      "id": "landing",
+      "hash": "22a8c83c2b4e1dcf",
+      "file": "audio-pd/landing.mp3",
+      "durationSec": 10.253469,
+      "spoken": "Auto Near finds product ideas in public NEAR activity. Find demand. Build within limits. Here is how it works, start to finish.",
+      "display": "AutoNEAR finds product ideas in public NEAR activity. Find demand. Build within limits. Here is how it works, start to finish.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 10.253469
+        },
+        "pauses": [
+          {
+            "start": 3.847,
+            "end": 4.421
+          },
+          {
+            "start": 5.383,
+            "end": 5.896
+          },
+          {
+            "start": 7.231,
+            "end": 7.813
+          },
+          {
+            "start": 9.105,
+            "end": 9.313
+          }
+        ]
+      }
+    },
+    {
+      "id": "home",
+      "hash": "8e14464868332192",
+      "file": "audio-pd/home.mp3",
+      "durationSec": 10.07195,
+      "spoken": "This is Home. Over five hundred public records, from thirteen sources, grouped into seven product ideas. Every record links back to its source.",
+      "display": "This is Home. Over five hundred public records, from thirteen sources, grouped into seven product ideas. Every record links back to its source.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 10.07195
+        },
+        "pauses": [
+          {
+            "start": 1.15,
+            "end": 1.539
+          },
+          {
+            "start": 3.601,
+            "end": 3.861
+          },
+          {
+            "start": 6.479,
+            "end": 6.67
+          },
+          {
+            "start": 7.456,
+            "end": 7.897
+          }
+        ]
+      }
+    },
+    {
+      "id": "watch",
+      "hash": "68312742003ba75e",
+      "file": "audio-pd/watch.mp3",
+      "durationSec": 10.29449,
+      "spoken": "On Watch, you choose the topics, events and words to follow or ignore. Below, every source the agents read, and when it was last checked.",
+      "display": "On Watch, you choose the topics, events and words to follow or ignore. Below, every source the agents read, and when it was last checked.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 10.29449
+        },
+        "pauses": [
+          {
+            "start": 0.637,
+            "end": 0.976
+          },
+          {
+            "start": 5.575,
+            "end": 6.008
+          },
+          {
+            "start": 6.427,
+            "end": 7.004
+          },
+          {
+            "start": 8.555,
+            "end": 8.941
+          }
+        ]
+      }
+    },
+    {
+      "id": "council",
+      "hash": "6af8d47f028e3fbd",
+      "file": "audio-pd/council.mp3",
+      "durationSec": 13.594603,
+      "spoken": "Then the council votes. Seven specialist agents, one of them a skeptic, score each idea. Treasury rebalancing scored eighty. It needed sixty-two. That is a go.",
+      "display": "Then the council votes. Seven specialist agents, one of them a skeptic, score each idea. Treasury rebalancing scored eighty. It needed sixty-two. That is a go.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 13.594603
+        },
+        "pauses": [
+          {
+            "start": 0.466,
+            "end": 0.834
+          },
+          {
+            "start": 1.937,
+            "end": 2.413
+          },
+          {
+            "start": 4.211,
+            "end": 4.562
+          },
+          {
+            "start": 5.762,
+            "end": 6.075
+          },
+          {
+            "start": 7.478,
+            "end": 7.916
+          },
+          {
+            "start": 9.561,
+            "end": 9.756
+          },
+          {
+            "start": 10.123,
+            "end": 10.6
+          },
+          {
+            "start": 11.921,
+            "end": 12.391
+          },
+          {
+            "start": 12.703,
+            "end": 12.942
+          }
+        ]
+      }
+    },
+    {
+      "id": "build",
+      "hash": "ff2fe11fb9b12774",
+      "file": "audio-pd/build.mp3",
+      "durationSec": 9.445601,
+      "spoken": "From a go, the agents draft the product's landing page: copy, layout, style, checks. You review it, then approve it.",
+      "display": "From a go, the agents draft the product's landing page: copy, layout, style, checks. You review it, then approve it.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 9.445601
+        },
+        "pauses": [
+          {
+            "start": 1.043,
+            "end": 1.228
+          },
+          {
+            "start": 3.695,
+            "end": 4.017
+          },
+          {
+            "start": 4.499,
+            "end": 4.801
+          },
+          {
+            "start": 5.308,
+            "end": 5.629
+          },
+          {
+            "start": 6.211,
+            "end": 6.614
+          },
+          {
+            "start": 7.04,
+            "end": 7.521
+          },
+          {
+            "start": 8.16,
+            "end": 8.639
+          }
+        ]
+      }
+    },
+    {
+      "id": "approvals",
+      "hash": "af552b217d72dcf9",
+      "file": "audio-pd/approvals.mp3",
+      "durationSec": 15.510295,
+      "spoken": "Actions that cost money or go live show up here as cards: what it does, what it costs, when it expires. In Manual mode, you hold to approve. In Auto mode, the agent acts inside your limits.",
+      "display": "Actions that cost money or go live show up here as cards: what it does, what it costs, when it expires. In Manual mode, you hold to approve. In Auto mode, the agent acts inside your limits.",
+      "tag": "LIVE APP · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 15.510295
+        },
+        "pauses": [
+          {
+            "start": 2.42,
+            "end": 2.6
+          },
+          {
+            "start": 4.27,
+            "end": 4.717
+          },
+          {
+            "start": 5.423,
+            "end": 5.804
+          },
+          {
+            "start": 6.57,
+            "end": 7.027
+          },
+          {
+            "start": 8.075,
+            "end": 8.556
+          },
+          {
+            "start": 9.458,
+            "end": 9.65
+          },
+          {
+            "start": 11.205,
+            "end": 11.68
+          },
+          {
+            "start": 12.859,
+            "end": 13.011
+          }
+        ]
+      }
+    },
+    {
+      "id": "vault",
+      "hash": "29745fd52bb447f5",
+      "file": "audio-pd/vault.mp3",
+      "durationSec": 15.076825,
+      "spoken": "The vault holds the agent's budget on NEAR: half a NEAR per action, two a day, ten in total, and an expiry date. The blockchain enforces those limits, not our server. Go outside them, and the transaction is refused.",
+      "display": "The vault holds the agent's budget on NEAR: half a NEAR per action, two a day, ten in total, and an expiry date. The blockchain enforces those limits, not our server. Go outside them, and the transaction is refused.",
+      "tag": "PUBLIC TESTNET · DEMO DATA",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 15.076825
+        },
+        "pauses": [
+          {
+            "start": 1.485,
+            "end": 1.668
+          },
+          {
+            "start": 2.63,
+            "end": 2.997
+          },
+          {
+            "start": 4.079,
+            "end": 4.296
+          },
+          {
+            "start": 4.915,
+            "end": 5.13
+          },
+          {
+            "start": 6.255,
+            "end": 6.475
+          },
+          {
+            "start": 7.714,
+            "end": 8.205
+          },
+          {
+            "start": 10.366,
+            "end": 10.645
+          },
+          {
+            "start": 11.448,
+            "end": 11.877
+          },
+          {
+            "start": 12.774,
+            "end": 13.092
+          }
+        ]
+      }
+    },
+    {
+      "id": "proof",
+      "hash": "81b555b7e18c55cb",
+      "file": "audio-pd/proof.mp3",
+      "durationSec": 12.099342,
+      "spoken": "Activity logs every step: the agent starting, fuel taken, a payment refused for being over the limit. Below it, a recorded run on NEAR testnet, each step with its transaction hash.",
+      "display": "Activity logs every step: the agent starting, fuel taken, a payment refused for being over the limit. Below it, a recorded run on NEAR testnet, each step with its transaction hash.",
+      "tag": "RECORDED RUN · NEAR TESTNET · DEMO KEY",
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 12.099342
+        },
+        "pauses": [
+          {
+            "start": 0.965,
+            "end": 1.119
+          },
+          {
+            "start": 1.841,
+            "end": 2.208
+          },
+          {
+            "start": 3.281,
+            "end": 3.52
+          },
+          {
+            "start": 4.435,
+            "end": 4.808
+          },
+          {
+            "start": 7.016,
+            "end": 7.505
+          },
+          {
+            "start": 7.848,
+            "end": 8.013
+          },
+          {
+            "start": 9.892,
+            "end": 10.319
+          }
+        ]
+      }
+    },
+    {
+      "id": "close",
+      "hash": "2e78766cb2a486a7",
+      "file": "audio-pd/close.mp3",
+      "durationSec": 15.729546,
+      "spoken": "That is Auto Near. It reads public NEAR demand, scores the ideas, and prepares the builds. Find demand. Build within limits. The code is open. Clone it, run the tests, try the demo.",
+      "display": "That is AutoNEAR. It reads public NEAR demand, scores the ideas, and prepares the builds. Find demand. Build within limits. The code is open. Clone it, run the tests, try the demo.",
+      "tag": null,
+      "cal": {
+        "speech": {
+          "start": 0,
+          "end": 15.729546
+        },
+        "pauses": [
+          {
+            "start": 0.371,
+            "end": 0.615
+          },
+          {
+            "start": 1.58,
+            "end": 2.064
+          },
+          {
+            "start": 3.664,
+            "end": 4.284
+          },
+          {
+            "start": 5.633,
+            "end": 6.118
+          },
+          {
+            "start": 7.59,
+            "end": 8.065
+          },
+          {
+            "start": 8.923,
+            "end": 9.514
+          },
+          {
+            "start": 10.885,
+            "end": 11.393
+          },
+          {
+            "start": 11.899,
+            "end": 12.041
+          },
+          {
+            "start": 12.52,
+            "end": 13.002
+          },
+          {
+            "start": 13.517,
+            "end": 13.927
+          },
+          {
+            "start": 14.796,
+            "end": 15.069
+          }
+        ]
+      }
+    }
+  ]
+}

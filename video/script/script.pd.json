@@ -1,0 +1,213 @@
+{
+ "title": "AutoNEAR product demo",
+ "track": "AI Security & Defense",
+ "voice": {
+  "name": "Puck",
+  "style": "A warm, clear product-keynote presenter: confident, natural, never rushed, never fake-salesy. Real human pacing with small breaths and natural emphasis."
+ },
+ "tokens_note": "Numbers are spoken as words; recorder.py asserts they equal the values read from the real app.",
+ "scenes": [
+  {
+   "id": "landing",
+   "tag": null,
+   "segments": [
+    {
+     "text": "AutoNEAR finds product ideas in public NEAR activity.",
+     "style": "Warm, confident, a small smile. A clear title-card delivery.",
+     "pause": 0.5
+    },
+    {
+     "text": "Find demand. Build within limits.",
+     "style": "Two crisp, firm beats, like a promise. A short silence between them.",
+     "pause": 0.5
+    },
+    {
+     "text": "Here is how it works, start to finish.",
+     "style": "Easy and inviting, as if turning to the audience.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "AutoNEAR finds product ideas in public NEAR activity. Find demand. Build within limits. Here is how it works, start to finish.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  },
+  {
+   "id": "home",
+   "tag": "LIVE APP · DEMO DATA",
+   "segments": [
+    {
+     "text": "This is Home.",
+     "style": "Bright, a quick welcome.",
+     "pause": 0.3
+    },
+    {
+     "text": "Over five hundred public records, from thirteen sources, grouped into seven product ideas.",
+     "style": "Quick and rhythmic, each number a notch higher, landing on 'seven product ideas'.",
+     "pause": 0.35
+    },
+    {
+     "text": "Every record links back to its source.",
+     "style": "Plain and reassuring.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "This is Home. Over five hundred public records, from thirteen sources, grouped into seven product ideas. Every record links back to its source.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  },
+  {
+   "id": "watch",
+   "tag": "LIVE APP · DEMO DATA",
+   "segments": [
+    {
+     "text": "On Watch, you choose the topics, events and words to follow or ignore.",
+     "style": "Friendly, direct, a gentle list rhythm.",
+     "pause": 0.35
+    },
+    {
+     "text": "Below, every source the agents read, and when it was last checked.",
+     "style": "Matter-of-fact, clear.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "On Watch, you choose the topics, events and words to follow or ignore. Below, every source the agents read, and when it was last checked.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  },
+  {
+   "id": "council",
+   "tag": "LIVE APP · DEMO DATA",
+   "segments": [
+    {
+     "text": "Then the council votes.",
+     "style": "Sharp, a beat of suspense.",
+     "pause": 0.4
+    },
+    {
+     "text": "Seven specialist agents, one of them a skeptic, score each idea.",
+     "style": "Tense and precise, a sly lift on 'skeptic'.",
+     "pause": 0.35
+    },
+    {
+     "text": "Treasury rebalancing scored eighty. It needed sixty-two.",
+     "style": "Building, each number crisp.",
+     "pause": 0.4
+    },
+    {
+     "text": "That is a go.",
+     "style": "Bright, a smile, release.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "Then the council votes. Seven specialist agents, one of them a skeptic, score each idea. Treasury rebalancing scored eighty. It needed sixty-two. That is a go.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  },
+  {
+   "id": "build",
+   "tag": "LIVE APP · DEMO DATA",
+   "segments": [
+    {
+     "text": "From a go, the agents draft the product's landing page: copy, layout, style, checks.",
+     "style": "Energetic and clear, the four nouns snappy.",
+     "pause": 0.4
+    },
+    {
+     "text": "You review it, then approve it.",
+     "style": "Calm, grounded, reassuring.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "From a go, the agents draft the product's landing page: copy, layout, style, checks. You review it, then approve it.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  },
+  {
+   "id": "approvals",
+   "tag": "LIVE APP · DEMO DATA",
+   "segments": [
+    {
+     "text": "Actions that cost money or go live show up here as cards: what it does, what it costs, when it expires.",
+     "style": "Clear, steady, even rhythm.",
+     "pause": 0.4
+    },
+    {
+     "text": "In Manual mode, you hold to approve.",
+     "style": "Firm, a little weight on 'hold to approve'.",
+     "pause": 0.4
+    },
+    {
+     "text": "In Auto mode, the agent acts inside your limits.",
+     "style": "Light, a small smile.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "Actions that cost money or go live show up here as cards: what it does, what it costs, when it expires. In Manual mode, you hold to approve. In Auto mode, the agent acts inside your limits.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  },
+  {
+   "id": "vault",
+   "tag": "PUBLIC TESTNET · DEMO DATA",
+   "segments": [
+    {
+     "text": "The vault holds the agent's budget on NEAR: half a NEAR per action, two a day, ten in total, and an expiry date.",
+     "style": "Brisk and crisp, each limit its own beat.",
+     "pause": 0.4
+    },
+    {
+     "text": "The blockchain enforces those limits, not our server.",
+     "style": "Firm, level, proud.",
+     "pause": 0.35
+    },
+    {
+     "text": "Go outside them, and the transaction is refused.",
+     "style": "Flat and decisive on 'refused'.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "The vault holds the agent's budget on NEAR: half a NEAR per action, two a day, ten in total, and an expiry date. The blockchain enforces those limits, not our server. Go outside them, and the transaction is refused.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  },
+  {
+   "id": "proof",
+   "tag": "RECORDED RUN · NEAR TESTNET · DEMO KEY",
+   "style": "Natural, confident product presenter; follow each phrase's own direction.",
+   "segments": [
+    {
+     "text": "Activity logs every step: the agent starting, fuel taken, a payment refused for being over the limit.",
+     "style": "Clear and unhurried, a slight lift on 'refused'.",
+     "pause": 0.4
+    },
+    {
+     "text": "Below it, a recorded run on NEAR testnet, each step with its transaction hash.",
+     "style": "Grounded and plain-spoken, like showing receipts.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "Activity logs every step: the agent starting, fuel taken, a payment refused for being over the limit. Below it, a recorded run on NEAR testnet, each step with its transaction hash."
+  },
+  {
+   "id": "close",
+   "tag": null,
+   "segments": [
+    {
+     "text": "That is AutoNEAR.",
+     "style": "Proud, resolved.",
+     "pause": 0.4
+    },
+    {
+     "text": "It reads public NEAR demand, scores the ideas, and prepares the builds.",
+     "style": "Steady, three clear beats.",
+     "pause": 0.4
+    },
+    {
+     "text": "Find demand. Build within limits.",
+     "style": "Two confident beats, a warm smile on the second.",
+     "pause": 0.45
+    },
+    {
+     "text": "The code is open. Clone it, run the tests, try the demo.",
+     "style": "Direct and friendly, an open invitation.",
+     "pause": 0.2
+    }
+   ],
+   "narration": "That is AutoNEAR. It reads public NEAR demand, scores the ideas, and prepares the builds. Find demand. Build within limits. The code is open. Clone it, run the tests, try the demo.",
+   "style": "Natural, confident product presenter; follow each phrase's own direction."
+  }
+ ]
+}
