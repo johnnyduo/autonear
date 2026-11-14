@@ -31,7 +31,7 @@ export function vaultStatus({ pendingMine = false, paused = false, stopped = fal
   if (paused) return { key: 'paused', tone: 'bad', chip: 'Paused on chain', title: 'The vault is paused', text: 'Nothing can leave it, not even through the agent’s own key. Un-pause it when you are ready.', action: 'unpause' };
   if (stopped) return { key: 'stopped', tone: 'warn', chip: 'Agent stopped', title: 'The agent is stopped', text: 'It will not do anything until you start it again. The limits and the funds are untouched.', action: 'start' };
   if (!live) return { key: 'nolimits', tone: 'warn', chip: 'No limits set', title: 'The agent has no budget yet', text: 'With no limits set, the agent cannot take anything from this vault. Set its limits to let it work.', action: demo ? null : 'limits' };
-  return { key: 'live', tone: 'ok', chip: 'Limits are on', title: 'The agent is working inside your limits', text: 'It can only spend what the limits below allow. They are enforced on the blockchain, not by our server.', action: null };
+  return { key: 'live', tone: 'ok', chip: 'Limits are on', title: 'The agent is working inside your limits', text: 'It can only take from the vault what the limits below allow. They are enforced on the blockchain, not by our server. Fuel it has already taken sits in its own account.', action: null };
 }
 
 /**

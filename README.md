@@ -11,9 +11,9 @@
   <a href="PROGRESS.md"><img src="docs/readme/btn-proof.png" alt="Proof table" height="44"></a>
 </p>
 
-AutoNEAR polls public demand and on-chain usage sources for NEAR, scores opportunities with a published formula, has a skeptic role argue against each one, and prepares testnet contract deployments for an owner to approve. The agent can also hold a small, capped budget in a vault contract and spend it only inside limits the owner set on-chain.
+AutoNEAR polls public demand and on-chain usage sources for NEAR, scores opportunities with a published formula, has a skeptic role argue against each one, and prepares testnet contract deployments for an owner to approve. An optional agent can draw gas from a vault contract and deploy owner-approved templates through it, inside caps the owner set on-chain. The caps apply to what the agent takes from the vault: NEAR it has already drawn sits in its own account.
 
-NEAR Hackathon 2026, track **AI Security & Defense**. NEAR **testnet only**. MIT.
+Built for the NEAR Hackathon 2026: **Open Innovation** (primary). The vault is also relevant to **AI Security & Defense**. NEAR **testnet only**. MIT.
 
 **What has and has not been demonstrated** (details in [What is real](#what-is-real-and-what-is-not)):
 
@@ -138,14 +138,14 @@ flowchart LR
     OWNER["<b>Owner</b><br/>ideally a multisig"]:::own
     AGENT["<b>Agent</b><br/>its own testnet key"]:::ag
     VAULT["<b>Mandate Vault</b> (on-chain)<br/>per-draw, period and total caps<br/>max deploys · expiry<br/>template allowlist by exact wasm hash<br/>init args fixed by the owner"]:::vault
-    NO["✗ widen its budget<br/>✗ send funds elsewhere<br/>✗ deploy unlisted code<br/>✗ choose who owns a deployed contract<br/>✗ upgrade or withdraw"]:::no
+    NO["✗ widen its budget<br/>✗ draw to any other address<br/>✗ deploy unlisted code<br/>✗ choose who owns a deployed contract<br/>✗ upgrade or withdraw"]:::no
 
     OWNER -->|"set mandate · allow templates<br/>revoke · pause · withdraw (to owner only)"| VAULT
     AGENT -->|"draw (to itself only) · deploy (allowlisted)<br/>pay (payouts build only)"| VAULT
     AGENT -.->|cannot| NO
 ```
 
-On NEAR a function-call key cannot deploy a contract, so the vault contract itself creates the sub-account and deploys the code through a promise batch. The sub-account gets no keys, so nobody, including the agent, can redeploy it. Before signing, the agent's signer allows only the vault's methods, enforces a fee ceiling, re-reads chain state, checks the vault code against the attested build and compares the JavaScript reference model with the chain's own previews. The loop is off by default (`AUTONOMY_ENABLED=1`), needs a Node host you control, and records its decisions and attempted actions in a hash-chained ledger.
+On NEAR a function-call key cannot deploy a contract, so the vault contract itself creates the sub-account and deploys the code through a promise batch. The sub-account gets no keys, so nobody, including the agent, can redeploy it. The limits cover the vault only: once the agent has drawn NEAR, it sits in the agent's own account, which its key controls, and revoking the mandate does not take it back. Keep caps small. Before signing, the agent's signer allows only the vault's methods, enforces a fee ceiling, re-reads chain state, checks the vault code against the attested build and compares the JavaScript reference model with the chain's own previews. The loop is off by default (`AUTONOMY_ENABLED=1`), needs a Node host you control, and records its decisions and attempted actions in a hash-chained ledger.
 
 ### Testnet deployments
 
@@ -202,7 +202,7 @@ flowchart LR
 
 Mainnet, upgrades, treasury spend, liquidity and outreach are blocked in code (`DECISION_LIMITS`). Agent keys are testnet-only, stored with mode `0600` and git-ignored; tests check the known API, log and error paths for key leakage.
 
-**Residual risks, read before enabling Auto:** the vault holds testnet value; a compromised host that can run the agent can spend up to the mandate's caps; the owner should be a multisig; the secp256k1 implementation is not constant-time and keys sit in process memory (not an HSM). Details and threat model: [SECURITY.md](SECURITY.md).
+**Residual risks, read before enabling Auto:** the vault holds testnet value; a compromised host that can run the agent can spend up to the mandate's caps, and NEAR already drawn stays with the agent after a revoke; the owner should be a multisig; the secp256k1 implementation is not constant-time and keys sit in process memory (not an HSM). Details and threat model: [SECURITY.md](SECURITY.md).
 
 <br>
 

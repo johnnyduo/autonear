@@ -6,11 +6,11 @@ export const ROUTES = { welcome: 'Welcome', home: 'Home', council: 'Council', ap
 
 export const T = {
   brand: 'AutoNEAR',
-  tagline: 'An AI agent that watches NEAR for you, and can only spend what you allow.',
+  tagline: 'An AI agent that watches NEAR for you. How much it can take from your vault is capped on-chain.',
   steps: [
     ['Watch', 'The agent reads GitHub, the NEAR forum, news and the chain around the clock and keeps score of what looks worth doing.'],
     ['Ask', 'When it wants to act, it asks you first. Or you let it act on its own, inside limits you set.'],
-    ['Stay safe', 'It has its own small fuel tank of test funds. It can never go past your limits, and you can stop it any time.'],
+    ['Stay safe', 'It has its own small fuel tank of test funds. How much it can take from your vault is capped on-chain, and you can stop it any time.'],
   ],
   connect: 'Connect wallet',
   demo: 'Explore the demo',

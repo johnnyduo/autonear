@@ -76,7 +76,7 @@ export function VaultTabs({ items, value, onChange, panelId }) {
 const NEVER = [
   ['lock', 'Change any configuration', 'Owner, pause state and mandate are owner-only calls. The agent key cannot call them.'],
   ['arrow', 'Widen its own budget', 'Caps, period and expiry are fixed in the mandate. Usage only resets when the owner sets a new one.'],
-  ['ban', 'Send funds anywhere else', 'A draw pays the bound agent address only. There is no transfer and no arbitrary call.'],
+  ['ban', 'Draw to any other address', 'A draw pays the bound agent address only. The vault has no transfer and no arbitrary call. Once drawn, funds sit in the agent\'s own account, outside the vault.'],
   ['deploy', 'Deploy code you did not list', 'Only owner-allowlisted templates: exact bytecode hash (EVM) or wasm hash (NEAR).'],
   ['user', 'Choose owners or init arguments', 'Init material is fixed by the owner when the template is allowed, so the agent cannot pick who owns a deployed registry.'],
   ['loop', 'Upgrade the vault or itself', 'No upgrade path, no delegatecall, no selfdestruct. Replacement means redeploy plus an owner withdraw.'],
@@ -91,7 +91,7 @@ export function NeverPanel() {
       <div className="ph"><h2 id="nv-h" className="eyebrow" style={{ margin: 0 }}>The leash</h2><Chip tone="mineral">enforced in contract code</Chip></div>
       <div className="pb stack">
         <div>
-          <h3 className="vt-h3 bad"><Icon name="ban" size={18} />This agent can never</h3>
+          <h3 className="vt-h3 bad"><Icon name="ban" size={18} />Through the vault, this agent can never</h3>
           <ul className="vt-never-l">
             {NEVER.map(([ic, t, d]) => <li key={t}><span className="vt-x" aria-hidden="true"><Icon name="x" size={14} /></span><span><b>{t}</b><span className="dim"> {d}</span></span></li>)}
           </ul>
