@@ -1,4 +1,4 @@
-//! Error codes (identical to docs/agent-vault-spec.md and contracts/vault-conformance.json).
+//! Error codes (identical to the Mandate Vault spec and contracts/vault-conformance.json).
 //!
 //! Every revert caused by a vault rule panics with `E_<Code>: <detail>`. The code is the part
 //! between `E_` and the first `:`; `detail` is human text and not part of the interface.

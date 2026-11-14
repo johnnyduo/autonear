@@ -3,7 +3,7 @@
 // Chain specifics live behind an adapter (src/vault/evm.js, src/vault/near.js). NOTHING in this file signs or holds a key; it is safe to
 // import from the Cloudflare Worker bundle (the autonomy loop, src/autonomy.js, is Node-only and is never imported from here).
 //
-// ADAPTER INTERFACE = docs/agent-vault-spec.md "Chain adapter interface" PLUS these extensions the core needs (an adapter missing one is
+// ADAPTER INTERFACE = the Mandate Vault spec "Chain adapter interface" PLUS these extensions the core needs (an adapter missing one is
 // reported as "incomplete" and the loop refuses to act on that chain; read-only API still works with readState/verifyVaultCode):
 //   attested                      { deployedBytecode|codeHash, sha256, ... }  the attested AgentVault build (passed to verifyVaultCode)
 //   preview(kind, {net, vault, amount|template+nameOrSalt, block, fetchImpl}) -> Promise<'' | ErrorCode>   previewDraw / previewDeploy

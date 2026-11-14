@@ -3,7 +3,7 @@
 //! A vault that holds testnet gas money for ONE autonomous agent and lets that agent do exactly two
 //! things: `draw` (pull NEAR to its own bound account) and `deploy` (create a keyless sub-account
 //! and deploy an owner-allowlisted wasm with owner-fixed init arguments), both inside one budget.
-//! Spec: docs/agent-vault-spec.md. Conformance: contracts/vault-conformance.json. See README.md.
+//! Spec: the Mandate Vault spec. Conformance: contracts/vault-conformance.json.
 //!
 //! Non-negotiables enforced here: no upgrade method, no arbitrary call, no `AddKey`/`DeleteAccount`
 //! action anywhere, promises only to `mandate.agent`, `owner` and the new sub-account.

@@ -3,14 +3,14 @@
 // WHAT THIS IS NOT: ERC-8004 is an ERC in DRAFT status. It defines three registries (Identity, Reputation, Validation)
 // for agent DISCOVERY and TRUST SIGNALS. It is NOT a wallet standard and NOT a spending/permission standard: it cannot hold
 // funds, limit spending, or authorise a transaction. Budget and permission enforcement lives in the Mandate Vault
-// (docs/agent-vault-spec.md), never here. Payments are explicitly out of scope of the ERC.
+// (the Mandate Vault spec), never here. Payments are explicitly out of scope of the ERC.
 //
 // WHAT THIS MODULE DOES: builds/validates the agent registration file, encodes calls to the Identity Registry
 // (register / setAgentURI / setMetadata) and its views (ownerOf / tokenURI / getMetadata / getAgentWallet), decodes results,
 // and runs a READ-ONLY verifyRegistration() against an RPC. It never signs and never sends a transaction: encode* returns
 // calldata, buildRegisterTx returns an unsigned request for the caller's own signer.
 //
-// SOURCES (read 2026-11-05; see src/identity/README.md): ERC text https://eips.ethereum.org/EIPS/eip-8004 (ethereum/ERCs
+// SOURCES (read 2026-11-05): ERC text https://eips.ethereum.org/EIPS/eip-8004 (ethereum/ERCs
 // commit 503591a6e80e6e1affdd6403341e25269141f046, last change to ERCS/erc-8004.md, 2026-01-25); reference contracts
 // https://github.com/erc-8004/erc-8004-contracts commit b9e466c250744a7e06b13dff9d3c2844ed64f825 (2026-08-15), whose
 // ERC8004SPEC.md is byte-identical to the ERCs file above. Because the standard is a Draft it may still change: re-check before

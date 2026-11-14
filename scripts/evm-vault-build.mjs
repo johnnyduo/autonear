@@ -34,7 +34,7 @@ const SOURCES = ["foundry.toml", "src/AgentVault.sol", "src/IAgentVault.sol"];
 const ARTIFACT = join(EVM, "out", `${CONTRACT}.sol`, `${CONTRACT}.json`);
 const DIST = join(EVM, "dist");
 
-// The 17 spec error codes (docs/agent-vault-spec.md), in spec order. Only these are previewable.
+// The 17 spec error codes (the Mandate Vault spec), in spec order. Only these are previewable.
 const SPEC_ERRORS = [
   "Unauthorized", "Paused", "NoMandate", "MandateInactive", "BadMandate", "BadAmount", "PerDrawCap", "PeriodCap",
   "TotalCap", "InsufficientBalance", "DeployLimit", "TemplateNotAllowed", "CodeMismatch", "AddressTaken", "BadName",

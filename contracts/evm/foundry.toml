@@ -30,7 +30,7 @@ fs_permissions = [
   { access = "read", path = "./src" },
   # Read-only: the runtime-code test compares against the build artifact.
   { access = "read", path = "./out" },
-  # Read-only: the shared Mandate Vault conformance scenarios (docs/agent-vault-spec.md). Never written by tests.
+  # Read-only: the shared Mandate Vault conformance scenarios (the Mandate Vault spec). Never written by tests.
   { access = "read", path = "../vault-conformance.json" },
 ]
 

@@ -1,4 +1,4 @@
-// EVM chain adapter for the Mandate Vault (contracts/evm/src/AgentVault.sol). Implements the interface in docs/agent-vault-spec.md
+// EVM chain adapter for the Mandate Vault (contracts/evm/src/AgentVault.sol). Implements the interface in the Mandate Vault spec
 // ("Chain adapter interface") plus the extensions listed in src/vault/index.js. READ-ONLY except for the pure builders: nothing here
 // holds a key or signs; signing is src/agent/*, driven by src/autonomy.js on the Node runtime only.
 //

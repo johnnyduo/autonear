@@ -101,14 +101,14 @@ Rejected after checking: Stack Overflow (`api.stackexchange.com`, no key): the t
 | --- | --- | --- | --- |
 | README matches behaviour; SECURITY; runbook; deploy docs; `.env.example` | working | `README.md`, `SECURITY.md`, `docs/` | |
 | CI | not used | No GitHub Actions workflow in the repo (the one that was written never ran and was removed on 2026-11-06). Checks run on the developer machine: `npm test`, `npm run test:web`, the secret scan in `.githooks/`, and Vercel builds the site on every push to `main` | None |
-| Model-assisted code reviews with every finding resolved or accepted | tested | `docs/audit/` (17 findings; regression tests) | Human audit before any non-test use |
+| Model-assisted code reviews with every finding resolved or accepted | tested | 17 findings from model-assisted reviews, each fixed or accepted with regression tests in `tests/` | Human audit before any non-test use |
 | Vercel + Turso deployment | working | 2026-11-05: production `Ready` at `https://autonear-eight.vercel.app` (console + API, real Turso DB). Full cron tick (`GET /api/cron/tick?wait=1` with `CRON_SECRET`) returned **200 in 64 s**: 4 sources ingested (GitHub 125 fetched, gov.near 247, HN 4, RPC 1), 7 opportunities scored, one research run started and ended `blocked` (no Rust/Foundry toolchain on Vercel, so no attested build: by design). Before pinning the function to `hnd1` the same pass took >300 s (HTTP 504): each Turso query cost ~200 ms from `iad1`. Counted locally: ~1,276 queries for a dedupe-only ingest + rescore pass | Region `hnd1` is a measured fit for this database, not a general rule: set `regions` to your Turso region. Cron runs every 15 minutes (Pro plan confirmed by the owner; the deployment with the 15-minute cron reached Ready; whether the scheduled invocations actually fire and authenticate is still to be observed in the logs). A 504 can return if the DB region changes or the sources grow. Deployment Protection (Vercel Authentication) is on for the `autonear-copycatfinance.vercel.app` alias; `autonear-eight.vercel.app` is public | **Update (same day, 9 sources):** the second full tick on production after the social sources landed returned 200 in 69 s: near-social 13 stored, mastodon 25, dev.to 2, farcaster 0, bluesky `not_configured` (the first call after the deploy still hit the old instance and listed 4 sources).
 | Public repo, demo video, X post, official form | **blocked** | human-owned publication steps | |
 
 ## Gate G: autonomous agent wallet ("Mandate Vault")
 
 An agent that holds its OWN testnet key and may only (1) draw gas and (2) deploy owner-allowlisted contract templates, inside a human-granted, revocable budget.
-Design, rules and shared conformance suite: [docs/agent-vault-spec.md](docs/agent-vault-spec.md). Testnet only; mainnet stays blocked in code. **Public NEAR testnet run: done (see the row below); no EVM public-testnet transaction exists yet.**
+Rules are checked by a shared conformance suite (`contracts/vault-conformance.json`). Testnet only; mainnet stays blocked in code. **Public NEAR testnet run: done (see the row below); no EVM public-testnet transaction exists yet.**
 
 | Requirement | Status | Proof | Next |
 | --- | --- | --- | --- |
@@ -122,10 +122,10 @@ Design, rules and shared conformance suite: [docs/agent-vault-spec.md](docs/agen
 | Grant flow | tested (API) / working (UI on fixtures) | `grant_mandate` decision, exact phrase, server activates only when on-chain state equals the approved payload field by field | UI live path never run against a real backend |
 | ERC-8004 identity (optional) | tested (offline) | `tests/identity.test.js` (24, viem cross-checked); registry addresses taken from the official repo README, not confirmed on-chain by us | ERC is **Draft**; no registration tx is ever sent by this code |
 | Vault console (`#/vault`) | working | Lighthouse a11y 100, axe 0 violations on fixtures; fixture mode is explicit and cannot send | LCP varied 0.8-3.2 s between runs on the fixture page |
-| Model-assisted review of the vault | tested | Review 3: 4 findings (1 High, 2 Medium, 1 Low), all fixed with regression tests: docs/audit/README.md | Re-run after any change |
-| Independent audit | **none** | model-assisted review only: see docs/audit/ | Human audit before any non-test use |
+| Model-assisted review of the vault | tested | Review 3: 4 findings (1 High, 2 Medium, 1 Low), all fixed with regression tests | Re-run after any change |
+| Independent audit | **none** | model-assisted review only | Human audit before any non-test use |
 
-## Gate H: owner app redesign (2026-11-06; design in `docs/design/`)
+## Gate H: owner app redesign (2026-11-06)
 
 One landing page, then four pages (Home, Approvals, Watch, Vault) and an Activity drawer; the old 9-screen console is kept only as deep links reachable from Activity. Screenshots: `docs/screenshots/redesign-*.png` (1440 / 768 / 360 px).
 

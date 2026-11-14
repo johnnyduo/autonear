@@ -102,7 +102,7 @@ export const LOOP = {
   blocked: { tone: 'bad', word: 'Blocked', note: 'An integrity check failed. The loop stopped itself and stays stopped until an operator resumes it.' },
 };
 
-/** Server-ceiling hints and contract rules for the propose form (docs/agent-vault-spec.md). Hints only: the server decides. */
+/** Server-ceiling hints and contract rules for the propose form (the Mandate Vault spec). Hints only: the server decides. */
 export const RULES = {
   maxExpiryHours: 720, minPeriodSecs: 60, maxPeriodSecs: 30 * 86400, maxDeploys: 1000,
   defaultTotalCeiling: { evm: '500000000000000000', near: '20000000000000000000000000' }, // 0.5 ETH / 20 NEAR (VAULT_MAX_TOTAL_CAP default)

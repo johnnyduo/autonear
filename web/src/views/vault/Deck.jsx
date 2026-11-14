@@ -103,7 +103,7 @@ export function NeverPanel() {
           </ul>
           <p className="help" style={{ margin: '8px 0 0' }}>Owner funds are never trapped. The agent has exactly two verbs: <b>draw</b> gas inside a budget, and <b>deploy</b> a listed template.</p>
         </div>
-        <p className="help vt-never-f">The same rules are checked by one shared conformance file across the EVM contract, the NEAR contract and the JS reference model (docs/agent-vault-spec.md). These are automated checks, not an independent audit: independent audit status is <b>none</b>.</p>
+        <p className="help vt-never-f">The same rules are checked by one shared conformance file across the EVM contract, the NEAR contract and the JS reference model. These are automated checks, not an independent audit: independent audit status is <b>none</b>.</p>
       </div>
     </section>
   );

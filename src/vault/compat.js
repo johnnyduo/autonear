@@ -1,4 +1,4 @@
-// Gap-filler between a chain adapter and what the core/loop needs. docs/agent-vault-spec.md fixes the BINDING adapter interface; the core also needs a few
+// Gap-filler between a chain adapter and what the core/loop needs. the Mandate Vault spec fixes the BINDING adapter interface; the core also needs a few
 // more methods (preview, estimateFee, signerOptions, deployTarget, planSteps; see src/vault/index.js). src/vault/evm.js implements all of them natively.
 // For any adapter that lacks one (today: src/vault/near.js, which has previewDraw/previewDeploy but not the rest), this file supplies a documented
 // fallback. A method the adapter DOES define always wins. NONE of the NEAR fallbacks has been exercised against a NEAR node: they are derived from

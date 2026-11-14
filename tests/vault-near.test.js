@@ -109,7 +109,7 @@ const verify = (w, over = {}) => adapter.verifyDeploy({ net: NET, txHash: TX, va
 const failedOf = (r) => r.checks.filter((c) => !c.ok).map((c) => c.name);
 
 // ------------------------------------------------------------------ interface shape
-describe('interface (docs/agent-vault-spec.md, Phase 2)', () => {
+describe('interface (the Mandate Vault spec, Phase 2)', () => {
   test('exports the binding adapter members', () => {
     assert.equal(adapter.chain, 'near');
     assert.deepEqual(adapter.unit, { symbol: 'NEAR', base: 'yoctoNEAR', decimals: 24 });

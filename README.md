@@ -43,7 +43,7 @@ This starts the local app and ingestion only. Click **Explore the demo** for ill
 
 ```bash
 npm test                # backend: 699 tests, 696 pass, 3 skipped, 0 fail (local run, 14 Nov 2026)
-npm run test:web        # owner-app logic: 151 tests pass (same run)
+npm run test:web        # owner-app logic: 159 tests pass (same run)
 npm run verify          # all of the above plus Foundry, Rust (registry, vault) and the web build
 npm run scan:secrets    # fail on anything that looks like a key or token
 ```
@@ -145,7 +145,7 @@ flowchart LR
     AGENT -.->|cannot| NO
 ```
 
-On NEAR a function-call key cannot deploy a contract, so the vault contract itself creates the sub-account and deploys the code through a promise batch. The sub-account gets no keys, so nobody, including the agent, can redeploy it. Before signing, the agent's signer allows only the vault's methods, enforces a fee ceiling, re-reads chain state, checks the vault code against the attested build and compares the JavaScript reference model with the chain's own previews. The loop is off by default (`AUTONOMY_ENABLED=1`), needs a Node host you control, and records its decisions and attempted actions in a hash-chained ledger. Spec and error codes: [docs/agent-vault-spec.md](docs/agent-vault-spec.md).
+On NEAR a function-call key cannot deploy a contract, so the vault contract itself creates the sub-account and deploys the code through a promise batch. The sub-account gets no keys, so nobody, including the agent, can redeploy it. Before signing, the agent's signer allows only the vault's methods, enforces a fee ceiling, re-reads chain state, checks the vault code against the attested build and compares the JavaScript reference model with the chain's own previews. The loop is off by default (`AUTONOMY_ENABLED=1`), needs a Node host you control, and records its decisions and attempted actions in a hash-chained ledger.
 
 ### Testnet deployments
 
@@ -182,7 +182,7 @@ Social weight is capped relative to non-social records, so extra social records 
 
 ## Security
 
-There has been **no independent security audit**. "Automated checks" means tests, linters, the Security Reviewer role and a model-assisted code review; findings and resolutions are in [docs/audit/](docs/audit/). None of these is an audit.
+There has been **no independent security audit**. "Automated checks" means tests, linters, the Security Reviewer role and a model-assisted code review; each finding was fixed or accepted with regression tests, as recorded in [PROGRESS.md](PROGRESS.md). None of these is an audit.
 
 ```mermaid
 flowchart LR
@@ -202,7 +202,7 @@ flowchart LR
 
 Mainnet, upgrades, treasury spend, liquidity and outreach are blocked in code (`DECISION_LIMITS`). Agent keys are testnet-only, stored with mode `0600` and git-ignored; tests check the known API, log and error paths for key leakage.
 
-**Residual risks, read before enabling Auto:** the vault holds testnet value; a compromised host that can run the agent can spend up to the mandate's caps; the owner should be a multisig; the secp256k1 implementation is not constant-time and keys sit in process memory (not an HSM). Details and threat model: [SECURITY.md](SECURITY.md) · [docs/INCIDENT-RUNBOOK.md](docs/INCIDENT-RUNBOOK.md).
+**Residual risks, read before enabling Auto:** the vault holds testnet value; a compromised host that can run the agent can spend up to the mandate's caps; the owner should be a multisig; the secp256k1 implementation is not constant-time and keys sit in process memory (not an HSM). Details and threat model: [SECURITY.md](SECURITY.md).
 
 <br>
 
@@ -229,7 +229,7 @@ src/            backend (no runtime dependencies on the Node and Cloudflare path
 contracts/      near-registry (Rust) · near-vault (Rust) · evm (Foundry, off by default) · vault-conformance*.json
 web/            React 19 + Vite app and technical views
 tests/          backend tests and recorded fixtures      migrations/   SQL schema (SQLite, D1, libSQL)
-scripts/        attestation, e2e and onboarding scripts  docs/         specs, deploy guides, review log, testnet records
+scripts/        attestation, e2e and onboarding scripts  docs/         deploy guides, screenshots, testnet records
 video/          Remotion pipeline for the demo video     PROGRESS.md   claims, status and proof commands
 ```
 

@@ -1,4 +1,4 @@
-// NEAR chain adapter for the Mandate Vault (binding interface: docs/agent-vault-spec.md, "Chain adapter interface").
+// NEAR chain adapter for the Mandate Vault (binding interface: the Mandate Vault spec, "Chain adapter interface").
 // Read-only against the RPC (jsonRpc from src/chains/common.js, fetchImpl injectable); it never signs and never holds keys.
 //
 // Conventions of THIS adapter (the interface fixes the shape, not the number types):

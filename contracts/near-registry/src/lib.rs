@@ -3,7 +3,7 @@
 //! An attestation registry: it binds an off-chain, policy-bound proposal to an
 //! owner-approved on-chain record. It never holds funds and makes NO external
 //! calls (no `Promise`, no cross-contract calls, no callbacks), so there is no
-//! reentrancy surface. See README.md and docs/contracts-spec.md.
+//! reentrancy surface. See the registry spec.
 
 pub mod events;
 pub mod id;

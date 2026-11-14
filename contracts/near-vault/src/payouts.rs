@@ -3,7 +3,7 @@
 //! The owner funds the vault with an NEP-141 token (USDC first), allowlists tokens (with per-pay /
 //! per-period / total caps) and payees; the mandate agent can then `pay` an allowlisted payee from an
 //! allowlisted token inside those caps. The only outbound call to a token is `ft_transfer` (1
-//! yoctoNEAR, never `ft_transfer_call`). Design: docs/design/stablecoin-payouts.md.
+//! yoctoNEAR, never `ft_transfer_call`). Design: the stablecoin payouts design note.
 //!
 //! Isolation from v1: none of this is compiled without the feature, so the default wasm stays
 //! byte-identical to the attested v1. The payout state lives under its OWN storage key (`p:state`),

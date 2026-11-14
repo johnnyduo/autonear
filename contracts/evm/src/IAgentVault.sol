@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 /// @title IAgentVault
 /// @notice Types, events, custom errors and external API of AutoNEAR Mandate Vault v1 (EVM).
-/// @dev Semantics are specified in docs/agent-vault-spec.md and MUST match the NEAR implementation and the JS model;
+/// @dev Semantics are specified in the Mandate Vault spec and MUST match the NEAR implementation and the JS model;
 ///      all three are checked against contracts/vault-conformance.json.
 ///      Error names are the spec's error codes, byte for byte. Preview views return the 4-byte selector of the
 ///      error the matching call would revert with (`bytes4(0)` = ok), so `selector == IAgentVault.X.selector`.

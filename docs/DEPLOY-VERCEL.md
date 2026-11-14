@@ -36,5 +36,5 @@ Never add wallet or agent private keys to Vercel: the autonomy loop (agent signi
   Bluesky stays `not_configured` (no request, no error) until both are set.
 
 ## After deploying
-Open `/api/status` (JSON), then the site root. Follow [INCIDENT-RUNBOOK.md](INCIDENT-RUNBOOK.md) for the kill switch and rotation; use
+Open `/api/status` (JSON), then the site root. Use the kill switch in the Security view to pause everything, and rotate `OPERATOR_TOKEN` and `CRON_SECRET` in Vercel if one leaks; use
 `vercel env` or the dashboard instead of `wrangler secret put`, and redeploy for new values to take effect.

@@ -9,7 +9,7 @@ export const PROTOCOLS = {
       { id: 'near-mainnet', label: 'NEAR mainnet', rpc: 'https://rpc.mainnet.near.org', explorer: 'https://nearblocks.io/txns/', mainnet: true },
     ],
     commands: { build: 'npm run contract:near:build', test: 'npm run contract:near:test' },
-    // Mandate Vault (docs/agent-vault-spec.md). The contract is in contracts/near-vault; the backend adapter is src/vault/near.js.
+    // Mandate Vault (the Mandate Vault spec). The contract is in contracts/near-vault; the backend adapter is src/vault/near.js.
     // `backend` is the honest state of the BACKEND path: nothing here is exercised on a public NEAR testnet.
     vault: { contract: 'contracts/near-vault', unit: { symbol: 'NEAR', base: 'yoctoNEAR', decimals: 24 }, adapter: 'src/vault/near.js', backend: 'adapter not exercised by the evm-first backend tests', commands: { build: 'npm run contract:near-vault:build', test: 'npm run contract:near-vault:test' } },
   },
@@ -26,7 +26,7 @@ export const PROTOCOLS = {
       { id: 'evm:31337', chainId: 31337, label: 'Local anvil (not a public chain)', rpc: 'http://127.0.0.1:8545', explorer: '', mainnet: false, local: true },
     ],
     commands: { build: 'npm run contract:evm:build', test: 'npm run contract:evm:test', e2e: 'npm run contract:evm:e2e' },
-    // Mandate Vault (docs/agent-vault-spec.md). Backend path exercised end to end only against a LOCAL anvil (31337), never a public testnet.
+    // Mandate Vault (the Mandate Vault spec). Backend path exercised end to end only against a LOCAL anvil (31337), never a public testnet.
     vault: { contract: 'contracts/evm/src/AgentVault.sol', unit: { symbol: 'ETH', base: 'wei', decimals: 18 }, adapter: 'src/vault/evm.js', backend: 'tested against a local anvil only', commands: { build: 'npm run contract:evm:vault:build', test: 'npm run contract:evm:vault:test', e2e: 'npm run contract:evm:vault:e2e' } },
   },
   // Listed so the roadmap is visible. NO code exists for these yet; the UI shows them as "planned".

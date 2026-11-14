@@ -1,6 +1,6 @@
 {
  "version": 1,
- "note": "Shared by EVM tests, NEAR tests and src/vault-model.js. See docs/agent-vault-spec.md. Do not edit to make an implementation pass.",
+ "note": "Shared by EVM tests, NEAR tests and src/vault-model.js. See the Mandate Vault spec. Do not edit to make an implementation pass.",
  "roles": [
   "owner",
   "agent",

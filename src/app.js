@@ -411,7 +411,7 @@ export function createApp(deps) {
         decisionLimits: DECISION_LIMITS, vaultLimits: vaultLimits(), budget: config.budget, auth: { operatorConfigured: Boolean(operatorToken) },
         audit: audits.map((a) => ({ ...a, detail: parse(a.detail, {}) })),
         keyScopes: [{ key: 'OPERATOR_TOKEN', scope: 'all mutations', holder: 'human operator' }, { key: 'CRON_SECRET', scope: '/api/cron/tick only', holder: 'scheduler' }, { key: 'LLM provider key', scope: 'server-side completion calls only', holder: 'server secret' }, { key: 'human wallet keys', scope: 'NONE: never held by this system', holder: 'human, in their own wallet' }, { key: 'AGENT_EVM_PRIVATE_KEY / AGENT_NEAR_PRIVATE_KEY / AGENT_KEYS_PATH file', scope: 'the AGENT testnet key only: the signer can sign nothing but vault draw/deploy to the configured vault, under a hard per-tx fee ceiling; the vault enforces the budget on-chain; Node runtime only, never on the Worker', holder: 'this server (disabled unless AUTONOMY_ENABLED=1)' }],
-        runbook: 'docs/INCIDENT-RUNBOOK.md',
+        runbook: 'SECURITY.md',
       });
     }
     if (p === '/api/security/pause' && m === 'POST') { const who = await needOwner(req); await setPaused(db, true, who.actor); return out({ paused: true }); }

@@ -37,7 +37,7 @@ function Field({ k, label, children, hint, msg }) { return (<div className="fiel
 
 function blank() { return { chainId: 'near-testnet', vault: '', owner: '', hours: '24', perDraw: '', periodN: '1', periodU: 'hour', periodCap: '', totalCap: '', maxDeploys: '3', fund: '', maxPerDay: '3', tpl: {} }; }
 
-/** Pure validation: returns { errors, payload|null }. Client rules mirror the contract (docs/agent-vault-spec.md); the server stays the authority. */
+/** Pure validation: returns { errors, payload|null }. Client rules mirror the contract (the Mandate Vault spec); the server stays the authority. */
 export function validate(f, agent, artifacts) {
   const meta = chainMeta(f.chainId); const proto = protoOfChain(f.chainId); const e = {}; const warn = {};
   const U = (s) => parseUnits(s, meta.decimals);

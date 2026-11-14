@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 /// @title IProposalRegistry
 /// @notice Interface, types, events and errors of AutoNEAR Proposal Registry v1 (EVM).
-/// @dev Semantics are specified in docs/contracts-spec.md and MUST match the NEAR implementation.
+/// @dev Semantics are specified in the registry spec and MUST match the NEAR implementation.
 ///      The registry is an attestation registry: it never holds funds and never calls the target.
 interface IProposalRegistry {
     /*//////////////////////////////////////////////////////////////

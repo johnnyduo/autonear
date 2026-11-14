@@ -7,7 +7,7 @@ import {IAgentVault} from "./IAgentVault.sol";
 /// @author AutoNEAR
 /// @notice Mandate Vault v1 (EVM): holds testnet gas money for ONE autonomous agent and lets it do exactly two
 ///         things inside an owner-set budget: `draw` ETH to its own address, and `deploy` an owner-allowlisted
-///         template via CREATE2 from the vault. Spec: docs/agent-vault-spec.md; shared conformance file:
+///         template via CREATE2 from the vault. Spec: the Mandate Vault spec; shared conformance file:
 ///         contracts/vault-conformance.json.
 /// @dev Design constraints, all load-bearing:
 ///      - The ONLY external interactions are the value sends in `draw` (to `mandate.agent`) and `withdraw` (to

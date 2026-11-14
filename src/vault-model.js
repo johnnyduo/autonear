@@ -1,4 +1,4 @@
-// Mandate Vault v1: pure-JS reference model of the state machine in docs/agent-vault-spec.md.
+// Mandate Vault v1: pure-JS reference model of the state machine in the Mandate Vault spec.
 //
 // Purpose: (1) executable spec that the EVM and NEAR contracts are checked against (contracts/vault-conformance.json,
 // via runScenario below), (2) PRE-FLIGHT for every agent transaction (previewDraw / previewDeploy return the exact error
