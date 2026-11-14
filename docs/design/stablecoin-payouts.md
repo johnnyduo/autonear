@@ -25,7 +25,7 @@ The vault today holds and moves only native NEAR (`draw`, `deploy`, `withdraw`; 
 ## Non-goals and anti-goals
 - No arbitrary contract call. In stage 1 the only outbound call is `ft_transfer` to an allowlisted payee. In stage 2 tokens may also go to a **product account the vault itself deployed from an owner-allowlisted template** (code hash known), never to a third-party contract. Third-party DEX pools (Ref and others) stay out until someone reviews them.
 - No change to the behaviour or events of the existing methods. The existing vault stays as it is; payouts come in a new build with its own hash and a new attestation.
-- Not a claim of an audit: tests plus AI-assisted review only.
+- Not a claim of an audit: tests plus automated model review only.
 - Mainnet stays blocked in code. The mock token refuses to initialise outside testnet / local sandbox.
 
 ## Design
@@ -92,7 +92,7 @@ Not closed: the owner's veto is a central power (it is visible and logged, not r
 4. *Exact window rules.* What counts as a lead change, which snapshot decides, the maximum total extension, and the finalization order, written as a table with worked examples.
 5. *Trust model for the veto and for stake concentration.* State who can veto what and why (criteria and the remedy), and say plainly that stake voting can be bought; borrowed stake and many-account locks (per-account caps do not stop one person using many accounts) are accepted only for a labelled testnet demo whose pool holds no real user value.
 
-**Before any of this is built:** the Stage 2 design gets its own independent review (Codex, AI-assisted, not an audit) and a written threat table, because it is the part that holds value and changes who controls it.
+**Before any of this is built:** the Stage 2 design gets its own independent review (a model-assisted review, not an audit) and a written threat table, because it is the part that holds value and changes who controls it.
 
 **What this adds.** Contracts: `proposal-claim`, a minimal seedable pool template (the only part with product logic), vault methods `fund_product`, a seedable-template allowlist and a product registry; conformance and e2e for seed, recall, claim, veto and sniping; arena and claim windows in the app. It is the largest part and is built last.
 

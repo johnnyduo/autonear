@@ -1,6 +1,6 @@
 # Security
 
-AutoNEAR is a hackathon MVP. It has had **no independent security audit**. Where this document says "automated checks", it means exactly that: tests, linters, a mechanical review by the Security Reviewer role, and an AI-assisted code review (see `docs/audit/`). None of these is an audit.
+AutoNEAR is a hackathon MVP. It has had **no independent security audit**. Where this document says "automated checks", it means exactly that: tests, linters, a mechanical review by the Security Reviewer role, and a model-assisted code review (see `docs/audit/`). None of these is an audit.
 
 ## What the system can and cannot do
 
@@ -30,7 +30,7 @@ AutoNEAR is a hackathon MVP. It has had **no independent security audit**. Where
 - **On-chain, not in prompts:** per-draw, per-period and total caps, a deploy count, an expiry, a pause and a revoke live in the vault contract. The agent address can only reach `draw` (funds go to itself only) and `deploy` (owner-allowlisted code hash; init arguments fixed by the owner at allowlist time, so the agent cannot choose who owns what it deploys). On NEAR the deployed sub-account has no keys; on EVM there is no upgrade path.
 - **Off-chain defense in depth:** the signer refuses any target or method except the vault's `draw`/`deploy` and any call above a fee ceiling; the loop re-reads the chain, checks the vault code against the attested build, compares the JS reference model with the chain's own previews before acting, and blocks itself on any mismatch until an operator resumes it.
 - **Key custody:** testnet keys only, file mode 0600 and git-ignored (`data/agent*`, `*.key`), never returned by the API, logged, or placed in errors (tests grep for the key). The secp256k1 implementation is not constant-time. Keys sit in process memory; this is not an HSM. A full-access key on the vault *account* (NEAR) would bypass every rule and must not be added.
-- **Residual risks (read before enabling):** the vault holds real testnet value; a compromised host that can run the agent can spend up to the mandate's caps; the owner should be a multisig; the contracts have tests and fuzzing but **no independent audit** (an AI-assisted review is in `docs/audit/`); nothing was run on a public testnet by us.
+- **Residual risks (read before enabling):** the vault holds real testnet value; a compromised host that can run the agent can spend up to the mandate's caps; the owner should be a multisig; the contracts have tests and fuzzing but **no independent audit** (a model-assisted review is in `docs/audit/`); nothing was run on a public testnet by us.
 
 ## Threat model (summary; full table in each generated brief)
 

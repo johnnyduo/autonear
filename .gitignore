@@ -128,9 +128,6 @@ echidna-corpus/
 medusa-corpus/
 fuzz-artifacts/
 proptest-regressions/
-# Codex / LLM review raw logs are kept only when curated into docs/audit/
-codex-*.raw.tmp
-*.codex.tmp
 
 # ───────────────────────── Logs, temp, OS, editors ─────────────────────────
 *.log
@@ -164,16 +161,6 @@ Desktop.ini
 !.vscode/settings.example.json
 *.iml
 .history/
-# Local AI-assistant state (settings stay on the developer's machine)
-.claude/settings.local.json
-.claude/projects/
-.claude/scratch/
-.cursor/
-.aider*
-.continue/
-.codex/
-CLAUDE.local.md
-*.local.md
 
 # Lockfiles ARE tracked (reproducible builds, `cargo --locked`, forge). A global *.lock rule on a dev machine must not hide them.
 !*.lock

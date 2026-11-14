@@ -154,7 +154,7 @@ The loop never: changes config, requests a larger budget, touches mainnet, runs 
 
 
 ## Token payouts (phase 2b), added 2026-11-06
-Backend half of the stablecoin payouts design (`docs/superpowers/specs/2026-11-06-stablecoin-payouts-design.md`, sections 2 and 3). It needs the **payouts build** of the NEAR vault (`autonear_vault_pay.wasm`, `config().version` 1.1.0); the v1 build and every v1 behaviour are unchanged. Testnet only, mainnet stays blocked in code.
+Backend half of the stablecoin payouts design (`docs/design/stablecoin-payouts.md`, sections 2 and 3). It needs the **payouts build** of the NEAR vault (`autonear_vault_pay.wasm`, `config().version` 1.1.0); the v1 build and every v1 behaviour are unchanged. Testnet only, mainnet stays blocked in code.
 
 **Grant `payouts` section** (optional; `POST /api/vault/mandates/propose` body and the stored payload):
 `payouts: { tokens: [{ token, symbol, decimals, perPayCap, periodCap, totalCap, mock? }], payees: [account...], fund?: { token, amount } }`. The request carries only `token`, the three caps and `fund`; the server reads `symbol` and `decimals` from the token's own `ft_metadata` (anything the client sends for them is ignored) and sets `mock: true` for a testnet "Mock ..." token. The vault must be the payouts build (checked live by code hash), else 409. `policy.assertGrantPayload` checks: 1..8 tokens, 1..64 payees, valid NEAR account ids, no duplicates, no token that is also a payee, never the vault / `system` / zero account, `0 < perPayCap <= periodCap <= totalCap`, and a per-token ceiling in the token's own base units: `totalCap` and `fund.amount` <= `VAULT_MAX_TOKEN_TOTAL_WHOLE` whole tokens x 10^decimals (default 1000, never above the compiled-in 100000).

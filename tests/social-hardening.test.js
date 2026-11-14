@@ -1,4 +1,4 @@
-// Codex re-review fixes: (1) aggregate cap on social influence in score and confidence, (2) social text is untrusted prompt content.
+// Review fixes: (1) aggregate cap on social influence in score and confidence, (2) social text is untrusted prompt content.
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { scoreTopic, WEIGHTS, SCORING_NOTES } from '../src/scoring.js';

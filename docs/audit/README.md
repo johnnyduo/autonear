@@ -1,13 +1,13 @@
-# AI-assisted code reviews (not an independent audit)
+# Automated code reviews (not an independent audit)
 
-Four read-only reviews were run with the OpenAI Codex CLI (`codex exec --sandbox read-only`) against this repository on 2026-11-05. They are **automated reviews by an AI model**. They are not a human security audit, name no independent reviewer, and do not change the project's audit status, which remains **none**.
+Four read-only reviews were run by a language model with no write access against this repository, starting 2026-11-05. They are **automated model reviews**. They are not a human security audit, name no independent reviewer, and do not change the project's audit status, which remains **none**.
 
-| Review | Scope | Raw output |
-| --- | --- | --- |
-| 1 · Backend | `src/**`, `tests/**`, `scripts/attest.mjs`, `wrangler.jsonc`, `migrations/` | [codex-backend-audit.raw.md](codex-backend-audit.raw.md) |
-| 2 · Contracts + verification | `contracts/evm/src`, `contracts/near-registry/src`, chain verifiers, decision flow | [codex-contracts-audit.raw.md](codex-contracts-audit.raw.md) |
-| 4 · Re-review of the review-3 fixes + social connectors + Vercel entry | `src/autonomy.js`, `src/vault/index.js`, `contracts/near-vault/src/lib.rs`, `contracts/evm/src/AgentVault.sol`, `src/connectors/*`, `src/scoring.js`, `src/policy.js`, `api/index.js` | [codex-vault-rereview.raw.md](codex-vault-rereview.raw.md) |
-| 3 · Mandate Vault (agent wallet) | `contracts/evm/src/AgentVault.sol`, `contracts/near-vault/src/lib.rs`, `src/autonomy.js`, `src/vault/*`, `src/agent/*`, vault routes, vault path of `src/decisions.js` | [codex-vault-audit.raw.md](codex-vault-audit.raw.md) |
+| Review | Scope |
+| --- | --- |
+| 1 · Backend | `src/**`, `tests/**`, `scripts/attest.mjs`, `wrangler.jsonc`, `migrations/` |
+| 2 · Contracts + verification | `contracts/evm/src`, `contracts/near-registry/src`, chain verifiers, decision flow |
+| 4 · Re-review of the review-3 fixes + social connectors + Vercel entry | `src/autonomy.js`, `src/vault/index.js`, `contracts/near-vault/src/lib.rs`, `contracts/evm/src/AgentVault.sol`, `src/connectors/*`, `src/scoring.js`, `src/policy.js`, `api/index.js` |
+| 3 · Mandate Vault (agent wallet) | `contracts/evm/src/AgentVault.sol`, `contracts/near-vault/src/lib.rs`, `src/autonomy.js`, `src/vault/*`, `src/agent/*`, vault routes, vault path of `src/decisions.js` |
 
 Each finding was checked against the code before acting. Resolution status below; regression tests are in `tests/`.
 
@@ -31,7 +31,7 @@ Each finding was checked against the code before acting. Resolution status below
 | ID | Sev | Finding | Resolution |
 | --- | --- | --- | --- |
 | N-01 | High | A deploy tx could carry extra actions (e.g. `AddKey`) | Verifier allowlists actions (`CreateAccount`, `Transfer`, `AddKey`, `DeployContract`, `FunctionCall`), requires exactly one `DeployContract`, permits only the `new` initializer call. *Remaining human step:* `AddKey` is allowed because a fresh contract account normally gets its owner's key, so the verifier lists every full-access key as an **INFO check that the human must confirm is theirs**. Not automatically enforceable. |
-| N-02 | High | Failed receipts inside the tx not inspected | Every `receipts_outcome` is checked for `Failure`. Test added. *(Codex appears to have read the file before this edit landed.)* |
+| N-02 | High | Failed receipts inside the tx not inspected | Every `receipts_outcome` is checked for `Failure`. Test added. *(the reviewer appears to have read the file before this edit landed.)* |
 | N-03 | Med | Retained full-access keys not checked | Listed as an INFO check (see N-01); policy comparison against a key set is **not implemented**. Open. |
 | B-01 | Med | Failing/unlinted attestations accepted | Attestation rejected unless tests pass, lint passes, and test names are present. Test added. |
 | B-02 | Med | Monitor only visited the 5 newest deployments | Least-recently-checked-first rotation. Test added. |
@@ -88,4 +88,4 @@ Run 2026-11-06 on the code after the review-3 fixes. The reviewer confirmed V-1 
 
 ## Added 2026-11-06
 
-`codex-redesign-review.raw.md`: two read-only Codex passes (plan, then implementation) on the owner-app redesign, with the author's triage and fix status. Same caveat: an automated model review, not an audit.
+Two read-only model passes (plan, then implementation) on the owner-app redesign, with the author's triage and fix status. Same caveat: an automated model review, not an audit.

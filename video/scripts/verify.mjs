@@ -25,7 +25,7 @@ for (const s of script.scenes) {
 
 // 1b. segmented scenes: the takes, joined, must equal the narration exactly
 for (const s of script.scenes) if (s.segments) must(s.segments.map((g) => g.text).join(' ').replace(/\s+/g, ' ') === s.narration.replace(/\s+/g, ' '), `${s.id}: segments do not add up to the narration`);
-// 2. banned / overclaiming words (Codex fact-check found these overstate what the code proves)
+// 2. banned / overclaiming words (these overstate what the code proves)
 const BANNED = [/\baudited\b/i, /\bguarantee/i, /\bunhackable\b/i, /\bproduction[- ]ready\b/i, /\bmainnet\b/i, /\bnever (let|move|holds?)\b/i, /\breal funds\b/i, /\bautonomous(ly)? (deploy|execut)/i, /\bsecure[sd]?\b/i];
 for (const s of script.scenes) for (const re of BANNED) must(!re.test(s.narration), `${s.id}: banned claim word ${re}`);
 

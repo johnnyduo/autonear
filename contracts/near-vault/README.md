@@ -205,7 +205,7 @@ Not part of the table (plain messages): `new` called twice, invalid `network_id`
 **Off by default.** A normal `cargo build` / `scripts/near-vault-build.sh` is the attested v1 and its wasm hash does not change; all
 payout code (`src/payouts.rs`, extra errors and events, tests in `src/tests_pay.rs`) is compiled only with `--features payouts`.
 `scripts/near-vault-build.sh --payouts` builds `dist/autonear_vault_pay.wasm` (the JSON gets `"features":"payouts"`); `config().version`
-is `1.1.0` in that build only. Design: `docs/superpowers/specs/2026-11-06-stablecoin-payouts-design.md` (stage 1 only: no `fund_product`,
+is `1.1.0` in that build only. Design: `docs/design/stablecoin-payouts.md` (stage 1 only: no `fund_product`,
 no claim contract; money flows out only).
 
 | Method | Who | Rule |

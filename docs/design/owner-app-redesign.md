@@ -48,14 +48,13 @@ The user is a web2/web3 client, not an engineer. The hard parts (ingestion, scor
 ## Constraints
 - Reuse the existing API and Vite/React 19 app, hash routing, design tokens in `web/src/styles.css`. Existing deep routes (`#/run/:id`, `#/opportunity/:id`, `#/approval`, `#/vault`) keep working or redirect.
 - Wallet config today is EVM injected only (`web/src/wallet/config.js`). NEAR wallet support is an open decision (below).
-- Read endpoints are public; every mutation needs an operator token today. The wallet-signature session is new server code and must be covered by tests and a Codex review.
-- Cheap on tokens: reuse components and CSS, delete rather than rewrite, stage the work, one Codex review of the plan and one of the result (not per file).
+- Read endpoints are public; every mutation needs an operator token today. The wallet-signature session is new server code and must be covered by tests and a review.
 
 ## Delivery stages (each ends with the app working and screenshots)
 1. **Shell**: landing, 4-page shell, Activity drawer, copy deck, old routes redirected, menu reduced.
 2. **Home + Approvals**: status sentence, Manual/Auto switch, gas meter, Leash scene wired to real data, hold-to-approve.
 3. **Watch + Vault + wallet sign-in**: owner keyword/source settings (new small API + tests), limits editor, emergency stop, signature session.
-4. **Polish and proof**: motion, reduced-motion, 360/768/1440 screenshots, accessibility pass, bundle check, Codex deep audit and fixes, PROGRESS.md and README updated honestly.
+4. **Polish and proof**: motion, reduced-motion, 360/768/1440 screenshots, accessibility pass, bundle check, model review and fixes, PROGRESS.md and README updated honestly.
 
 ## Decisions I made (say if you disagree)
 - UI name for the mandate is **Limits**; the metaphor name "Leash" is used only in the scene and landing copy.
