@@ -163,6 +163,30 @@ Selected transactions: [deploy vault](https://testnet.nearblocks.io/txns/migRdhR
 
 <br>
 
+## Standards and engineering
+
+| Standard | What it does here | Status |
+| --- | --- | --- |
+| **NEP-518** | An Ethereum wallet (MetaMask) signs NEAR transactions and a relayer submits them, so the owner needs no second wallet. | Implemented |
+| **EIP-191** | Owner sign-in: signing a plain-text challenge proves control of the owner address. No transaction, no cost. | Implemented |
+| **EIP-1193 · EIP-6963** | Injected wallets are discovered and used through the standard provider API. No WalletConnect. | Implemented |
+| **NEP-141 · NEP-145** | The agent pays tokens with `ft_transfer` through the vault, only to payees the owner allowed, inside the owner's caps, after a storage-registration check. | Payouts build, run on testnet with a mock token |
+| **NEP-297** | Every contract state change emits a standard event, so the audit trail can be read from the chain. | Implemented in the vault and the registry |
+| **EIP-1559 · EIP-155 · EIP-55** | The agent signs its own EVM transactions (type 2 and legacy) and checks address checksums, with key code written in this repo. | Implemented (EVM path is off by default) |
+| **ERC-8004** (Draft) | Optional agent identity: an adapter can publish the agent's registration file. | Adapter, off by default |
+| **ERC-7710 style limits** | The vault's budget, per-draw cap and expiry follow the delegation idea, enforced natively on NEAR. | Design influence, not an ERC-7710 implementation |
+
+**Design research.** ERC-4337, ERC-7579, ERC-7710 and ERC-7715 give EVM-only session keys, need a bundler or an experimental wallet, and have no NEAR equivalent. So the vault is a native contract with one conformance suite across chains. NEAR function-call keys cannot deploy contracts, so the vault itself creates a keyless sub-account to deploy into.
+
+- **Three implementations, one test file.** The NEAR (Rust) vault, the EVM (Solidity) vault and a JavaScript reference model must agree on every operation and error code in `contracts/vault-conformance.json`.
+- **Key code without dependencies.** secp256k1, keccak, RLP, base58 and NEAR transaction encoding are implemented in `src/agent/` and checked against vectors generated with nearcore's own Rust crates and against a local anvil chain.
+- **Contract testing.** Foundry fuzz and invariant tests for the EVM registry and vault, Rust unit tests for both NEAR contracts, a shared conformance suite, and sandbox integration tests for the NEAR vault.
+- **One handler, three runtimes.** Node with SQLite, Cloudflare Workers with D1, and Vercel with Turso run the same request handler.
+- **Tamper evidence.** A hash-chained audit log and run events, an immutable blob store (updates are rejected by the database), and builds attested by wasm hash and checked against the on-chain receipt.
+- **Careful ingestion.** A strict NEAR-relevance filter, dedupe, bot, low-signal and prompt-injection flags, and connectors with timeouts, a circuit breaker and backoff.
+
+<br>
+
 ## Sources and scoring
 
 | Tier | Sources | Weight |
