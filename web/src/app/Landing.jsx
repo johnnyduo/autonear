@@ -12,7 +12,7 @@ import LandingFx from './LandingFx.jsx';
 
 const Hero = lazy(() => import('../views/constellation/ConstellationHero.jsx'));
 
-const HEAD_A = 'An agent that works for you,'; const HEAD_B = 'on a leash you hold.';
+const HEAD_A = 'Find demand.'; const HEAD_B = 'Build within limits.';
 // each word sits in a mask and rises into it; the heading stays one sentence for screen readers (aria-label on the h1)
 const Words = ({ text, from }) => text.split(' ').map((w, i, all) => <Fragment key={w + i}><span className="ln-word" aria-hidden="true" style={{ '--i': from + i }}><span>{w}</span></span>{i < all.length - 1 ? ' ' : null}</Fragment>);
 
